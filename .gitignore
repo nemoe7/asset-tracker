@@ -1,0 +1,23 @@
+# Environment
+.env
+
+# Bruno local environments
+bruno/**/environments/local.*
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# VS Code
+.vscode/
+
+# App cache
+.cache/
+
+# Logs
+logs/

@@ -1,0 +1,12 @@
+services:
+  stanportal:
+    build: .
+    container_name: inventory-management
+    restart: unless-stopped
+    network_mode: host
+
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    working_dir: /app
