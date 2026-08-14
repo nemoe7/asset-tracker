@@ -1,12 +1,21 @@
 services:
-  stanportal:
+  app:
     build: .
     container_name: inventory-management
     restart: unless-stopped
-    network_mode: host
 
     env_file:
       - .env
     volumes:
       - .:/app
     working_dir: /app
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    command: tunnel --no-autoupdate --protocol http2 --url http://app:5000
+    depends_on:
+      - app
