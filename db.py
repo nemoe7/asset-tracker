@@ -8,7 +8,8 @@ SCHEMA_PATH = Path("database/schema.sql")
 def init_db():
   DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-  connection = get_db()
+  connection = sqlite3.connect(DB_PATH)
+  connection.execute("PRAGMA foreign_keys = ON")
 
   with SCHEMA_PATH.open() as file:
     connection.executescript(file.read())
