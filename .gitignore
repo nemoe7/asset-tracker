@@ -12,6 +12,7 @@ env/
 # Python cache
 __pycache__/
 *.py[cod]
+.pytest_cache
 
 # VS Code
 .vscode/
