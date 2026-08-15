@@ -1,0 +1,13 @@
+.git
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+htmlcov
+
+tests/
+docs/
+
+.gitignore
+compose.yml
+requirements.md
