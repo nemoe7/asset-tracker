@@ -1,6 +1,6 @@
 {
   "name": "Inventory Management",
-  "short_name": "Inventory",
+  "short_name": "InvMan",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
