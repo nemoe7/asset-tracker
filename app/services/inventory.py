@@ -4,6 +4,28 @@ from app.db import get_db
 from app.services.audit import create_audit_log
 
 
+def _validate_item_name(name):
+  if not isinstance(name, str) or not name.strip():
+    raise ValueError("Item name cannot be empty")
+
+
+def _validate_location(connection, location_id):
+  if location_id is None:
+    return
+
+  location = connection.execute(
+    """
+    SELECT id
+    FROM locations
+    WHERE id = ?
+    """,
+    (location_id,),
+  ).fetchone()
+
+  if location is None:
+    raise ValueError("Location does not exist")
+
+
 def _get_custom_fields(connection, item_id):
   rows = connection.execute(
     """
@@ -54,6 +76,8 @@ def create_item(name, location_id=None):
   item_id = str(uuid.uuid4())
 
   connection = get_db()
+  _validate_item_name(name)
+  _validate_location(connection, location_id)
 
   try:
     connection.execute(
@@ -129,6 +153,9 @@ def get_items():
 
 def update_item(item_id, name, location_id=None):
   connection = get_db()
+
+  _validate_item_name(name)
+  _validate_location(connection, location_id)
 
   try:
     existing = connection.execute(
