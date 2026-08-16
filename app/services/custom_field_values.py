@@ -4,86 +4,19 @@ from app.db import get_db
 from app.services.audit import create_audit_log
 
 
-def _validate_value(field_type, value):
-  if field_type == "text":
-    if not isinstance(value, str):
-      raise ValueError("Value must be text")
-
-    return value
-
-  if field_type == "integer":
-    if isinstance(value, bool):
-      raise ValueError("Value must be an integer")
-
-    try:
-      return int(value)
-    except (TypeError, ValueError):
-      raise ValueError("Value must be an integer")
-
-  if field_type == "decimal":
-    if isinstance(value, bool):
-      raise ValueError("Value must be a decimal")
-
-    try:
-      return float(value)
-    except (TypeError, ValueError):
-      raise ValueError("Value must be a decimal")
-
-  if field_type == "boolean":
-    if not isinstance(value, bool):
-      raise ValueError("Value must be a boolean")
-
-    return value
-
-  if field_type == "date":
-    if not isinstance(value, str):
-      raise ValueError("Value must be a date")
-
-    try:
-      date.fromisoformat(value)
-    except ValueError:
-      raise ValueError("Value must be a valid date")
-
-    return value
-
-  raise ValueError("Invalid custom field type")
+def _get_item(connection, item_id):
+  return connection.execute(
+    """
+    SELECT id
+    FROM inventory_items
+    WHERE id = ?
+      AND archived_at IS NULL
+    """,
+    (item_id,),
+  ).fetchone()
 
 
-def _serialize_value(field_type, value):
-  value = _validate_value(field_type, value)
-
-  if field_type == "boolean":
-    return "1" if value else "0"
-
-  if field_type == "decimal":
-    return str(value)
-
-  return str(value)
-
-
-def _deserialize_value(field_type, value):
-  if value is None:
-    return None
-
-  if field_type == "text":
-    return value
-
-  if field_type == "integer":
-    return int(value)
-
-  if field_type == "decimal":
-    return float(value)
-
-  if field_type == "boolean":
-    return value == "1"
-
-  if field_type == "date":
-    return value
-
-  raise ValueError("Invalid custom field type")
-
-
-def _get_field(connection, field_id):
+def _get_custom_field(connection, field_id):
   return connection.execute(
     """
     SELECT *
@@ -94,18 +27,76 @@ def _get_field(connection, field_id):
   ).fetchone()
 
 
-def _get_item(connection, item_id):
-  return connection.execute(
-    """
-    SELECT *
-    FROM inventory_items
-    WHERE id = ?
-    """,
-    (item_id,),
-  ).fetchone()
+def _validate_value(field_type, value):
+  if field_type == "text":
+    if not isinstance(value, str):
+      raise ValueError("Invalid text value")
+
+    return value
+
+  if field_type == "integer":
+    if isinstance(value, bool):
+      raise ValueError("Invalid integer value")
+
+    try:
+      return int(value)
+    except (TypeError, ValueError):
+      raise ValueError("Invalid integer value")
+
+  if field_type == "decimal":
+    if isinstance(value, bool):
+      raise ValueError("Invalid decimal value")
+
+    try:
+      return float(value)
+    except (TypeError, ValueError):
+      raise ValueError("Invalid decimal value")
+
+  if field_type == "boolean":
+    if not isinstance(value, bool):
+      raise ValueError("Invalid boolean value")
+
+    return value
+
+  if field_type == "date":
+    if not isinstance(value, str):
+      raise ValueError("Invalid date value")
+
+    try:
+      date.fromisoformat(value)
+    except ValueError:
+      raise ValueError("Invalid date value")
+
+    return value
+
+  raise ValueError("Invalid custom field type")
 
 
-def set_custom_field_value(item_id, field_id, value):
+def _serialize_value(field_type, value):
+  if field_type == "boolean":
+    return "1" if value else "0"
+
+  return str(value)
+
+
+def _deserialize_value(field_type, value):
+  if field_type == "integer":
+    return int(value)
+
+  if field_type == "decimal":
+    return float(value)
+
+  if field_type == "boolean":
+    return value == "1"
+
+  return value
+
+
+def set_custom_field_value(
+  item_id,
+  field_id,
+  value,
+):
   connection = get_db()
 
   try:
@@ -114,14 +105,19 @@ def set_custom_field_value(item_id, field_id, value):
     if item is None:
       raise ValueError("Inventory item does not exist")
 
-    field = _get_field(connection, field_id)
+    field = _get_custom_field(connection, field_id)
 
     if field is None:
       raise ValueError("Custom field does not exist")
 
-    serialized_value = _serialize_value(
+    validated_value = _validate_value(
       field["field_type"],
       value,
+    )
+
+    serialized_value = _serialize_value(
+      field["field_type"],
+      validated_value,
     )
 
     existing = connection.execute(
@@ -163,9 +159,9 @@ def set_custom_field_value(item_id, field_id, value):
         existing["value"],
       )
 
-      if old_value == value:
+      if old_value == validated_value:
         connection.commit()
-        return
+        return True
 
       connection.execute(
         """
@@ -188,13 +184,15 @@ def set_custom_field_value(item_id, field_id, value):
         details={
           "value": {
             "old": old_value,
-            "new": value,
+            "new": validated_value,
           },
         },
         connection=connection,
       )
 
     connection.commit()
+
+    return True
   except:
     connection.rollback()
     raise
@@ -206,7 +204,12 @@ def get_custom_field_value(item_id, field_id):
   connection = get_db()
 
   try:
-    field = _get_field(connection, field_id)
+    item = _get_item(connection, item_id)
+
+    if item is None:
+      return None
+
+    field = _get_custom_field(connection, field_id)
 
     if field is None:
       return None
@@ -236,11 +239,6 @@ def clear_custom_field_value(item_id, field_id):
   connection = get_db()
 
   try:
-    field = _get_field(connection, field_id)
-
-    if field is None:
-      return False
-
     existing = connection.execute(
       """
       SELECT value
@@ -253,11 +251,6 @@ def clear_custom_field_value(item_id, field_id):
 
     if existing is None:
       return False
-
-    old_value = _deserialize_value(
-      field["field_type"],
-      existing["value"],
-    )
 
     connection.execute(
       """
@@ -272,12 +265,6 @@ def clear_custom_field_value(item_id, field_id):
       action="cleared",
       entity_type="inventory_item_field",
       entity_id=f"{item_id}:{field_id}",
-      details={
-        "value": {
-          "old": old_value,
-          "new": None,
-        },
-      },
       connection=connection,
     )
 
