@@ -1,7 +1,16 @@
+import json
+
 from app.db import get_db
 
 
-def create_audit_log(action, entity_type, entity_id, user_id=None, connection=None):
+def create_audit_log(
+  action,
+  entity_type,
+  entity_id,
+  user_id=None,
+  details=None,
+  connection=None,
+):
   owns_connection = connection is None
 
   if owns_connection:
@@ -15,19 +24,22 @@ def create_audit_log(action, entity_type, entity_id, user_id=None, connection=No
         action,
         entity_type,
         entity_id,
+        details,
         timestamp
       )
-      VALUES (?, ?, ?, ?, datetime('now'))
+      VALUES (?, ?, ?, ?, ?, datetime('now'))
       """,
       (
         user_id,
         action,
         entity_type,
         str(entity_id),
+        json.dumps(details) if details is not None else None,
       ),
     )
 
-    connection.commit()
+    if owns_connection:
+      connection.commit()
 
     return result.lastrowid
   finally:

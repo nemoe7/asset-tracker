@@ -92,6 +92,7 @@ CREATE TABLE audit_log (
   action TEXT NOT NULL,
   entity_type TEXT NOT NULL,
   entity_id TEXT NOT NULL,
+  details TEXT,
   timestamp TEXT NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
