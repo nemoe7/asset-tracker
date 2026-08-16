@@ -1,0 +1,300 @@
+import pytest
+
+from app.services.audit import get_audit_logs
+from app.services.users import (
+  archive_user,
+  create_user,
+  get_user,
+  get_user_by_username,
+  get_users,
+  restore_user,
+  update_user,
+  verify_password,
+)
+
+
+def test_create_user(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  assert user_id is not None
+
+  user = get_user(user_id)
+
+  assert user["id"] == user_id
+  assert user["username"] == "alice"
+  assert user["password_hash"] != "password123"
+  assert user["archived_at"] is None
+
+
+def test_get_user(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  user = get_user(user_id)
+
+  assert user["id"] == user_id
+  assert user["username"] == "alice"
+
+
+def test_get_user_by_username(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  user = get_user_by_username("alice")
+
+  assert user["id"] == user_id
+  assert user["username"] == "alice"
+
+
+def test_get_users(test_db):
+  create_user(
+    username="alice",
+    password="password123",
+  )
+
+  create_user(
+    username="bob",
+    password="password456",
+  )
+
+  users = get_users()
+
+  assert len(users) == 2
+  assert users[0]["username"] == "alice"
+  assert users[1]["username"] == "bob"
+
+
+def test_update_user_username(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  updated = update_user(
+    user_id,
+    username="alice2",
+  )
+
+  assert updated is True
+
+  user = get_user(user_id)
+
+  assert user["username"] == "alice2"
+
+
+def test_update_user_password(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  updated = update_user(
+    user_id,
+    password="newpassword",
+  )
+
+  assert updated is True
+
+  assert verify_password(
+    user_id,
+    "newpassword",
+  )
+
+  assert not verify_password(
+    user_id,
+    "password123",
+  )
+
+
+def test_create_user_with_duplicate_username_fails(test_db):
+  create_user(
+    username="alice",
+    password="password123",
+  )
+
+  with pytest.raises(ValueError, match="Username already exists"):
+    create_user(
+      username="alice",
+      password="password456",
+    )
+
+
+def test_create_user_with_empty_username_fails(test_db):
+  with pytest.raises(ValueError):
+    create_user(
+      username="",
+      password="password123",
+    )
+
+
+def test_create_user_with_whitespace_username_fails(test_db):
+  with pytest.raises(ValueError):
+    create_user(
+      username="   ",
+      password="password123",
+    )
+
+
+def test_create_user_with_empty_password_fails(test_db):
+  with pytest.raises(ValueError):
+    create_user(
+      username="alice",
+      password="",
+    )
+
+
+def test_password_is_hashed(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  user = get_user(user_id)
+
+  assert user["password_hash"] != "password123"
+
+
+def test_password_can_be_verified(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  assert verify_password(
+    user_id,
+    "password123",
+  )
+
+
+def test_wrong_password_cannot_be_verified(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  assert not verify_password(
+    user_id,
+    "wrongpassword",
+  )
+
+
+def test_get_nonexistent_user(test_db):
+  assert get_user(999) is None
+
+
+def test_get_nonexistent_username(test_db):
+  assert get_user_by_username("does-not-exist") is None
+
+
+def test_update_nonexistent_user(test_db):
+  assert (
+    update_user(
+      999,
+      username="alice",
+    )
+    is False
+  )
+
+
+def test_archive_user(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  assert archive_user(user_id) is True
+
+  user = get_user(user_id)
+
+  assert user is not None
+  assert user["username"] == "alice"
+  assert user["archived_at"] is not None
+
+  assert get_user_by_username("alice") is None
+  assert get_users() == []
+
+
+def test_cannot_archive_already_archived_user(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  assert archive_user(user_id) is True
+  assert archive_user(user_id) is False
+
+
+def test_restore_user(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  assert archive_user(user_id) is True
+  assert restore_user(user_id) is True
+
+  user = get_user(user_id)
+
+  assert user is not None
+  assert user["username"] == "alice"
+  assert user["archived_at"] is None
+
+  assert len(get_users()) == 1
+
+
+def test_cannot_restore_active_user(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  assert restore_user(user_id) is False
+
+
+def test_restore_nonexistent_user(test_db):
+  assert restore_user(999) is False
+
+
+def test_archive_creates_audit_log(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  assert archive_user(user_id) is True
+
+  logs = get_audit_logs(
+    entity_type="user",
+    entity_id=user_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[0]["action"] == "created"
+  assert logs[1]["action"] == "archived"
+
+
+def test_restore_creates_audit_log(test_db):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  archive_user(user_id)
+  restore_user(user_id)
+
+  logs = get_audit_logs(
+    entity_type="user",
+    entity_id=user_id,
+  )
+
+  assert len(logs) == 3
+  assert logs[0]["action"] == "created"
+  assert logs[1]["action"] == "archived"
+  assert logs[2]["action"] == "restored"
