@@ -6,7 +6,7 @@ _UNSET = object()
 VALID_FIELD_TYPES = {
   "text",
   "integer",
-  "number",
+  "decimal",
   "boolean",
   "date",
 }
