@@ -623,3 +623,70 @@ def test_get_item_does_not_include_missing_custom_field_values(test_db):
   item = get_item(item_id)
 
   assert item["custom_fields"] == {}
+
+
+def test_create_item_with_empty_name_fails(test_db):
+  with pytest.raises(ValueError):
+    create_item(
+      name="",
+    )
+
+
+def test_create_item_with_whitespace_name_fails(test_db):
+  with pytest.raises(ValueError):
+    create_item(
+      name="   ",
+    )
+
+
+def test_create_item_with_nonexistent_location_fails(test_db):
+  with pytest.raises(ValueError):
+    create_item(
+      name="Laptop",
+      location_id=999,
+    )
+
+
+def test_create_item_without_location_is_allowed(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  assert item_id is not None
+
+
+def test_update_item_with_nonexistent_location_fails(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  with pytest.raises(ValueError):
+    update_item(
+      item_id,
+      name="Laptop",
+      location_id=999,
+    )
+
+
+def test_update_item_with_empty_name_fails(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  with pytest.raises(ValueError):
+    update_item(
+      item_id,
+      name="",
+    )
+
+
+def test_update_item_with_whitespace_name_fails(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  with pytest.raises(ValueError):
+    update_item(
+      item_id,
+      name="   ",
+    )
