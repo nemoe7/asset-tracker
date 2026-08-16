@@ -1,8 +1,11 @@
 from app.db import get_db
 
 
-def create_audit_log(action, entity_type, entity_id, user_id=None):
-  connection = get_db()
+def create_audit_log(action, entity_type, entity_id, user_id=None, connection=None):
+  owns_connection = connection is None
+
+  if owns_connection:
+    connection = get_db()
 
   try:
     result = connection.execute(
@@ -28,7 +31,8 @@ def create_audit_log(action, entity_type, entity_id, user_id=None):
 
     return result.lastrowid
   finally:
-    connection.close()
+    if owns_connection:
+      connection.close()
 
 
 def get_audit_log(audit_id):

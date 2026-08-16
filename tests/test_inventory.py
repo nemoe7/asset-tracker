@@ -4,6 +4,7 @@ import pytest
 
 import config
 from app.db import get_db, init_db
+from app.services.audit import get_audit_logs
 from app.services.inventory import (
   create_item,
   delete_item,
@@ -55,6 +56,14 @@ def test_create_item(test_db):
   assert item["name"] == "Laptop"
   assert item["location_id"] == 1
 
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["action"] == "created"
+
 
 def test_get_item(test_db):
   item_id = create_item(
@@ -89,6 +98,15 @@ def test_update_item(test_db):
   assert item["name"] == "Desktop"
   assert item["location_id"] == 2
 
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[0]["action"] == "created"
+  assert logs[1]["action"] == "updated"
+
 
 def test_delete_item(test_db):
   item_id = create_item(
@@ -100,6 +118,15 @@ def test_delete_item(test_db):
 
   assert deleted is True
   assert get_item(item_id) is None
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[0]["action"] == "created"
+  assert logs[1]["action"] == "deleted"
 
 
 def test_create_item_without_location(test_db):
@@ -147,11 +174,25 @@ def test_update_nonexistent_item(test_db):
 
   assert result is False
 
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id="does-not-exist",
+  )
+
+  assert logs == []
+
 
 def test_delete_nonexistent_item(test_db):
   result = delete_item("does-not-exist")
 
   assert result is False
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id="does-not-exist",
+  )
+
+  assert logs == []
 
 
 def test_update_item_without_location(test_db):
@@ -171,3 +212,18 @@ def test_update_item_without_location(test_db):
 
   assert item["name"] == "Laptop"
   assert item["location_id"] is None
+
+
+def test_audit_uses_item_id_as_text(test_db):
+  item_id = create_item(
+    name="Laptop",
+    location_id=1,
+  )
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["entity_id"] == str(item_id)
