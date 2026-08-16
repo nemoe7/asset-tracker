@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -106,6 +107,160 @@ def test_update_item(test_db):
   assert len(logs) == 2
   assert logs[0]["action"] == "created"
   assert logs[1]["action"] == "updated"
+
+
+def test_update_item_audit_records_name_change(test_db):
+  item_id = create_item(
+    name="Laptop",
+    location_id=1,
+  )
+
+  updated = update_item(
+    item_id,
+    name="Desktop",
+    location_id=1,
+  )
+
+  assert updated is True
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[1]["action"] == "updated"
+
+  details = json.loads(logs[1]["details"])
+
+  assert details == {
+    "name": {
+      "old": "Laptop",
+      "new": "Desktop",
+    },
+  }
+
+
+def test_update_item_audit_records_location_change(test_db):
+  item_id = create_item(
+    name="Laptop",
+    location_id=1,
+  )
+
+  updated = update_item(
+    item_id,
+    name="Laptop",
+    location_id=2,
+  )
+
+  assert updated is True
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[1]["action"] == "updated"
+
+  details = json.loads(logs[1]["details"])
+
+  assert details == {
+    "location_id": {
+      "old": 1,
+      "new": 2,
+    },
+  }
+
+
+def test_update_item_audit_records_multiple_changes(test_db):
+  item_id = create_item(
+    name="Laptop",
+    location_id=1,
+  )
+
+  updated = update_item(
+    item_id,
+    name="Desktop",
+    location_id=2,
+  )
+
+  assert updated is True
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[1]["action"] == "updated"
+
+  details = json.loads(logs[1]["details"])
+
+  assert details == {
+    "name": {
+      "old": "Laptop",
+      "new": "Desktop",
+    },
+    "location_id": {
+      "old": 1,
+      "new": 2,
+    },
+  }
+
+
+def test_update_item_audit_records_location_removed(test_db):
+  item_id = create_item(
+    name="Laptop",
+    location_id=1,
+  )
+
+  updated = update_item(
+    item_id,
+    name="Laptop",
+    location_id=None,
+  )
+
+  assert updated is True
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 2
+
+  details = json.loads(logs[1]["details"])
+
+  assert details == {
+    "location_id": {
+      "old": 1,
+      "new": None,
+    },
+  }
+
+
+def test_update_item_without_changes_does_not_create_audit(test_db):
+  item_id = create_item(
+    name="Laptop",
+    location_id=1,
+  )
+
+  updated = update_item(
+    item_id,
+    name="Laptop",
+    location_id=1,
+  )
+
+  assert updated is True
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["action"] == "created"
 
 
 def test_delete_item(test_db):
