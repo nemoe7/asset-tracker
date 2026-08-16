@@ -1,14 +1,25 @@
 services:
   app:
-    image: ghcr.io/nemoe7/inventory-management:latest
-    container_name: inventory-management
-    restart: unless-stopped
+    build:
+      context: .
+
+    container_name: inventory-management-dev
 
     env_file:
       - .env
 
+    ports:
+      - "${PORT}:5000"
+
     volumes:
+      - .:/home/appuser
       - ./data:/home/appuser/data
+
+    working_dir: /home/appuser
+
+    command:
+      - python
+      - run.py
 
   tunnel:
     image: openziti/zrok
