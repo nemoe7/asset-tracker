@@ -40,8 +40,7 @@ CREATE TABLE custom_fields (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL,
   field_type TEXT NOT NULL,
-  description TEXT,
-  required INTEGER NOT NULL
+  description TEXT
 );
 
 CREATE TABLE user_roles (
