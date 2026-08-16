@@ -29,7 +29,6 @@ def test_create_custom_field(test_db):
     name="Serial Number",
     field_type="text",
     description="Device serial number",
-    required=True,
   )
 
   assert field_id is not None
@@ -40,30 +39,17 @@ def test_create_custom_field(test_db):
   assert field["name"] == "Serial Number"
   assert field["field_type"] == "text"
   assert field["description"] == "Device serial number"
-  assert field["required"] == 1
 
 
 def test_create_custom_field_defaults_description_to_none(test_db):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
-    required=False,
   )
 
   field = get_custom_field(field_id)
 
   assert field["description"] is None
-
-
-def test_create_custom_field_defaults_to_not_required(test_db):
-  field_id = create_custom_field(
-    name="Serial Number",
-    field_type="text",
-  )
-
-  field = get_custom_field(field_id)
-
-  assert field["required"] == 0
 
 
 def test_get_custom_field(test_db):
@@ -157,7 +143,6 @@ def test_update_custom_field(test_db):
     name="Serial Number",
     field_type="text",
     description="Device serial number",
-    required=False,
   )
 
   updated = update_custom_field(
@@ -165,7 +150,6 @@ def test_update_custom_field(test_db):
     name="Asset Serial Number",
     field_type="text",
     description="Unique serial number assigned to the device",
-    required=True,
   )
 
   assert updated is True
@@ -175,7 +159,6 @@ def test_update_custom_field(test_db):
   assert field["name"] == "Asset Serial Number"
   assert field["field_type"] == "text"
   assert field["description"] == ("Unique serial number assigned to the device")
-  assert field["required"] == 1
 
   logs = get_audit_logs(
     entity_type="custom_field",
@@ -195,10 +178,6 @@ def test_update_custom_field(test_db):
     "description": {
       "old": "Device serial number",
       "new": "Unique serial number assigned to the device",
-    },
-    "required": {
-      "old": 0,
-      "new": 1,
     },
   }
 
@@ -275,7 +254,6 @@ def test_update_custom_field_without_changes_does_not_create_audit(test_db):
     name="Serial Number",
     field_type="text",
     description="Device serial number",
-    required=True,
   )
 
   updated = update_custom_field(
@@ -283,7 +261,6 @@ def test_update_custom_field_without_changes_does_not_create_audit(test_db):
     name="Serial Number",
     field_type="text",
     description="Device serial number",
-    required=True,
   )
 
   assert updated is True
@@ -319,38 +296,3 @@ def test_update_custom_field_rejects_invalid_type(test_db):
       name="Serial Number",
       field_type="banana",
     )
-
-
-def test_update_custom_field_required_to_false(test_db):
-  field_id = create_custom_field(
-    name="Serial Number",
-    field_type="text",
-    required=True,
-  )
-
-  updated = update_custom_field(
-    field_id,
-    required=False,
-  )
-
-  assert updated is True
-
-  field = get_custom_field(field_id)
-
-  assert field["required"] == 0
-
-  logs = get_audit_logs(
-    entity_type="custom_field",
-    entity_id=field_id,
-  )
-
-  assert len(logs) == 2
-
-  details = json.loads(logs[1]["details"])
-
-  assert details == {
-    "required": {
-      "old": 1,
-      "new": 0,
-    },
-  }
