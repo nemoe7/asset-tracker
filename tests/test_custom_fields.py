@@ -19,7 +19,10 @@ from app.services.custom_fields import (
   get_custom_fields,
   update_custom_field,
 )
-from app.services.inventory import create_item
+from app.services.inventory import (
+  archive_item,
+  create_item,
+)
 
 
 @pytest.fixture
@@ -817,3 +820,77 @@ def test_clear_custom_field_value_creates_audit(test_db):
 
   assert len(logs) == 2
   assert logs[1]["action"] == "cleared"
+
+
+def test_set_custom_field_value_with_nonexistent_item_fails(test_db):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  with pytest.raises(ValueError):
+    set_custom_field_value(
+      "does-not-exist",
+      field_id,
+      "ABC123",
+    )
+
+
+def test_set_custom_field_value_with_nonexistent_field_fails(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  with pytest.raises(ValueError):
+    set_custom_field_value(
+      item_id,
+      999,
+      "ABC123",
+    )
+
+
+def test_set_custom_field_value_on_archived_item_fails(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  assert archive_item(item_id) is True
+
+  with pytest.raises(ValueError):
+    set_custom_field_value(
+      item_id,
+      field_id,
+      "ABC123",
+    )
+
+
+def test_get_custom_field_value_for_archived_item_returns_none(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "ABC123",
+  )
+
+  assert archive_item(item_id) is True
+
+  assert (
+    get_custom_field_value(
+      item_id,
+      field_id,
+    )
+    is None
+  )
