@@ -6,6 +6,8 @@ import pytest
 import config
 from app.db import get_db, init_db
 from app.services.audit import get_audit_logs
+from app.services.custom_field_values import set_custom_field_value
+from app.services.custom_fields import create_custom_field
 from app.services.inventory import (
   archive_item,
   create_item,
@@ -519,3 +521,105 @@ def test_restored_item_appears_in_get_items(test_db):
 
   assert len(items) == 1
   assert items[0]["id"] == item_id
+
+
+def test_get_item_includes_custom_fields(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  serial_field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  year_field_id = create_custom_field(
+    name="Purchase Year",
+    field_type="integer",
+  )
+
+  set_custom_field_value(
+    item_id,
+    serial_field_id,
+    "ABC123",
+  )
+
+  set_custom_field_value(
+    item_id,
+    year_field_id,
+    2026,
+  )
+
+  item = get_item(item_id)
+
+  assert item["custom_fields"] == {
+    serial_field_id: "ABC123",
+    year_field_id: 2026,
+  }
+
+
+def test_get_item_with_no_custom_fields(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  item = get_item(item_id)
+
+  assert item["custom_fields"] == {}
+
+
+def test_get_items_includes_custom_fields(test_db):
+  laptop_id = create_item(
+    name="Laptop",
+  )
+
+  desktop_id = create_item(
+    name="Desktop",
+  )
+
+  serial_field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  set_custom_field_value(
+    laptop_id,
+    serial_field_id,
+    "LAPTOP123",
+  )
+
+  set_custom_field_value(
+    desktop_id,
+    serial_field_id,
+    "DESKTOP456",
+  )
+
+  items = get_items()
+
+  assert len(items) == 2
+
+  desktop = items[0]
+  laptop = items[1]
+
+  assert desktop["custom_fields"] == {
+    serial_field_id: "DESKTOP456",
+  }
+
+  assert laptop["custom_fields"] == {
+    serial_field_id: "LAPTOP123",
+  }
+
+
+def test_get_item_does_not_include_missing_custom_field_values(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  item = get_item(item_id)
+
+  assert item["custom_fields"] == {}
