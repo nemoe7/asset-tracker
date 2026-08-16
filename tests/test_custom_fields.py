@@ -105,7 +105,7 @@ def test_get_custom_fields(test_db):
   [
     "text",
     "integer",
-    "number",
+    "decimal",
     "boolean",
     "date",
   ],
@@ -212,14 +212,14 @@ def test_update_custom_field_type(test_db):
   updated = update_custom_field(
     field_id,
     name="Purchase Value",
-    field_type="number",
+    field_type="decimal",
   )
 
   assert updated is True
 
   field = get_custom_field(field_id)
 
-  assert field["field_type"] == "number"
+  assert field["field_type"] == "decimal"
 
   logs = get_audit_logs(
     entity_type="custom_field",
@@ -231,7 +231,7 @@ def test_update_custom_field_type(test_db):
   assert details == {
     "field_type": {
       "old": "integer",
-      "new": "number",
+      "new": "decimal",
     },
   }
 
