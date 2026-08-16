@@ -1,6 +1,7 @@
 import uuid
 
 from app.db import get_db
+from app.services.audit import create_audit_log
 
 
 def create_item(name, location_id=None):
@@ -23,9 +24,19 @@ def create_item(name, location_id=None):
       (item_id, name, location_id),
     )
 
+    create_audit_log(
+      action="created",
+      entity_type="inventory_item",
+      entity_id=item_id,
+      connection=connection,
+    )
+
     connection.commit()
 
     return item_id
+  except:
+    connection.rollback()
+    raise
   finally:
     connection.close()
 
@@ -76,9 +87,23 @@ def update_item(item_id, name, location_id=None):
       (name, location_id, item_id),
     )
 
+    if result.rowcount == 0:
+      connection.rollback()
+      return False
+
+    create_audit_log(
+      action="updated",
+      entity_type="inventory_item",
+      entity_id=item_id,
+      connection=connection,
+    )
+
     connection.commit()
 
-    return result.rowcount > 0
+    return True
+  except:
+    connection.rollback()
+    raise
   finally:
     connection.close()
 
@@ -95,8 +120,22 @@ def delete_item(item_id):
       (item_id,),
     )
 
+    if result.rowcount == 0:
+      connection.rollback()
+      return False
+
+    create_audit_log(
+      action="deleted",
+      entity_type="inventory_item",
+      entity_id=item_id,
+      connection=connection,
+    )
+
     connection.commit()
 
-    return result.rowcount > 0
+    return True
+  except:
+    connection.rollback()
+    raise
   finally:
     connection.close()
