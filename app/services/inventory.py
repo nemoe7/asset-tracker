@@ -50,6 +50,7 @@ def get_item(item_id):
       SELECT *
       FROM inventory_items
       WHERE id = ?
+        AND archived_at IS NULL
       """,
       (item_id,),
     ).fetchone()
@@ -65,6 +66,7 @@ def get_items():
       """
       SELECT *
       FROM inventory_items
+      WHERE archived_at IS NULL
       ORDER BY name
       """
     ).fetchall()
@@ -81,6 +83,7 @@ def update_item(item_id, name, location_id=None):
       SELECT name, location_id
       FROM inventory_items
       WHERE id = ?
+        AND archived_at IS NULL
       """,
       (item_id,),
     ).fetchone()
@@ -112,6 +115,7 @@ def update_item(item_id, name, location_id=None):
           location_id = ?,
           updated_at = datetime('now')
       WHERE id = ?
+        AND archived_at IS NULL
       """,
       (name, location_id, item_id),
     )
@@ -134,14 +138,17 @@ def update_item(item_id, name, location_id=None):
     connection.close()
 
 
-def delete_item(item_id):
+def archive_item(item_id):
   connection = get_db()
 
   try:
     result = connection.execute(
       """
-      DELETE FROM inventory_items
+      UPDATE inventory_items
+      SET archived_at = datetime('now'),
+          updated_at = datetime('now')
       WHERE id = ?
+        AND archived_at IS NULL
       """,
       (item_id,),
     )
@@ -150,7 +157,42 @@ def delete_item(item_id):
       return False
 
     create_audit_log(
-      action="deleted",
+      action="archived",
+      entity_type="inventory_item",
+      entity_id=item_id,
+      connection=connection,
+    )
+
+    connection.commit()
+
+    return True
+  except:
+    connection.rollback()
+    raise
+  finally:
+    connection.close()
+
+
+def restore_item(item_id):
+  connection = get_db()
+
+  try:
+    result = connection.execute(
+      """
+      UPDATE inventory_items
+      SET archived_at = NULL,
+          updated_at = datetime('now')
+      WHERE id = ?
+        AND archived_at IS NOT NULL
+      """,
+      (item_id,),
+    )
+
+    if result.rowcount == 0:
+      return False
+
+    create_audit_log(
+      action="restored",
       entity_type="inventory_item",
       entity_id=item_id,
       connection=connection,

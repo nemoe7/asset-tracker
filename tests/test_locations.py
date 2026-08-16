@@ -2,9 +2,9 @@ import json
 
 import pytest
 
-from app.db import init_db
+from app.db import get_db, init_db
 from app.services.audit import get_audit_logs
-from app.services.inventory import create_item, get_item
+from app.services.inventory import archive_item, create_item, get_item
 from app.services.locations import (
   LocationDeletionConfirmationRequired,
   create_location,
@@ -396,3 +396,148 @@ def test_delete_location_with_items_creates_location_audit(test_db):
   assert len(logs) == 2
   assert logs[0]["action"] == "created"
   assert logs[1]["action"] == "deleted"
+
+
+def test_delete_location_rolls_back_when_audit_fails(test_db, monkeypatch):
+  location_id = create_location("Office")
+
+  item_id = create_item(
+    name="Laptop",
+    location_id=location_id,
+  )
+
+  from app.services import locations
+
+  original_create_audit_log = locations.create_audit_log
+
+  def failing_audit(*args, **kwargs):
+    if kwargs.get("action") == "deleted":
+      raise RuntimeError("simulated audit failure")
+
+    return original_create_audit_log(*args, **kwargs)
+
+  monkeypatch.setattr(
+    locations,
+    "create_audit_log",
+    failing_audit,
+  )
+
+  with pytest.raises(RuntimeError):
+    locations.delete_location(
+      location_id,
+      confirmed=True,
+    )
+
+  assert get_location(location_id) is not None
+  assert get_item(item_id)["location_id"] == location_id
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["action"] == "created"
+
+
+def test_delete_location_rolls_back_all_items_when_audit_fails(
+  test_db,
+  monkeypatch,
+):
+  location_id = create_location("Office")
+
+  item1_id = create_item(
+    name="Laptop",
+    location_id=location_id,
+  )
+
+  item2_id = create_item(
+    name="Desktop",
+    location_id=location_id,
+  )
+
+  from app.services import locations
+
+  original_create_audit_log = locations.create_audit_log
+  location_change_count = 0
+
+  def failing_audit(*args, **kwargs):
+    nonlocal location_change_count
+
+    if kwargs.get("action") == "location_changed":
+      location_change_count += 1
+
+      if location_change_count == 2:
+        raise RuntimeError("simulated audit failure")
+
+    return original_create_audit_log(*args, **kwargs)
+
+  monkeypatch.setattr(
+    locations,
+    "create_audit_log",
+    failing_audit,
+  )
+
+  with pytest.raises(RuntimeError):
+    locations.delete_location(
+      location_id,
+      confirmed=True,
+    )
+
+  assert get_location(location_id) is not None
+
+  assert get_item(item1_id)["location_id"] == location_id
+  assert get_item(item2_id)["location_id"] == location_id
+
+  item1_logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item1_id,
+  )
+
+  item2_logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item2_id,
+  )
+
+  assert len(item1_logs) == 1
+  assert len(item2_logs) == 1
+
+  assert item1_logs[0]["action"] == "created"
+  assert item2_logs[0]["action"] == "created"
+
+
+def test_delete_location_unassigns_archived_items(test_db):
+  location_id = create_location("Office")
+
+  item_id = create_item(
+    name="Laptop",
+    location_id=location_id,
+  )
+
+  assert archive_item(item_id) is True
+
+  deleted = delete_location(
+    location_id,
+    confirmed=True,
+  )
+
+  assert deleted is True
+  assert get_location(location_id) is None
+
+  connection = get_db()
+
+  try:
+    item = connection.execute(
+      """
+      SELECT *
+      FROM inventory_items
+      WHERE id = ?
+      """,
+      (item_id,),
+    ).fetchone()
+  finally:
+    connection.close()
+
+  assert item is not None
+  assert item["archived_at"] is not None
+  assert item["location_id"] is None
