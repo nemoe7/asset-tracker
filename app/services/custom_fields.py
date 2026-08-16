@@ -16,7 +16,6 @@ def create_custom_field(
   name,
   field_type,
   description=None,
-  required=False,
 ):
   if not name:
     raise ValueError("Custom field name cannot be empty")
@@ -32,16 +31,14 @@ def create_custom_field(
       INSERT INTO custom_fields (
         name,
         field_type,
-        description,
-        required
+        description
       )
-      VALUES (?, ?, ?, ?)
+      VALUES (?, ?, ?)
       """,
       (
         name,
         field_type,
         description,
-        int(required),
       ),
     )
 
@@ -100,7 +97,6 @@ def update_custom_field(
   name=None,
   field_type=None,
   description=_UNSET,
-  required=None,
 ):
   if name is not None and not name:
     raise ValueError("Custom field name cannot be empty")
@@ -129,8 +125,6 @@ def update_custom_field(
 
     new_description = existing["description"] if description is _UNSET else description
 
-    new_required = existing["required"] if required is None else int(required)
-
     details = {}
 
     if existing["name"] != new_name:
@@ -151,12 +145,6 @@ def update_custom_field(
         "new": new_description,
       }
 
-    if existing["required"] != new_required:
-      details["required"] = {
-        "old": existing["required"],
-        "new": new_required,
-      }
-
     if not details:
       return True
 
@@ -165,15 +153,13 @@ def update_custom_field(
       UPDATE custom_fields
       SET name = ?,
           field_type = ?,
-          description = ?,
-          required = ?
+          description = ?
       WHERE id = ?
       """,
       (
         new_name,
         new_field_type,
         new_description,
-        new_required,
         field_id,
       ),
     )
