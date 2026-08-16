@@ -13,6 +13,7 @@ from app.services.custom_field_values import (
 )
 from app.services.custom_fields import create_custom_field
 from app.services.inventory import create_item
+from app.services.locations import create_location
 
 
 @pytest.fixture
@@ -24,23 +25,9 @@ def test_db(tmp_path, monkeypatch):
 
   connection = get_db()
 
-  connection.execute(
-    """
-    INSERT INTO locations (
-      id,
-      name,
-      description,
-      created_at,
-      updated_at
-    )
-    VALUES (
-      1,
-      'Office',
-      NULL,
-      datetime('now'),
-      datetime('now')
-    )
-    """
+  create_location(
+    name="Office",
+    description="Main office",
   )
 
   connection.commit()

@@ -1,8 +1,6 @@
 from app.db import get_db
 from app.services.audit import create_audit_log
 
-_UNSET = object()
-
 VALID_FIELD_TYPES = {
   "text",
   "integer",
@@ -10,6 +8,13 @@ VALID_FIELD_TYPES = {
   "boolean",
   "date",
 }
+
+
+class CustomFieldInUseError(Exception):
+  pass
+
+
+_UNSET = object()
 
 
 def create_custom_field(
@@ -169,6 +174,60 @@ def update_custom_field(
       entity_type="custom_field",
       entity_id=field_id,
       details=details,
+      connection=connection,
+    )
+
+    connection.commit()
+
+    return True
+  except:
+    connection.rollback()
+    raise
+  finally:
+    connection.close()
+
+
+def delete_custom_field(field_id):
+  connection = get_db()
+
+  try:
+    existing = connection.execute(
+      """
+      SELECT id
+      FROM custom_fields
+      WHERE id = ?
+      """,
+      (field_id,),
+    ).fetchone()
+
+    if existing is None:
+      return False
+
+    value = connection.execute(
+      """
+      SELECT 1
+      FROM inventory_item_fields
+      WHERE field_id = ?
+      LIMIT 1
+      """,
+      (field_id,),
+    ).fetchone()
+
+    if value is not None:
+      raise CustomFieldInUseError("Cannot delete custom field with existing values")
+
+    connection.execute(
+      """
+      DELETE FROM custom_fields
+      WHERE id = ?
+      """,
+      (field_id,),
+    )
+
+    create_audit_log(
+      action="deleted",
+      entity_type="custom_field",
+      entity_id=field_id,
       connection=connection,
     )
 

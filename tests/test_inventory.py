@@ -14,6 +14,7 @@ from app.services.inventory import (
   restore_item,
   update_item,
 )
+from app.services.locations import create_location
 
 
 @pytest.fixture
@@ -23,23 +24,15 @@ def test_db(tmp_path, monkeypatch):
 
   init_db()
 
-  conn = get_db()
+  create_location(
+    name="Office",
+    description="Main office",
+  )
 
-  conn.execute("""
-    INSERT INTO locations (
-      id,
-      name,
-      description,
-      created_at,
-      updated_at
-    )
-    VALUES
-      (1, 'Office', NULL, datetime('now'), datetime('now')),
-      (2, 'IT Room', NULL, datetime('now'), datetime('now'))
-  """)
-
-  conn.commit()
-  conn.close()
+  create_location(
+    name="IT Room",
+    description="Main IT room",
+  )
 
   return db_path
 
