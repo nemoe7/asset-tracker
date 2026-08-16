@@ -77,7 +77,36 @@ def update_location(location_id, name, description=None):
   connection = get_db()
 
   try:
-    result = connection.execute(
+    existing = connection.execute(
+      """
+      SELECT name, description
+      FROM locations
+      WHERE id = ?
+      """,
+      (location_id,),
+    ).fetchone()
+
+    if existing is None:
+      return False
+
+    details = {}
+
+    if existing["name"] != name:
+      details["name"] = {
+        "old": existing["name"],
+        "new": name,
+      }
+
+    if existing["description"] != description:
+      details["description"] = {
+        "old": existing["description"],
+        "new": description,
+      }
+
+    if not details:
+      return True
+
+    connection.execute(
       """
       UPDATE locations
       SET name = ?,
@@ -88,14 +117,11 @@ def update_location(location_id, name, description=None):
       (name, description, location_id),
     )
 
-    if result.rowcount == 0:
-      connection.rollback()
-      return False
-
     create_audit_log(
       action="updated",
       entity_type="location",
       entity_id=location_id,
+      details=details,
       connection=connection,
     )
 

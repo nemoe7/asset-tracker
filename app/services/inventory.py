@@ -76,7 +76,36 @@ def update_item(item_id, name, location_id=None):
   connection = get_db()
 
   try:
-    result = connection.execute(
+    existing = connection.execute(
+      """
+      SELECT name, location_id
+      FROM inventory_items
+      WHERE id = ?
+      """,
+      (item_id,),
+    ).fetchone()
+
+    if existing is None:
+      return False
+
+    details = {}
+
+    if existing["name"] != name:
+      details["name"] = {
+        "old": existing["name"],
+        "new": name,
+      }
+
+    if existing["location_id"] != location_id:
+      details["location_id"] = {
+        "old": existing["location_id"],
+        "new": location_id,
+      }
+
+    if not details:
+      return True
+
+    connection.execute(
       """
       UPDATE inventory_items
       SET name = ?,
@@ -87,14 +116,11 @@ def update_item(item_id, name, location_id=None):
       (name, location_id, item_id),
     )
 
-    if result.rowcount == 0:
-      connection.rollback()
-      return False
-
     create_audit_log(
       action="updated",
       entity_type="inventory_item",
       entity_id=item_id,
+      details=details,
       connection=connection,
     )
 
@@ -121,7 +147,6 @@ def delete_item(item_id):
     )
 
     if result.rowcount == 0:
-      connection.rollback()
       return False
 
     create_audit_log(
