@@ -1,10 +1,7 @@
 import json
-from pathlib import Path
 
 import pytest
 
-import config
-from app.db import get_db, init_db
 from app.services.audit import get_audit_logs
 from app.services.custom_field_values import (
   clear_custom_field_value,
@@ -13,33 +10,11 @@ from app.services.custom_field_values import (
 )
 from app.services.custom_fields import create_custom_field
 from app.services.inventory import create_item
-from app.services.locations import create_location
-
-
-@pytest.fixture
-def test_db(tmp_path, monkeypatch):
-  db_path = tmp_path / "test.db"
-  monkeypatch.setattr(config, "DB_PATH", Path(db_path))
-
-  init_db()
-
-  connection = get_db()
-
-  create_location(
-    name="Office",
-    description="Main office",
-  )
-
-  connection.commit()
-  connection.close()
-
-  return db_path
 
 
 def test_set_custom_field_value(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -65,7 +40,6 @@ def test_set_custom_field_value(test_db):
 def test_get_missing_custom_field_value_returns_none(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -85,7 +59,6 @@ def test_get_missing_custom_field_value_returns_none(test_db):
 def test_update_custom_field_value(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -108,7 +81,6 @@ def test_update_custom_field_value(test_db):
 def test_clear_custom_field_value(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -131,7 +103,6 @@ def test_clear_custom_field_value(test_db):
 def test_clear_missing_custom_field_value_returns_false(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -151,7 +122,6 @@ def test_clear_missing_custom_field_value_returns_false(test_db):
 def test_item_can_have_multiple_custom_field_values(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   serial_field = create_custom_field(
@@ -196,12 +166,10 @@ def test_item_can_have_multiple_custom_field_values(test_db):
 def test_multiple_items_can_use_same_custom_field(test_db):
   first_item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   second_item_id = create_item(
     name="Desktop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -256,7 +224,6 @@ def test_custom_field_value_types(
 ):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -282,7 +249,6 @@ def test_custom_field_value_types(
 def test_invalid_integer_value_is_rejected(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -301,7 +267,6 @@ def test_invalid_integer_value_is_rejected(test_db):
 def test_invalid_decimal_value_is_rejected(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -320,7 +285,6 @@ def test_invalid_decimal_value_is_rejected(test_db):
 def test_invalid_boolean_value_is_rejected(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -339,7 +303,6 @@ def test_invalid_boolean_value_is_rejected(test_db):
 def test_invalid_date_value_is_rejected(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -358,7 +321,6 @@ def test_invalid_date_value_is_rejected(test_db):
 def test_set_custom_field_value_creates_audit(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -384,7 +346,6 @@ def test_set_custom_field_value_creates_audit(test_db):
 def test_update_custom_field_value_creates_audit(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(
@@ -425,7 +386,6 @@ def test_update_custom_field_value_creates_audit(test_db):
 def test_clear_custom_field_value_creates_audit(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   field_id = create_custom_field(

@@ -1,10 +1,7 @@
 import json
-from pathlib import Path
 
 import pytest
 
-import config
-from app.db import init_db
 from app.services.audit import get_audit_logs
 from app.services.custom_field_values import (
   clear_custom_field_value,
@@ -23,16 +20,6 @@ from app.services.inventory import (
   archive_item,
   create_item,
 )
-
-
-@pytest.fixture
-def test_db(tmp_path, monkeypatch):
-  db_path = tmp_path / "test.db"
-  monkeypatch.setattr(config, "DB_PATH", Path(db_path))
-
-  init_db()
-
-  return db_path
 
 
 def test_create_custom_field(test_db):
