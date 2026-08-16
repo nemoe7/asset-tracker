@@ -76,10 +76,11 @@ def create_item(name, location_id=None):
   item_id = str(uuid.uuid4())
 
   connection = get_db()
-  _validate_item_name(name)
-  _validate_location(connection, location_id)
 
   try:
+    _validate_item_name(name)
+    _validate_location(connection, location_id)
+
     connection.execute(
       """
       INSERT INTO inventory_items (
@@ -154,10 +155,9 @@ def get_items():
 def update_item(item_id, name, location_id=None):
   connection = get_db()
 
-  _validate_item_name(name)
-  _validate_location(connection, location_id)
-
   try:
+    _validate_item_name(name)
+    _validate_location(connection, location_id)
     existing = connection.execute(
       """
       SELECT *
