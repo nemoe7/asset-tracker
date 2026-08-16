@@ -32,6 +32,7 @@ CREATE TABLE inventory_items (
   location_id INTEGER,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
+  archived_at TEXT,
   FOREIGN KEY (location_id) REFERENCES locations(id)
 );
 

@@ -7,10 +7,11 @@ import config
 from app.db import get_db, init_db
 from app.services.audit import get_audit_logs
 from app.services.inventory import (
+  archive_item,
   create_item,
-  delete_item,
   get_item,
   get_items,
+  restore_item,
   update_item,
 )
 
@@ -263,15 +264,15 @@ def test_update_item_without_changes_does_not_create_audit(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_delete_item(test_db):
+def test_archive_item_hides_from_active_items(test_db):
   item_id = create_item(
     name="Laptop",
     location_id=1,
   )
 
-  deleted = delete_item(item_id)
+  archived = archive_item(item_id)
 
-  assert deleted is True
+  assert archived is True
   assert get_item(item_id) is None
 
   logs = get_audit_logs(
@@ -281,7 +282,7 @@ def test_delete_item(test_db):
 
   assert len(logs) == 2
   assert logs[0]["action"] == "created"
-  assert logs[1]["action"] == "deleted"
+  assert logs[1]["action"] == "archived"
 
 
 def test_create_item_without_location(test_db):
@@ -337,8 +338,8 @@ def test_update_nonexistent_item(test_db):
   assert logs == []
 
 
-def test_delete_nonexistent_item(test_db):
-  result = delete_item("does-not-exist")
+def test_archive_nonexistent_item(test_db):
+  result = archive_item("does-not-exist")
 
   assert result is False
 
@@ -382,3 +383,146 @@ def test_audit_uses_item_id_as_text(test_db):
 
   assert len(logs) == 1
   assert logs[0]["entity_id"] == str(item_id)
+
+
+def test_archived_item_is_not_in_get_items(test_db):
+  item_id = create_item(
+    name="Laptop",
+    location_id=1,
+  )
+
+  create_item(
+    name="Desktop",
+    location_id=1,
+  )
+
+  archive_item(item_id)
+
+  items = get_items()
+
+  assert len(items) == 1
+  assert items[0]["name"] == "Desktop"
+
+
+def test_archived_item_remains_in_database(test_db):
+  item_id = create_item(
+    name="Laptop",
+    location_id=1,
+  )
+
+  archive_item(item_id)
+
+  connection = get_db()
+
+  try:
+    item = connection.execute(
+      """
+      SELECT *
+      FROM inventory_items
+      WHERE id = ?
+      """,
+      (item_id,),
+    ).fetchone()
+  finally:
+    connection.close()
+
+  assert item is not None
+  assert item["archived_at"] is not None
+
+
+def test_cannot_archive_already_archived_item(test_db):
+  item_id = create_item(
+    name="Laptop",
+    location_id=1,
+  )
+
+  assert archive_item(item_id) is True
+  assert archive_item(item_id) is False
+
+
+def test_inventory_items_support_archival(test_db):
+  connection = get_db()
+
+  try:
+    columns = connection.execute(
+      """
+      PRAGMA table_info(inventory_items)
+      """
+    ).fetchall()
+  finally:
+    connection.close()
+
+  column_names = {column["name"] for column in columns}
+
+  assert "archived_at" in column_names
+
+
+def test_restore_item_makes_item_active_again(test_db):
+  item_id = create_item(
+    name="Laptop",
+    location_id=1,
+  )
+
+  assert archive_item(item_id) is True
+  assert get_item(item_id) is None
+
+  restored = restore_item(item_id)
+
+  assert restored is True
+
+  item = get_item(item_id)
+
+  assert item is not None
+  assert item["id"] == item_id
+  assert item["name"] == "Laptop"
+  assert item["location_id"] == 1
+  assert item["archived_at"] is None
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 3
+  assert logs[0]["action"] == "created"
+  assert logs[1]["action"] == "archived"
+  assert logs[2]["action"] == "restored"
+
+
+def test_cannot_restore_active_item(test_db):
+  item_id = create_item(
+    name="Laptop",
+    location_id=1,
+  )
+
+  assert restore_item(item_id) is False
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["action"] == "created"
+
+
+def test_restore_nonexistent_item_returns_false(test_db):
+  assert restore_item("does-not-exist") is False
+
+
+def test_restored_item_appears_in_get_items(test_db):
+  item_id = create_item(
+    name="Laptop",
+    location_id=1,
+  )
+
+  archive_item(item_id)
+
+  assert get_items() == []
+
+  assert restore_item(item_id) is True
+
+  items = get_items()
+
+  assert len(items) == 1
+  assert items[0]["id"] == item_id
