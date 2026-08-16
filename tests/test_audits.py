@@ -1,25 +1,10 @@
 import json
 
-import pytest
-
-from app.db import init_db
 from app.services.audit import (
   create_audit_log,
   get_audit_log,
   get_audit_logs,
 )
-
-
-@pytest.fixture
-def test_db(tmp_path, monkeypatch):
-  import config
-
-  db_path = tmp_path / "test.db"
-  monkeypatch.setattr(config, "DB_PATH", db_path)
-
-  init_db()
-
-  return db_path
 
 
 def test_create_audit_log(test_db):

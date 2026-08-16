@@ -1,10 +1,8 @@
 import json
-from pathlib import Path
 
 import pytest
 
-import config
-from app.db import get_db, init_db
+from app.db import get_db
 from app.services.audit import get_audit_logs
 from app.services.custom_field_values import set_custom_field_value
 from app.services.custom_fields import create_custom_field
@@ -19,30 +17,9 @@ from app.services.inventory import (
 from app.services.locations import create_location
 
 
-@pytest.fixture
-def test_db(tmp_path, monkeypatch):
-  db_path = tmp_path / "test.db"
-  monkeypatch.setattr(config, "DB_PATH", Path(db_path))
-
-  init_db()
-
-  create_location(
-    name="Office",
-    description="Main office",
-  )
-
-  create_location(
-    name="IT Room",
-    description="Main IT room",
-  )
-
-  return db_path
-
-
 def test_create_item(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   assert item_id is not None
@@ -51,7 +28,6 @@ def test_create_item(test_db):
 
   assert item["id"] == item_id
   assert item["name"] == "Laptop"
-  assert item["location_id"] == 1
 
   logs = get_audit_logs(
     entity_type="inventory_item",
@@ -65,26 +41,34 @@ def test_create_item(test_db):
 def test_get_item(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   result = get_item(item_id)
 
   assert result["id"] == item_id
   assert result["name"] == "Laptop"
-  assert result["location_id"] == 1
 
 
 def test_update_item(test_db):
+  office_id = create_location(
+    name="Office",
+    description="Main office",
+  )
+
+  it_room_id = create_location(
+    name="IT Room",
+    description="Main IT room",
+  )
+
   item_id = create_item(
     name="Laptop",
-    location_id=1,
+    location_id=office_id,
   )
 
   updated = update_item(
     item_id,
     name="Desktop",
-    location_id=2,
+    location_id=it_room_id,
   )
 
   assert updated is True
@@ -93,7 +77,7 @@ def test_update_item(test_db):
 
   assert item["id"] == item_id
   assert item["name"] == "Desktop"
-  assert item["location_id"] == 2
+  assert item["location_id"] == it_room_id
 
   logs = get_audit_logs(
     entity_type="inventory_item",
@@ -108,13 +92,11 @@ def test_update_item(test_db):
 def test_update_item_audit_records_name_change(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   updated = update_item(
     item_id,
     name="Desktop",
-    location_id=1,
   )
 
   assert updated is True
@@ -138,15 +120,25 @@ def test_update_item_audit_records_name_change(test_db):
 
 
 def test_update_item_audit_records_location_change(test_db):
+  office_id = create_location(
+    name="Office",
+    description="Main office",
+  )
+
+  it_room_id = create_location(
+    name="IT Room",
+    description="Main IT room",
+  )
+
   item_id = create_item(
     name="Laptop",
-    location_id=1,
+    location_id=office_id,
   )
 
   updated = update_item(
     item_id,
     name="Laptop",
-    location_id=2,
+    location_id=it_room_id,
   )
 
   assert updated is True
@@ -163,22 +155,32 @@ def test_update_item_audit_records_location_change(test_db):
 
   assert details == {
     "location_id": {
-      "old": 1,
-      "new": 2,
+      "old": office_id,
+      "new": it_room_id,
     },
   }
 
 
 def test_update_item_audit_records_multiple_changes(test_db):
+  office_id = create_location(
+    name="Office",
+    description="Main office",
+  )
+
+  it_room_id = create_location(
+    name="IT Room",
+    description="Main IT room",
+  )
+
   item_id = create_item(
     name="Laptop",
-    location_id=1,
+    location_id=office_id,
   )
 
   updated = update_item(
     item_id,
     name="Desktop",
-    location_id=2,
+    location_id=it_room_id,
   )
 
   assert updated is True
@@ -199,16 +201,21 @@ def test_update_item_audit_records_multiple_changes(test_db):
       "new": "Desktop",
     },
     "location_id": {
-      "old": 1,
-      "new": 2,
+      "old": office_id,
+      "new": it_room_id,
     },
   }
 
 
 def test_update_item_audit_records_location_removed(test_db):
+  office_id = create_location(
+    name="Office",
+    description="Main office",
+  )
+
   item_id = create_item(
     name="Laptop",
-    location_id=1,
+    location_id=office_id,
   )
 
   updated = update_item(
@@ -230,7 +237,7 @@ def test_update_item_audit_records_location_removed(test_db):
 
   assert details == {
     "location_id": {
-      "old": 1,
+      "old": office_id,
       "new": None,
     },
   }
@@ -239,13 +246,11 @@ def test_update_item_audit_records_location_removed(test_db):
 def test_update_item_without_changes_does_not_create_audit(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   updated = update_item(
     item_id,
     name="Laptop",
-    location_id=1,
   )
 
   assert updated is True
@@ -262,7 +267,6 @@ def test_update_item_without_changes_does_not_create_audit(test_db):
 def test_archive_item_hides_from_active_items(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   archived = archive_item(item_id)
@@ -281,9 +285,7 @@ def test_archive_item_hides_from_active_items(test_db):
 
 
 def test_create_item_without_location(test_db):
-  item_id = create_item(
-    name="Laptop",
-  )
+  item_id = create_item(name="Laptop")
 
   item = get_item(item_id)
 
@@ -299,15 +301,9 @@ def test_get_nonexistent_item(test_db):
 
 
 def test_get_items(test_db):
-  create_item(
-    name="Laptop",
-    location_id=1,
-  )
+  create_item(name="Laptop")
 
-  create_item(
-    name="Desktop",
-    location_id=2,
-  )
+  create_item(name="Desktop")
 
   items = get_items()
 
@@ -320,7 +316,7 @@ def test_update_nonexistent_item(test_db):
   result = update_item(
     "does-not-exist",
     name="Laptop",
-    location_id=1,
+    location_id=None,
   )
 
   assert result is False
@@ -347,9 +343,14 @@ def test_archive_nonexistent_item(test_db):
 
 
 def test_update_item_without_location(test_db):
+  office_id = create_location(
+    name="Office",
+    description="Main office",
+  )
+
   item_id = create_item(
     name="Laptop",
-    location_id=1,
+    location_id=office_id,
   )
 
   updated = update_item(
@@ -368,7 +369,6 @@ def test_update_item_without_location(test_db):
 def test_audit_uses_item_id_as_text(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   logs = get_audit_logs(
@@ -381,14 +381,19 @@ def test_audit_uses_item_id_as_text(test_db):
 
 
 def test_archived_item_is_not_in_get_items(test_db):
+  office_id = create_location(
+    name="Office",
+    description="Main office",
+  )
+
   item_id = create_item(
     name="Laptop",
-    location_id=1,
+    location_id=office_id,
   )
 
   create_item(
     name="Desktop",
-    location_id=1,
+    location_id=office_id,
   )
 
   archive_item(item_id)
@@ -402,7 +407,6 @@ def test_archived_item_is_not_in_get_items(test_db):
 def test_archived_item_remains_in_database(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   archive_item(item_id)
@@ -428,7 +432,6 @@ def test_archived_item_remains_in_database(test_db):
 def test_cannot_archive_already_archived_item(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   assert archive_item(item_id) is True
@@ -455,7 +458,6 @@ def test_inventory_items_support_archival(test_db):
 def test_restore_item_makes_item_active_again(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=1,
   )
 
   assert archive_item(item_id) is True
@@ -470,7 +472,6 @@ def test_restore_item_makes_item_active_again(test_db):
   assert item is not None
   assert item["id"] == item_id
   assert item["name"] == "Laptop"
-  assert item["location_id"] == 1
   assert item["archived_at"] is None
 
   logs = get_audit_logs(
@@ -485,10 +486,7 @@ def test_restore_item_makes_item_active_again(test_db):
 
 
 def test_cannot_restore_active_item(test_db):
-  item_id = create_item(
-    name="Laptop",
-    location_id=1,
-  )
+  item_id = create_item(name="Laptop")
 
   assert restore_item(item_id) is False
 
@@ -506,10 +504,7 @@ def test_restore_nonexistent_item_returns_false(test_db):
 
 
 def test_restored_item_appears_in_get_items(test_db):
-  item_id = create_item(
-    name="Laptop",
-    location_id=1,
-  )
+  item_id = create_item(name="Laptop")
 
   archive_item(item_id)
 

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from app.db import get_db, init_db
+from app.db import get_db
 from app.services.audit import get_audit_logs
 from app.services.inventory import archive_item, create_item, get_item
 from app.services.locations import (
@@ -13,18 +13,6 @@ from app.services.locations import (
   get_locations,
   update_location,
 )
-
-
-@pytest.fixture
-def test_db(tmp_path, monkeypatch):
-  import config
-
-  db_path = tmp_path / "test.db"
-  monkeypatch.setattr(config, "DB_PATH", db_path)
-
-  init_db()
-
-  return db_path
 
 
 def test_create_location(test_db):
