@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from app.db import init_db
@@ -27,8 +29,6 @@ def test_create_audit_log(test_db):
     entity_id="1",
   )
 
-  assert audit_id is not None
-
   audit = get_audit_log(audit_id)
 
   assert audit["id"] == audit_id
@@ -36,13 +36,26 @@ def test_create_audit_log(test_db):
   assert audit["entity_type"] == "inventory_item"
   assert audit["entity_id"] == "1"
   assert audit["user_id"] is None
+  assert audit["details"] is None
   assert audit["timestamp"] is not None
 
 
-def test_create_audit_log_with_user(test_db):
-  # User does not exist yet, so this will need to be adjusted
-  # once the user domain is implemented.
-  pass
+def test_create_audit_log_with_details(test_db):
+  details = {
+    "old_location_id": 1,
+    "new_location_id": None,
+  }
+
+  audit_id = create_audit_log(
+    action="location_changed",
+    entity_type="inventory_item",
+    entity_id="1",
+    details=details,
+  )
+
+  audit = get_audit_log(audit_id)
+
+  assert json.loads(audit["details"]) == details
 
 
 def test_get_nonexistent_audit_log(test_db):
