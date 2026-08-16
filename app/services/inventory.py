@@ -4,6 +4,52 @@ from app.db import get_db
 from app.services.audit import create_audit_log
 
 
+def _get_custom_fields(connection, item_id):
+  rows = connection.execute(
+    """
+    SELECT
+      inventory_item_fields.field_id,
+      inventory_item_fields.value,
+      custom_fields.field_type
+    FROM inventory_item_fields
+    JOIN custom_fields
+      ON custom_fields.id = inventory_item_fields.field_id
+    WHERE inventory_item_fields.item_id = ?
+    """,
+    (item_id,),
+  ).fetchall()
+
+  fields = {}
+
+  for row in rows:
+    value = row["value"]
+    field_type = row["field_type"]
+
+    if field_type == "integer":
+      value = int(value)
+    elif field_type == "decimal":
+      value = float(value)
+    elif field_type == "boolean":
+      value = value == "1"
+
+    fields[row["field_id"]] = value
+
+  return fields
+
+
+def _item_with_custom_fields(connection, item):
+  if item is None:
+    return None
+
+  item = dict(item)
+  item["custom_fields"] = _get_custom_fields(
+    connection,
+    item["id"],
+  )
+
+  return item
+
+
 def create_item(name, location_id=None):
   item_id = str(uuid.uuid4())
 
@@ -45,7 +91,7 @@ def get_item(item_id):
   connection = get_db()
 
   try:
-    return connection.execute(
+    item = connection.execute(
       """
       SELECT *
       FROM inventory_items
@@ -54,6 +100,11 @@ def get_item(item_id):
       """,
       (item_id,),
     ).fetchone()
+
+    return _item_with_custom_fields(
+      connection,
+      item,
+    )
   finally:
     connection.close()
 
@@ -62,7 +113,7 @@ def get_items():
   connection = get_db()
 
   try:
-    return connection.execute(
+    items = connection.execute(
       """
       SELECT *
       FROM inventory_items
@@ -70,6 +121,8 @@ def get_items():
       ORDER BY name
       """
     ).fetchall()
+
+    return [_item_with_custom_fields(connection, item) for item in items]
   finally:
     connection.close()
 
@@ -80,7 +133,7 @@ def update_item(item_id, name, location_id=None):
   try:
     existing = connection.execute(
       """
-      SELECT name, location_id
+      SELECT *
       FROM inventory_items
       WHERE id = ?
         AND archived_at IS NULL
@@ -105,10 +158,7 @@ def update_item(item_id, name, location_id=None):
         "new": location_id,
       }
 
-    if not details:
-      return True
-
-    connection.execute(
+    result = connection.execute(
       """
       UPDATE inventory_items
       SET name = ?,
@@ -120,17 +170,18 @@ def update_item(item_id, name, location_id=None):
       (name, location_id, item_id),
     )
 
-    create_audit_log(
-      action="updated",
-      entity_type="inventory_item",
-      entity_id=item_id,
-      details=details,
-      connection=connection,
-    )
+    if details:
+      create_audit_log(
+        action="updated",
+        entity_type="inventory_item",
+        entity_id=item_id,
+        details=details,
+        connection=connection,
+      )
 
     connection.commit()
 
-    return True
+    return result.rowcount > 0
   except:
     connection.rollback()
     raise
@@ -154,6 +205,7 @@ def archive_item(item_id):
     )
 
     if result.rowcount == 0:
+      connection.commit()
       return False
 
     create_audit_log(
@@ -189,6 +241,7 @@ def restore_item(item_id):
     )
 
     if result.rowcount == 0:
+      connection.commit()
       return False
 
     create_audit_log(
