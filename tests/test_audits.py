@@ -1,0 +1,118 @@
+import pytest
+
+from app.db import init_db
+from app.services.audit import (
+  create_audit_log,
+  get_audit_log,
+  get_audit_logs,
+)
+
+
+@pytest.fixture
+def test_db(tmp_path, monkeypatch):
+  import config
+
+  db_path = tmp_path / "test.db"
+  monkeypatch.setattr(config, "DB_PATH", db_path)
+
+  init_db()
+
+  return db_path
+
+
+def test_create_audit_log(test_db):
+  audit_id = create_audit_log(
+    action="created",
+    entity_type="inventory_item",
+    entity_id="1",
+  )
+
+  assert audit_id is not None
+
+  audit = get_audit_log(audit_id)
+
+  assert audit["id"] == audit_id
+  assert audit["action"] == "created"
+  assert audit["entity_type"] == "inventory_item"
+  assert audit["entity_id"] == "1"
+  assert audit["user_id"] is None
+  assert audit["timestamp"] is not None
+
+
+def test_create_audit_log_with_user(test_db):
+  # User does not exist yet, so this will need to be adjusted
+  # once the user domain is implemented.
+  pass
+
+
+def test_get_nonexistent_audit_log(test_db):
+  assert get_audit_log(999) is None
+
+
+def test_get_audit_logs(test_db):
+  create_audit_log(
+    action="created",
+    entity_type="inventory_item",
+    entity_id="1",
+  )
+
+  create_audit_log(
+    action="updated",
+    entity_type="inventory_item",
+    entity_id="1",
+  )
+
+  logs = get_audit_logs()
+
+  assert len(logs) == 2
+
+
+def test_get_audit_logs_for_entity(test_db):
+  create_audit_log(
+    action="created",
+    entity_type="inventory_item",
+    entity_id="1",
+  )
+
+  create_audit_log(
+    action="updated",
+    entity_type="inventory_item",
+    entity_id="2",
+  )
+
+  create_audit_log(
+    action="deleted",
+    entity_type="location",
+    entity_id="1",
+  )
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id="1",
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["action"] == "created"
+  assert logs[0]["entity_type"] == "inventory_item"
+  assert logs[0]["entity_id"] == "1"
+
+
+def test_get_audit_logs_for_entity_type(test_db):
+  create_audit_log(
+    action="created",
+    entity_type="inventory_item",
+    entity_id="1",
+  )
+
+  create_audit_log(
+    action="created",
+    entity_type="location",
+    entity_id="1",
+  )
+
+  logs = get_audit_logs(
+    entity_type="location",
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["entity_type"] == "location"
