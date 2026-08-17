@@ -8,7 +8,7 @@ from app.services.user_roles import assign_role_to_user
 from app.services.users import archive_user, create_user
 
 
-def test_user_without_permission_is_denied(test_db):
+def test_user_without_permission_is_denied(test_db, authenticated_test_user):
   create_permission(
     name="inventory.read",
   )
@@ -22,7 +22,7 @@ def test_user_without_permission_is_denied(test_db):
   )
 
 
-def test_user_with_direct_permission_is_allowed(test_db):
+def test_user_with_direct_permission_is_allowed(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.read",
   )
@@ -41,7 +41,7 @@ def test_user_with_direct_permission_is_allowed(test_db):
   )
 
 
-def test_user_with_role_permission_is_allowed(test_db):
+def test_user_with_role_permission_is_allowed(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.read",
   )
@@ -69,7 +69,7 @@ def test_user_with_role_permission_is_allowed(test_db):
   )
 
 
-def test_user_with_unrelated_permission_is_denied(test_db):
+def test_user_with_unrelated_permission_is_denied(test_db, authenticated_test_user):
   view_permission_id = create_permission(
     name="inventory.read",
   )
@@ -92,7 +92,7 @@ def test_user_with_unrelated_permission_is_denied(test_db):
   )
 
 
-def test_direct_allow_overrides_role_permission(test_db):
+def test_direct_allow_overrides_role_permission(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.read",
   )
@@ -125,7 +125,7 @@ def test_direct_allow_overrides_role_permission(test_db):
   )
 
 
-def test_direct_deny_overrides_role_permission(test_db):
+def test_direct_deny_overrides_role_permission(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.read",
   )
@@ -159,7 +159,9 @@ def test_direct_deny_overrides_role_permission(test_db):
   )
 
 
-def test_direct_deny_without_role_permission_is_denied(test_db):
+def test_direct_deny_without_role_permission_is_denied(
+  test_db, authenticated_test_user
+):
   permission_id = create_permission(
     name="inventory.read",
   )
@@ -179,7 +181,7 @@ def test_direct_deny_without_role_permission_is_denied(test_db):
   )
 
 
-def test_nonexistent_user_is_denied(test_db):
+def test_nonexistent_user_is_denied(test_db, authenticated_test_user):
   create_permission(
     name="inventory.read",
   )
@@ -203,7 +205,7 @@ def test_nonexistent_permission_is_denied(test_db):
   )
 
 
-def test_archived_user_is_denied(test_db):
+def test_archived_user_is_denied(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.read",
   )
@@ -225,7 +227,7 @@ def test_archived_user_is_denied(test_db):
 
 
 def test_permission_check_does_not_depend_on_current_user(
-  test_db,
+  test_db, authenticated_test_user
 ):
   permission_id = create_permission(
     name="inventory.read",
@@ -258,7 +260,7 @@ def test_permission_check_does_not_depend_on_current_user(
   )
 
 
-def test_permission_granted_by_any_assigned_role(test_db):
+def test_permission_granted_by_any_assigned_role(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.read",
   )
@@ -295,7 +297,7 @@ def test_permission_granted_by_any_assigned_role(test_db):
   )
 
 
-def test_inventory_crud_permissions_are_independent(test_db):
+def test_inventory_crud_permissions_are_independent(test_db, authenticated_test_user):
   permission_names = [
     "inventory.create",
     "inventory.read",
@@ -343,7 +345,7 @@ def test_inventory_crud_permissions_are_independent(test_db):
   )
 
 
-def test_inventory_import_permission_is_independent(test_db):
+def test_inventory_import_permission_is_independent(test_db, authenticated_test_user):
   create_permission(
     name="inventory.read",
   )
@@ -374,7 +376,7 @@ def test_inventory_import_permission_is_independent(test_db):
   )
 
 
-def test_inventory_export_permission_is_independent(test_db):
+def test_inventory_export_permission_is_independent(test_db, authenticated_test_user):
   create_permission(
     name="inventory.read",
   )
@@ -405,7 +407,7 @@ def test_inventory_export_permission_is_independent(test_db):
   )
 
 
-def test_audit_read_permission_is_independent(test_db):
+def test_audit_read_permission_is_independent(test_db, authenticated_test_user):
   audit_permission_id = create_permission(
     name="audit.read",
   )
@@ -432,7 +434,7 @@ def test_audit_read_permission_is_independent(test_db):
   )
 
 
-def test_backup_permissions_are_independent(test_db):
+def test_backup_permissions_are_independent(test_db, authenticated_test_user):
   create_permission(
     name="backup.create",
   )
@@ -463,7 +465,7 @@ def test_backup_permissions_are_independent(test_db):
   )
 
 
-def test_field_read_permission_is_allowed(test_db):
+def test_field_read_permission_is_allowed(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Purchase Price",
     field_type="decimal",
@@ -487,7 +489,7 @@ def test_field_read_permission_is_allowed(test_db):
   )
 
 
-def test_field_update_permission_is_allowed(test_db):
+def test_field_update_permission_is_allowed(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Purchase Price",
     field_type="decimal",
@@ -511,7 +513,9 @@ def test_field_update_permission_is_allowed(test_db):
   )
 
 
-def test_field_read_and_update_permissions_are_independent(test_db):
+def test_field_read_and_update_permissions_are_independent(
+  test_db, authenticated_test_user
+):
   field_id = create_custom_field(
     name="Purchase Price",
     field_type="decimal",
@@ -543,7 +547,7 @@ def test_field_read_and_update_permissions_are_independent(test_db):
   )
 
 
-def test_field_permission_can_be_granted_through_role(test_db):
+def test_field_permission_can_be_granted_through_role(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Purchase Price",
     field_type="decimal",
@@ -576,7 +580,7 @@ def test_field_permission_can_be_granted_through_role(test_db):
   )
 
 
-def test_direct_field_deny_overrides_role_allow(test_db):
+def test_direct_field_deny_overrides_role_allow(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Purchase Price",
     field_type="decimal",

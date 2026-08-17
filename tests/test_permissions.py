@@ -10,7 +10,7 @@ from app.services.permissions import (
 )
 
 
-def test_create_permission(test_db):
+def test_create_permission(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
     description="View inventory",
@@ -23,7 +23,7 @@ def test_create_permission(test_db):
   assert permission["description"] == "View inventory"
 
 
-def test_create_permission_creates_audit_log(test_db):
+def test_create_permission_creates_audit_log(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
     description="View inventory",
@@ -39,7 +39,7 @@ def test_create_permission_creates_audit_log(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_get_permission(test_db):
+def test_get_permission(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
     description="View inventory",
@@ -55,7 +55,7 @@ def test_get_nonexistent_permission(test_db):
   assert get_permission(999) is None
 
 
-def test_get_permissions(test_db):
+def test_get_permissions(test_db, authenticated_test_user):
   create_permission(
     name="inventory.view",
     description="View inventory",
@@ -73,7 +73,7 @@ def test_get_permissions(test_db):
   assert permissions[1]["name"] == "inventory.view"
 
 
-def test_update_permission(test_db):
+def test_update_permission(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
     description="View inventory",
@@ -94,7 +94,7 @@ def test_update_permission(test_db):
   assert permission["description"] == "Read inventory"
 
 
-def test_update_permission_name_only(test_db):
+def test_update_permission_name_only(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
     description="View inventory",
@@ -114,7 +114,7 @@ def test_update_permission_name_only(test_db):
   assert permission["description"] == "View inventory"
 
 
-def test_update_permission_description_only(test_db):
+def test_update_permission_description_only(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
     description="View inventory",
@@ -134,7 +134,7 @@ def test_update_permission_description_only(test_db):
   assert permission["description"] == "Read inventory"
 
 
-def test_update_permission_creates_audit_log(test_db):
+def test_update_permission_creates_audit_log(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
     description="View inventory",
@@ -156,7 +156,9 @@ def test_update_permission_creates_audit_log(test_db):
   assert logs[1]["user_id"] == 1
 
 
-def test_update_permission_without_changes_creates_no_audit_log(test_db):
+def test_update_permission_without_changes_creates_no_audit_log(
+  test_db, authenticated_test_user
+):
   permission_id = create_permission(
     name="inventory.view",
     description="View inventory",
@@ -190,7 +192,7 @@ def test_update_nonexistent_permission(test_db):
   )
 
 
-def test_update_permission_with_no_fields_fails(test_db):
+def test_update_permission_with_no_fields_fails(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
     description="View inventory",
@@ -203,7 +205,7 @@ def test_update_permission_with_no_fields_fails(test_db):
     update_permission(permission_id)
 
 
-def test_delete_permission(test_db):
+def test_delete_permission(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
     description="View inventory",
@@ -213,7 +215,7 @@ def test_delete_permission(test_db):
   assert get_permission(permission_id) is None
 
 
-def test_delete_permission_creates_audit_log(test_db):
+def test_delete_permission_creates_audit_log(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
     description="View inventory",
@@ -252,7 +254,7 @@ def test_create_permission_with_whitespace_name_fails(test_db):
     )
 
 
-def test_create_duplicate_permission_fails(test_db):
+def test_create_duplicate_permission_fails(test_db, authenticated_test_user):
   create_permission(
     name="inventory.view",
     description="View inventory",

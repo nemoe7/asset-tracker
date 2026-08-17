@@ -12,7 +12,7 @@ from app.services.locations import (
 )
 
 
-def test_create_location(test_db):
+def test_create_location(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
   )
@@ -24,7 +24,7 @@ def test_create_location(test_db):
   assert location["description"] is None
 
 
-def test_create_location_with_description(test_db):
+def test_create_location_with_description(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
     description="Main storage area",
@@ -36,7 +36,7 @@ def test_create_location_with_description(test_db):
   assert location["description"] == "Main storage area"
 
 
-def test_create_location_creates_audit_log(test_db):
+def test_create_location_creates_audit_log(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
   )
@@ -51,7 +51,7 @@ def test_create_location_creates_audit_log(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_create_location_with_duplicate_name_fails(test_db):
+def test_create_location_with_duplicate_name_fails(test_db, authenticated_test_user):
   create_location(
     name="Storage Room",
   )
@@ -76,7 +76,7 @@ def test_create_location_with_whitespace_name_fails(test_db):
     )
 
 
-def test_get_location(test_db):
+def test_get_location(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
   )
@@ -91,7 +91,7 @@ def test_get_nonexistent_location(test_db):
   assert get_location(999) is None
 
 
-def test_get_locations(test_db):
+def test_get_locations(test_db, authenticated_test_user):
   first_id = create_location(
     name="Storage Room",
   )
@@ -108,7 +108,7 @@ def test_get_locations(test_db):
   assert second_id in ids
 
 
-def test_update_location_name(test_db):
+def test_update_location_name(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
   )
@@ -126,7 +126,7 @@ def test_update_location_name(test_db):
   assert location["name"] == "Main Storage"
 
 
-def test_update_location_description(test_db):
+def test_update_location_description(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
   )
@@ -144,7 +144,7 @@ def test_update_location_description(test_db):
   assert location["description"] == "Main storage area"
 
 
-def test_update_location_name_and_description(test_db):
+def test_update_location_name_and_description(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
     description="Old description",
@@ -165,7 +165,7 @@ def test_update_location_name_and_description(test_db):
   assert location["description"] == "New description"
 
 
-def test_update_location_description_to_none(test_db):
+def test_update_location_description_to_none(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
     description="Main storage area",
@@ -184,7 +184,9 @@ def test_update_location_description_to_none(test_db):
   assert location["description"] is None
 
 
-def test_update_location_without_changes_creates_no_audit_log(test_db):
+def test_update_location_without_changes_creates_no_audit_log(
+  test_db, authenticated_test_user
+):
   location_id = create_location(
     name="Storage Room",
   )
@@ -200,7 +202,9 @@ def test_update_location_without_changes_creates_no_audit_log(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_update_location_with_same_values_creates_no_audit_log(test_db):
+def test_update_location_with_same_values_creates_no_audit_log(
+  test_db, authenticated_test_user
+):
   location_id = create_location(
     name="Storage Room",
     description="Main storage area",
@@ -224,7 +228,7 @@ def test_update_location_with_same_values_creates_no_audit_log(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_update_location_creates_audit_log(test_db):
+def test_update_location_creates_audit_log(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
   )
@@ -249,7 +253,7 @@ def test_update_location_creates_audit_log(test_db):
   assert logs[1]["user_id"] == 1
 
 
-def test_update_location_to_existing_name_fails(test_db):
+def test_update_location_to_existing_name_fails(test_db, authenticated_test_user):
   create_location(
     name="Storage Room",
   )
@@ -275,7 +279,7 @@ def test_update_nonexistent_location(test_db):
   )
 
 
-def test_delete_location_requires_confirmation(test_db):
+def test_delete_location_requires_confirmation(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
   )
@@ -294,7 +298,7 @@ def test_delete_location_requires_confirmation(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_delete_location(test_db):
+def test_delete_location(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
   )
@@ -310,7 +314,7 @@ def test_delete_location(test_db):
   assert get_location(location_id) is None
 
 
-def test_delete_location_creates_audit_log(test_db):
+def test_delete_location_creates_audit_log(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
   )
@@ -344,7 +348,9 @@ def test_delete_nonexistent_location(test_db):
   )
 
 
-def test_delete_location_sets_inventory_location_to_null(test_db):
+def test_delete_location_sets_inventory_location_to_null(
+  test_db, authenticated_test_user
+):
   location_id = create_location(
     name="Storage Room",
   )
@@ -367,7 +373,9 @@ def test_delete_location_sets_inventory_location_to_null(test_db):
   assert item["location_id"] is None
 
 
-def test_deleted_location_does_not_appear_in_get_locations(test_db):
+def test_deleted_location_does_not_appear_in_get_locations(
+  test_db, authenticated_test_user
+):
   location_id = create_location(
     name="Storage Room",
   )

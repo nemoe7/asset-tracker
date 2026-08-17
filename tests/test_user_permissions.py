@@ -14,7 +14,7 @@ from app.services.user_permissions import (
 from app.services.users import create_user
 
 
-def test_assign_permission_to_user(test_db):
+def test_assign_permission_to_user(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
   )
@@ -35,13 +35,11 @@ def test_assign_permission_to_user(test_db):
   assert permissions[0]["allowed"] == 1
 
 
-def test_get_user_permissions_returns_empty_for_user_without_permissions(
-  test_db,
-):
+def test_get_user_permissions_returns_empty_for_user_without_permissions(test_db):
   assert get_user_permissions(1) == []
 
 
-def test_user_can_have_multiple_permissions(test_db):
+def test_user_can_have_multiple_permissions(test_db, authenticated_test_user):
   first_permission_id = create_permission(
     name="inventory.view",
   )
@@ -70,7 +68,7 @@ def test_user_can_have_multiple_permissions(test_db):
   ]
 
 
-def test_permission_can_be_assigned_to_multiple_users(test_db):
+def test_permission_can_be_assigned_to_multiple_users(test_db, authenticated_test_user):
   second_user_id = create_user(
     username="second_user",
     password="test_password",
@@ -94,7 +92,7 @@ def test_permission_can_be_assigned_to_multiple_users(test_db):
   assert get_user_permissions(second_user_id)[0]["id"] == permission_id
 
 
-def test_duplicate_permission_assignment_is_rejected(test_db):
+def test_duplicate_permission_assignment_is_rejected(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
   )
@@ -111,7 +109,9 @@ def test_duplicate_permission_assignment_is_rejected(test_db):
     )
 
 
-def test_assign_permission_to_nonexistent_user_is_rejected(test_db):
+def test_assign_permission_to_nonexistent_user_is_rejected(
+  test_db, authenticated_test_user
+):
   permission_id = create_permission(
     name="inventory.view",
   )
@@ -131,7 +131,7 @@ def test_assign_nonexistent_permission_to_user_is_rejected(test_db):
     )
 
 
-def test_remove_permission_from_user(test_db):
+def test_remove_permission_from_user(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
   )
@@ -152,7 +152,9 @@ def test_remove_permission_from_user(test_db):
   assert get_user_permissions(1) == []
 
 
-def test_remove_missing_permission_from_user_returns_false(test_db):
+def test_remove_missing_permission_from_user_returns_false(
+  test_db, authenticated_test_user
+):
   permission_id = create_permission(
     name="inventory.view",
   )
@@ -166,13 +168,11 @@ def test_remove_missing_permission_from_user_returns_false(test_db):
   )
 
 
-def test_get_user_permissions_for_nonexistent_user_returns_empty(
-  test_db,
-):
+def test_get_user_permissions_for_nonexistent_user_returns_empty(test_db):
   assert get_user_permissions(999) == []
 
 
-def test_assign_permission_creates_audit_log(test_db):
+def test_assign_permission_creates_audit_log(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
   )
@@ -192,7 +192,7 @@ def test_assign_permission_creates_audit_log(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_remove_permission_creates_audit_log(test_db):
+def test_remove_permission_creates_audit_log(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
   )
@@ -220,6 +220,7 @@ def test_remove_permission_creates_audit_log(test_db):
 
 def test_failed_duplicate_assignment_creates_no_audit_log(
   test_db,
+  authenticated_test_user,
 ):
   permission_id = create_permission(
     name="inventory.view",
@@ -245,7 +246,7 @@ def test_failed_duplicate_assignment_creates_no_audit_log(
   assert logs[0]["action"] == "created"
 
 
-def test_delete_permission_cascades_user_permissions(test_db):
+def test_delete_permission_cascades_user_permissions(test_db, authenticated_test_user):
   permission_id = create_permission(
     name="inventory.view",
   )

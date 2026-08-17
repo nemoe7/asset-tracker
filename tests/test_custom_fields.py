@@ -19,7 +19,7 @@ from app.services.custom_fields import (
 from app.services.inventory import archive_item, create_item
 
 
-def test_create_custom_field(test_db):
+def test_create_custom_field(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -34,7 +34,7 @@ def test_create_custom_field(test_db):
   assert field["description"] == "Asset serial number"
 
 
-def test_create_custom_field_without_description(test_db):
+def test_create_custom_field_without_description(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -45,7 +45,7 @@ def test_create_custom_field_without_description(test_db):
   assert field["description"] is None
 
 
-def test_create_custom_field_creates_audit_log(test_db):
+def test_create_custom_field_creates_audit_log(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -77,7 +77,7 @@ def test_create_custom_field_with_empty_name_fails(test_db):
     )
 
 
-def test_get_custom_field(test_db):
+def test_get_custom_field(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -94,7 +94,7 @@ def test_get_nonexistent_custom_field(test_db):
   assert get_custom_field(999) is None
 
 
-def test_get_custom_fields(test_db):
+def test_get_custom_fields(test_db, authenticated_test_user):
   first_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -113,7 +113,7 @@ def test_get_custom_fields(test_db):
   assert second_id in ids
 
 
-def test_update_custom_field(test_db):
+def test_update_custom_field(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -137,7 +137,7 @@ def test_update_custom_field(test_db):
   assert field["description"] == "Unique asset identifier"
 
 
-def test_update_custom_field_type(test_db):
+def test_update_custom_field_type(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Purchase Value",
     field_type="integer",
@@ -156,7 +156,7 @@ def test_update_custom_field_type(test_db):
   assert field["field_type"] == "decimal"
 
 
-def test_update_custom_field_description_to_none(test_db):
+def test_update_custom_field_description_to_none(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -178,6 +178,7 @@ def test_update_custom_field_description_to_none(test_db):
 
 def test_update_custom_field_without_changes_creates_no_audit_log(
   test_db,
+  authenticated_test_user,
 ):
   field_id = create_custom_field(
     name="Serial Number",
@@ -204,7 +205,7 @@ def test_update_custom_field_without_changes_creates_no_audit_log(
   assert logs[0]["action"] == "created"
 
 
-def test_update_custom_field_creates_audit_log(test_db):
+def test_update_custom_field_creates_audit_log(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -229,7 +230,7 @@ def test_update_custom_field_creates_audit_log(test_db):
   assert logs[1]["user_id"] == 1
 
 
-def test_update_custom_field_audit_records_changes(test_db):
+def test_update_custom_field_audit_records_changes(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -277,7 +278,7 @@ def test_update_nonexistent_custom_field(test_db):
   )
 
 
-def test_update_custom_field_with_invalid_type_fails(test_db):
+def test_update_custom_field_with_invalid_type_fails(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -290,7 +291,7 @@ def test_update_custom_field_with_invalid_type_fails(test_db):
     )
 
 
-def test_delete_custom_field(test_db):
+def test_delete_custom_field(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -300,7 +301,7 @@ def test_delete_custom_field(test_db):
   assert get_custom_field(field_id) is None
 
 
-def test_delete_custom_field_creates_audit_log(test_db):
+def test_delete_custom_field_creates_audit_log(test_db, authenticated_test_user):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -323,7 +324,7 @@ def test_delete_nonexistent_custom_field(test_db):
   assert delete_custom_field(999) is False
 
 
-def test_cannot_delete_custom_field_with_values(test_db):
+def test_cannot_delete_custom_field_with_values(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -355,6 +356,7 @@ def test_cannot_delete_custom_field_with_values(test_db):
 
 def test_failed_custom_field_deletion_creates_no_audit_log(
   test_db,
+  authenticated_test_user,
 ):
   item_id = create_item(
     name="Laptop",
@@ -383,7 +385,7 @@ def test_failed_custom_field_deletion_creates_no_audit_log(
   assert logs[0]["action"] == "created"
 
 
-def test_set_custom_field_value(test_db):
+def test_set_custom_field_value(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -408,7 +410,7 @@ def test_set_custom_field_value(test_db):
   )
 
 
-def test_set_custom_field_value_creates_audit_log(test_db):
+def test_set_custom_field_value_creates_audit_log(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -434,7 +436,7 @@ def test_set_custom_field_value_creates_audit_log(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_get_missing_custom_field_value_returns_none(test_db):
+def test_get_missing_custom_field_value_returns_none(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -453,7 +455,7 @@ def test_get_missing_custom_field_value_returns_none(test_db):
   )
 
 
-def test_update_custom_field_value(test_db):
+def test_update_custom_field_value(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -484,7 +486,7 @@ def test_update_custom_field_value(test_db):
   )
 
 
-def test_update_custom_field_value_creates_audit_log(test_db):
+def test_update_custom_field_value_creates_audit_log(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -524,7 +526,7 @@ def test_update_custom_field_value_creates_audit_log(test_db):
   }
 
 
-def test_clear_custom_field_value(test_db):
+def test_clear_custom_field_value(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -557,7 +559,7 @@ def test_clear_custom_field_value(test_db):
   )
 
 
-def test_clear_custom_field_value_creates_audit_log(test_db):
+def test_clear_custom_field_value_creates_audit_log(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -591,7 +593,9 @@ def test_clear_custom_field_value_creates_audit_log(test_db):
   assert logs[1]["action"] == "cleared"
 
 
-def test_clear_missing_custom_field_value_returns_false(test_db):
+def test_clear_missing_custom_field_value_returns_false(
+  test_db, authenticated_test_user
+):
   item_id = create_item(
     name="Laptop",
   )
@@ -610,7 +614,7 @@ def test_clear_missing_custom_field_value_returns_false(test_db):
   )
 
 
-def test_item_can_have_multiple_custom_field_values(test_db):
+def test_item_can_have_multiple_custom_field_values(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -654,7 +658,7 @@ def test_item_can_have_multiple_custom_field_values(test_db):
   )
 
 
-def test_multiple_items_can_use_same_custom_field(test_db):
+def test_multiple_items_can_use_same_custom_field(test_db, authenticated_test_user):
   first_item_id = create_item(
     name="Laptop",
   )
@@ -709,6 +713,7 @@ def test_multiple_items_can_use_same_custom_field(test_db):
 )
 def test_custom_field_value_types(
   test_db,
+  authenticated_test_user,
   field_type,
   value,
   expected,
@@ -737,7 +742,7 @@ def test_custom_field_value_types(
   )
 
 
-def test_invalid_integer_value_is_rejected(test_db):
+def test_invalid_integer_value_is_rejected(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -755,7 +760,7 @@ def test_invalid_integer_value_is_rejected(test_db):
     )
 
 
-def test_invalid_decimal_value_is_rejected(test_db):
+def test_invalid_decimal_value_is_rejected(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -773,7 +778,7 @@ def test_invalid_decimal_value_is_rejected(test_db):
     )
 
 
-def test_invalid_boolean_value_is_rejected(test_db):
+def test_invalid_boolean_value_is_rejected(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -791,7 +796,7 @@ def test_invalid_boolean_value_is_rejected(test_db):
     )
 
 
-def test_invalid_date_value_is_rejected(test_db):
+def test_invalid_date_value_is_rejected(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -809,7 +814,9 @@ def test_invalid_date_value_is_rejected(test_db):
     )
 
 
-def test_set_custom_field_value_with_nonexistent_item_fails(test_db):
+def test_set_custom_field_value_with_nonexistent_item_fails(
+  test_db, authenticated_test_user
+):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -823,7 +830,9 @@ def test_set_custom_field_value_with_nonexistent_item_fails(test_db):
     )
 
 
-def test_set_custom_field_value_with_nonexistent_field_fails(test_db):
+def test_set_custom_field_value_with_nonexistent_field_fails(
+  test_db, authenticated_test_user
+):
   item_id = create_item(
     name="Laptop",
   )
@@ -836,7 +845,9 @@ def test_set_custom_field_value_with_nonexistent_field_fails(test_db):
     )
 
 
-def test_set_custom_field_value_on_archived_item_fails(test_db):
+def test_set_custom_field_value_on_archived_item_fails(
+  test_db, authenticated_test_user
+):
   item_id = create_item(
     name="Laptop",
   )
@@ -856,7 +867,9 @@ def test_set_custom_field_value_on_archived_item_fails(test_db):
     )
 
 
-def test_get_custom_field_value_for_archived_item_returns_none(test_db):
+def test_get_custom_field_value_for_archived_item_returns_none(
+  test_db, authenticated_test_user
+):
   item_id = create_item(
     name="Laptop",
   )

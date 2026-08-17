@@ -10,7 +10,7 @@ from app.services.inventory import (
 from app.services.locations import create_location
 
 
-def test_create_item(test_db):
+def test_create_item(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -23,7 +23,7 @@ def test_create_item(test_db):
   assert item["archived_at"] is None
 
 
-def test_create_item_with_location(test_db):
+def test_create_item_with_location(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
   )
@@ -39,7 +39,7 @@ def test_create_item_with_location(test_db):
   assert item["location_id"] == location_id
 
 
-def test_create_item_creates_audit_log(test_db):
+def test_create_item_creates_audit_log(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -54,7 +54,7 @@ def test_create_item_creates_audit_log(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_get_item(test_db):
+def test_get_item(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -70,7 +70,7 @@ def test_get_nonexistent_item(test_db):
   assert get_item("nonexistent") is None
 
 
-def test_get_items(test_db):
+def test_get_items(test_db, authenticated_test_user):
   first_id = create_item(
     name="Laptop",
   )
@@ -87,7 +87,7 @@ def test_get_items(test_db):
   assert second_id in ids
 
 
-def test_update_item_name(test_db):
+def test_update_item_name(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -105,7 +105,7 @@ def test_update_item_name(test_db):
   assert item["name"] == "Desktop"
 
 
-def test_update_item_location(test_db):
+def test_update_item_location(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -127,7 +127,7 @@ def test_update_item_location(test_db):
   assert item["location_id"] == location_id
 
 
-def test_update_item_remove_location(test_db):
+def test_update_item_remove_location(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
   )
@@ -150,7 +150,7 @@ def test_update_item_remove_location(test_db):
   assert item["location_id"] is None
 
 
-def test_update_item_name_only_preserves_location(test_db):
+def test_update_item_name_only_preserves_location(test_db, authenticated_test_user):
   location_id = create_location(
     name="Storage Room",
   )
@@ -174,7 +174,7 @@ def test_update_item_name_only_preserves_location(test_db):
   assert item["location_id"] == location_id
 
 
-def test_update_item_location_only_preserves_name(test_db):
+def test_update_item_location_only_preserves_name(test_db, authenticated_test_user):
   first_location_id = create_location(
     name="Storage Room",
   )
@@ -202,7 +202,9 @@ def test_update_item_location_only_preserves_name(test_db):
   assert item["location_id"] == second_location_id
 
 
-def test_update_item_without_changes_creates_no_audit_log(test_db):
+def test_update_item_without_changes_creates_no_audit_log(
+  test_db, authenticated_test_user
+):
   item_id = create_item(
     name="Laptop",
   )
@@ -218,7 +220,7 @@ def test_update_item_without_changes_creates_no_audit_log(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_update_item_creates_audit_log(test_db):
+def test_update_item_creates_audit_log(test_db, authenticated_test_user):
   first_location_id = create_location(
     name="Storage Room",
   )
@@ -252,7 +254,9 @@ def test_update_item_creates_audit_log(test_db):
   assert logs[1]["user_id"] == 1
 
 
-def test_update_item_with_same_values_creates_no_audit_log(test_db):
+def test_update_item_with_same_values_creates_no_audit_log(
+  test_db, authenticated_test_user
+):
   location_id = create_location(
     name="Storage Room",
   )
@@ -290,7 +294,7 @@ def test_update_nonexistent_item(test_db):
   )
 
 
-def test_archive_item(test_db):
+def test_archive_item(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -300,7 +304,7 @@ def test_archive_item(test_db):
   assert get_item(item_id) is None
 
 
-def test_archive_item_creates_audit_log(test_db):
+def test_archive_item_creates_audit_log(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -318,7 +322,7 @@ def test_archive_item_creates_audit_log(test_db):
   assert logs[1]["user_id"] == 1
 
 
-def test_archive_item_excludes_item_from_get_items(test_db):
+def test_archive_item_excludes_item_from_get_items(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -330,7 +334,7 @@ def test_archive_item_excludes_item_from_get_items(test_db):
   assert all(item["id"] != item_id for item in items)
 
 
-def test_cannot_archive_already_archived_item(test_db):
+def test_cannot_archive_already_archived_item(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -343,7 +347,7 @@ def test_archive_nonexistent_item(test_db):
   assert archive_item("nonexistent") is False
 
 
-def test_restore_item(test_db):
+def test_restore_item(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -356,7 +360,7 @@ def test_restore_item(test_db):
   assert item["archived_at"] is None
 
 
-def test_restore_item_creates_audit_log(test_db):
+def test_restore_item_creates_audit_log(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -376,7 +380,7 @@ def test_restore_item_creates_audit_log(test_db):
   assert logs[2]["user_id"] == 1
 
 
-def test_restore_active_item(test_db):
+def test_restore_active_item(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -388,7 +392,7 @@ def test_restore_nonexistent_item(test_db):
   assert restore_item("nonexistent") is False
 
 
-def test_update_archived_item_fails(test_db):
+def test_update_archived_item_fails(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )

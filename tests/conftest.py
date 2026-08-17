@@ -21,7 +21,7 @@ def test_db(tmp_path, monkeypatch):
 
   connection = sqlite3.connect(db_path)
 
-  result = connection.execute(
+  connection.execute(
     """
     INSERT INTO users (
       username,
@@ -30,7 +30,7 @@ def test_db(tmp_path, monkeypatch):
       updated_at
     )
     VALUES (
-      'test_user',
+      'test_admin',
       'test_password_hash',
       datetime('now'),
       datetime('now')
@@ -38,14 +38,35 @@ def test_db(tmp_path, monkeypatch):
     """
   )
 
-  user_id = result.lastrowid
-
   connection.commit()
   connection.close()
 
-  token = set_current_user(user_id)
+  yield db_path
+
+
+@pytest.fixture
+def test_user_id(test_db):
+  connection = sqlite3.connect(test_db)
 
   try:
-    yield db_path
+    result = connection.execute(
+      """
+      SELECT id
+      FROM users
+      WHERE username = 'test_admin'
+      """
+    ).fetchone()
+
+    return result[0]
+  finally:
+    connection.close()
+
+
+@pytest.fixture
+def authenticated_test_user(test_user_id):
+  token = set_current_user(test_user_id)
+
+  try:
+    yield test_user_id
   finally:
     reset_current_user(token)

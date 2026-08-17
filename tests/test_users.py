@@ -17,7 +17,7 @@ from app.services.users import (
 # Create
 
 
-def test_create_user(test_db):
+def test_create_user(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -32,7 +32,7 @@ def test_create_user(test_db):
   assert user["archived_at"] is None
 
 
-def test_create_user_creates_audit_log(test_db):
+def test_create_user_creates_audit_log(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -48,7 +48,7 @@ def test_create_user_creates_audit_log(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_create_user_with_duplicate_username_fails(test_db):
+def test_create_user_with_duplicate_username_fails(test_db, authenticated_test_user):
   create_user(
     username="alice",
     password="password123",
@@ -100,7 +100,7 @@ def test_create_user_with_empty_password_fails(test_db):
 # Read
 
 
-def test_get_user(test_db):
+def test_get_user(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -112,7 +112,7 @@ def test_get_user(test_db):
   assert user["username"] == "alice"
 
 
-def test_get_user_by_username(test_db):
+def test_get_user_by_username(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -124,7 +124,7 @@ def test_get_user_by_username(test_db):
   assert user["username"] == "alice"
 
 
-def test_get_users(test_db):
+def test_get_users(test_db, authenticated_test_user):
   create_user(
     username="alice",
     password="password123",
@@ -153,7 +153,7 @@ def test_get_nonexistent_username(test_db):
 # Update
 
 
-def test_update_user_username(test_db):
+def test_update_user_username(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -172,7 +172,7 @@ def test_update_user_username(test_db):
   assert user["username"] == "alice2"
 
 
-def test_update_user_password(test_db):
+def test_update_user_password(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -197,7 +197,7 @@ def test_update_user_password(test_db):
   )
 
 
-def test_update_user_creates_audit_log(test_db):
+def test_update_user_creates_audit_log(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -232,7 +232,9 @@ def test_update_user_creates_audit_log(test_db):
   assert details["password"] == "changed"
 
 
-def test_update_user_with_same_username_creates_no_audit_log(test_db):
+def test_update_user_with_same_username_creates_no_audit_log(
+  test_db, authenticated_test_user
+):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -255,7 +257,7 @@ def test_update_user_with_same_username_creates_no_audit_log(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_update_user_to_existing_username_fails(test_db):
+def test_update_user_to_existing_username_fails(test_db, authenticated_test_user):
   create_user(
     username="alice",
     password="password123",
@@ -276,7 +278,7 @@ def test_update_user_to_existing_username_fails(test_db):
     )
 
 
-def test_failed_username_update_creates_no_audit_log(test_db):
+def test_failed_username_update_creates_no_audit_log(test_db, authenticated_test_user):
   create_user(
     username="alice",
     password="password123",
@@ -305,7 +307,7 @@ def test_failed_username_update_creates_no_audit_log(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_update_user_with_no_fields_fails(test_db):
+def test_update_user_with_no_fields_fails(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -318,7 +320,7 @@ def test_update_user_with_no_fields_fails(test_db):
     update_user(user_id)
 
 
-def test_update_user_with_empty_username_fails(test_db):
+def test_update_user_with_empty_username_fails(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -334,7 +336,7 @@ def test_update_user_with_empty_username_fails(test_db):
     )
 
 
-def test_update_user_with_empty_password_fails(test_db):
+def test_update_user_with_empty_password_fails(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -363,7 +365,7 @@ def test_update_nonexistent_user(test_db):
 # Archive
 
 
-def test_archive_user(test_db):
+def test_archive_user(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -378,7 +380,9 @@ def test_archive_user(test_db):
   assert user["archived_at"] is not None
 
 
-def test_archive_user_excludes_user_from_active_queries(test_db):
+def test_archive_user_excludes_user_from_active_queries(
+  test_db, authenticated_test_user
+):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -390,7 +394,7 @@ def test_archive_user_excludes_user_from_active_queries(test_db):
   assert len(get_users()) == 1
 
 
-def test_archive_user_creates_audit_log(test_db):
+def test_archive_user_creates_audit_log(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -409,7 +413,7 @@ def test_archive_user_creates_audit_log(test_db):
   assert logs[1]["user_id"] == 1
 
 
-def test_cannot_archive_already_archived_user(test_db):
+def test_cannot_archive_already_archived_user(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -426,7 +430,7 @@ def test_archive_nonexistent_user(test_db):
 # Restore
 
 
-def test_restore_user(test_db):
+def test_restore_user(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -444,7 +448,7 @@ def test_restore_user(test_db):
   assert len(get_users()) == 2
 
 
-def test_restore_user_creates_audit_log(test_db):
+def test_restore_user_creates_audit_log(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -465,7 +469,7 @@ def test_restore_user_creates_audit_log(test_db):
   assert logs[2]["user_id"] == 1
 
 
-def test_cannot_restore_active_user(test_db):
+def test_cannot_restore_active_user(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -481,7 +485,7 @@ def test_restore_nonexistent_user(test_db):
 # Password verification
 
 
-def test_password_is_hashed(test_db):
+def test_password_is_hashed(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -490,7 +494,7 @@ def test_password_is_hashed(test_db):
   assert verify_password(user_id, "password123")
 
 
-def test_password_can_be_verified(test_db):
+def test_password_can_be_verified(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -502,7 +506,7 @@ def test_password_can_be_verified(test_db):
   )
 
 
-def test_wrong_password_cannot_be_verified(test_db):
+def test_wrong_password_cannot_be_verified(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
@@ -514,7 +518,7 @@ def test_wrong_password_cannot_be_verified(test_db):
   )
 
 
-def test_archived_user_password_cannot_be_verified(test_db):
+def test_archived_user_password_cannot_be_verified(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="password123",
