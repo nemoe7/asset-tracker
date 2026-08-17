@@ -78,7 +78,6 @@ def get_user(user_id):
       SELECT
         id,
         username,
-        password_hash,
         created_at,
         updated_at,
         archived_at
@@ -100,7 +99,6 @@ def get_user_by_username(username):
       SELECT
         id,
         username,
-        password_hash,
         created_at,
         updated_at,
         archived_at
@@ -123,7 +121,6 @@ def get_users():
       SELECT
         id,
         username,
-        password_hash,
         created_at,
         updated_at,
         archived_at
