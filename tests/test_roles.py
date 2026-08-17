@@ -1,4 +1,6 @@
 import pytest
+
+from app.services.audit import get_audit_logs
 from app.services.roles import (
   create_role,
   delete_role,
@@ -21,6 +23,22 @@ def test_create_role(test_db):
   assert role["id"] == role_id
   assert role["name"] == "Admin"
   assert role["description"] == "Administrator"
+
+
+def test_create_role_creates_audit_log(test_db):
+  role_id = create_role(
+    name="Admin",
+    description="Administrator",
+  )
+
+  logs = get_audit_logs(
+    entity_type="role",
+    entity_id=role_id,
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["user_id"] == 1
+  assert logs[0]["action"] == "created"
 
 
 def test_get_role(test_db):
@@ -74,6 +92,29 @@ def test_update_role(test_db):
   assert role["description"] == "Full administrator"
 
 
+def test_update_role_creates_audit_log(test_db):
+  role_id = create_role(
+    name="Admin",
+    description="Administrator",
+  )
+
+  update_role(
+    role_id,
+    name="Super Admin",
+  )
+
+  logs = get_audit_logs(
+    entity_type="role",
+    entity_id=role_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[0]["user_id"] == 1
+  assert logs[0]["action"] == "created"
+  assert logs[1]["user_id"] == 1
+  assert logs[1]["action"] == "updated"
+
+
 def test_update_role_name_only(test_db):
   role_id = create_role(
     name="Admin",
@@ -122,6 +163,26 @@ def test_delete_role(test_db):
   assert get_role(role_id) is None
 
 
+def test_delete_role_creates_audit_log(test_db):
+  role_id = create_role(
+    name="Admin",
+    description="Administrator",
+  )
+
+  assert delete_role(role_id) is True
+
+  logs = get_audit_logs(
+    entity_type="role",
+    entity_id=role_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[0]["user_id"] == 1
+  assert logs[0]["action"] == "created"
+  assert logs[1]["user_id"] == 1
+  assert logs[1]["action"] == "deleted"
+
+
 def test_delete_nonexistent_role(test_db):
   assert delete_role(999) is False
 
@@ -148,7 +209,10 @@ def test_create_duplicate_role_fails(test_db):
     description="Administrator",
   )
 
-  with pytest.raises(ValueError, match="Role already exists"):
+  with pytest.raises(
+    ValueError,
+    match="Role already exists",
+  ):
     create_role(
       name="Admin",
       description="Another description",
@@ -175,5 +239,8 @@ def test_update_role_with_no_fields_fails(test_db):
     description="Administrator",
   )
 
-  with pytest.raises(ValueError, match="No fields to update"):
+  with pytest.raises(
+    ValueError,
+    match="No fields to update",
+  ):
     update_role(role_id)

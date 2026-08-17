@@ -1,4 +1,6 @@
 import pytest
+
+from app.services.audit import get_audit_logs
 from app.services.permissions import (
   create_permission,
   delete_permission,
@@ -21,6 +23,22 @@ def test_create_permission(test_db):
   assert permission["id"] == permission_id
   assert permission["name"] == "inventory.view"
   assert permission["description"] == "View inventory"
+
+
+def test_create_permission_creates_audit_log(test_db):
+  permission_id = create_permission(
+    name="inventory.view",
+    description="View inventory",
+  )
+
+  logs = get_audit_logs(
+    entity_type="permission",
+    entity_id=permission_id,
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["user_id"] == 1
+  assert logs[0]["action"] == "created"
 
 
 def test_get_permission(test_db):
@@ -74,6 +92,29 @@ def test_update_permission(test_db):
   assert permission["description"] == "Read inventory"
 
 
+def test_update_permission_creates_audit_log(test_db):
+  permission_id = create_permission(
+    name="inventory.view",
+    description="View inventory",
+  )
+
+  update_permission(
+    permission_id,
+    name="inventory.read",
+  )
+
+  logs = get_audit_logs(
+    entity_type="permission",
+    entity_id=permission_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[0]["user_id"] == 1
+  assert logs[0]["action"] == "created"
+  assert logs[1]["user_id"] == 1
+  assert logs[1]["action"] == "updated"
+
+
 def test_update_permission_name_only(test_db):
   permission_id = create_permission(
     name="inventory.view",
@@ -120,6 +161,26 @@ def test_delete_permission(test_db):
 
   assert delete_permission(permission_id) is True
   assert get_permission(permission_id) is None
+
+
+def test_delete_permission_creates_audit_log(test_db):
+  permission_id = create_permission(
+    name="inventory.view",
+    description="View inventory",
+  )
+
+  assert delete_permission(permission_id) is True
+
+  logs = get_audit_logs(
+    entity_type="permission",
+    entity_id=permission_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[0]["user_id"] == 1
+  assert logs[0]["action"] == "created"
+  assert logs[1]["user_id"] == 1
+  assert logs[1]["action"] == "deleted"
 
 
 def test_delete_nonexistent_permission(test_db):
@@ -178,5 +239,8 @@ def test_update_permission_with_no_fields_fails(test_db):
     description="View inventory",
   )
 
-  with pytest.raises(ValueError, match="No fields to update"):
+  with pytest.raises(
+    ValueError,
+    match="No fields to update",
+  ):
     update_permission(permission_id)

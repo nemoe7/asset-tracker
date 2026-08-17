@@ -1,4 +1,5 @@
 from app.db import get_db
+from app.services.audit import create_audit_log
 
 
 def _validate_name(name):
@@ -35,9 +36,18 @@ def create_permission(name, description=None):
       (name, description),
     )
 
+    permission_id = cursor.lastrowid
+
+    create_audit_log(
+      action="created",
+      entity_type="permission",
+      entity_id=permission_id,
+      connection=connection,
+    )
+
     connection.commit()
 
-    return cursor.lastrowid
+    return permission_id
   except:
     connection.rollback()
     raise
@@ -110,6 +120,7 @@ def update_permission(
 
     updates = []
     values = []
+    details = {}
 
     if name is not None and existing["name"] != name:
       duplicate = connection.execute(
@@ -128,9 +139,19 @@ def update_permission(
       updates.append("name = ?")
       values.append(name)
 
+      details["name"] = {
+        "old": existing["name"],
+        "new": name,
+      }
+
     if description is not None and existing["description"] != description:
       updates.append("description = ?")
       values.append(description)
+
+      details["description"] = {
+        "old": existing["description"],
+        "new": description,
+      }
 
     if not updates:
       return True
@@ -144,6 +165,14 @@ def update_permission(
       WHERE id = ?
       """,
       values,
+    )
+
+    create_audit_log(
+      action="updated",
+      entity_type="permission",
+      entity_id=permission_id,
+      details=details,
+      connection=connection,
     )
 
     connection.commit()
@@ -168,9 +197,20 @@ def delete_permission(permission_id):
       (permission_id,),
     )
 
+    if result.rowcount == 0:
+      connection.commit()
+      return False
+
+    create_audit_log(
+      action="deleted",
+      entity_type="permission",
+      entity_id=permission_id,
+      connection=connection,
+    )
+
     connection.commit()
 
-    return result.rowcount > 0
+    return True
   except:
     connection.rollback()
     raise
