@@ -39,7 +39,7 @@ def assign_permission_to_user(
       raise ValueError("Permission does not exist")
 
     if not isinstance(allowed, bool):
-      raise ValueError("Allowed must be a boolean")
+      raise TypeError("Allowed must be a boolean")
 
     existing = connection.execute(
       """

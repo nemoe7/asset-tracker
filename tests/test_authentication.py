@@ -1,4 +1,4 @@
-from app.db import get_db
+from app.context import get_current_user, reset_current_user, set_current_user
 from app.services.users import (
   archive_user,
   create_user,
@@ -89,6 +89,8 @@ def test_password_is_stored_as_a_hash(test_db):
     password="correct-password",
   )
 
+  from app.db import get_db
+
   connection = get_db()
 
   try:
@@ -105,3 +107,89 @@ def test_password_is_stored_as_a_hash(test_db):
 
   assert user["password_hash"] != "correct-password"
   assert user["password_hash"] is not None
+
+
+def test_set_current_user_sets_user_id(test_db):
+  token = set_current_user(1)
+
+  try:
+    assert get_current_user() == 1
+  finally:
+    reset_current_user(token)
+
+
+def test_reset_current_user_restores_previous_user(test_db):
+  token = set_current_user(1)
+
+  try:
+    assert get_current_user() == 1
+  finally:
+    reset_current_user(token)
+
+  assert get_current_user() is None
+
+
+def test_authentication_contract_valid_credentials_set_current_user(
+  test_db,
+):
+  user_id = create_user(
+    username="alice",
+    password="correct-password",
+  )
+
+  token = set_current_user(user_id)
+
+  try:
+    assert get_current_user() == user_id
+  finally:
+    reset_current_user(token)
+
+
+def test_failed_authentication_does_not_establish_user(
+  test_db,
+):
+  user_id = create_user(
+    username="alice",
+    password="correct-password",
+  )
+
+  token = set_current_user(None)
+
+  try:
+    assert (
+      verify_password(
+        user_id,
+        "wrong-password",
+      )
+      is False
+    )
+
+    assert get_current_user() is None
+  finally:
+    reset_current_user(token)
+
+
+def test_current_user_can_be_replaced(test_db):
+  first_user_id = create_user(
+    username="alice",
+    password="password-one",
+  )
+
+  second_user_id = create_user(
+    username="bob",
+    password="password-two",
+  )
+
+  first_token = set_current_user(first_user_id)
+
+  try:
+    assert get_current_user() == first_user_id
+
+    second_token = set_current_user(second_user_id)
+
+    try:
+      assert get_current_user() == second_user_id
+    finally:
+      reset_current_user(second_token)
+  finally:
+    reset_current_user(first_token)
