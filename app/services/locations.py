@@ -147,15 +147,14 @@ def update_location(
           "new": name,
         }
 
-    if description is not _UNSET:
-      if description != existing["description"]:
-        updates.append("description = ?")
-        values.append(description)
+    if description is not _UNSET and description != existing["description"]:
+      updates.append("description = ?")
+      values.append(description)
 
-        details["description"] = {
-          "old": existing["description"],
-          "new": description,
-        }
+      details["description"] = {
+        "old": existing["description"],
+        "new": description,
+      }
 
     if not updates:
       connection.commit()
