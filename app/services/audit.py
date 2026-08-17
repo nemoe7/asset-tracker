@@ -1,5 +1,6 @@
 import json
 
+from app.context import get_current_user
 from app.db import get_db
 
 
@@ -7,10 +8,14 @@ def create_audit_log(
   action,
   entity_type,
   entity_id,
-  user_id=None,
   details=None,
   connection=None,
 ):
+  user_id = get_current_user()
+
+  if user_id is None:
+    raise RuntimeError("No current user")
+
   owns_connection = connection is None
 
   if owns_connection:

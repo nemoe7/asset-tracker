@@ -20,7 +20,7 @@ def test_create_audit_log(test_db):
   assert audit["action"] == "created"
   assert audit["entity_type"] == "inventory_item"
   assert audit["entity_id"] == "1"
-  assert audit["user_id"] is None
+  assert audit["user_id"] == 1
   assert audit["details"] is None
   assert audit["timestamp"] is not None
 
