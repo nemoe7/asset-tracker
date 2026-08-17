@@ -6,11 +6,33 @@ class LocationDeletionConfirmationRequired(Exception):
   pass
 
 
+_UNSET = object()
+
+
+def _validate_name(name):
+  if not isinstance(name, str) or not name.strip():
+    raise ValueError("Location name cannot be empty")
+
+
 def create_location(name, description=None):
+  _validate_name(name)
+
   connection = get_db()
 
   try:
-    result = connection.execute(
+    existing = connection.execute(
+      """
+      SELECT id
+      FROM locations
+      WHERE name = ?
+      """,
+      (name,),
+    ).fetchone()
+
+    if existing is not None:
+      raise ValueError("Location already exists")
+
+    cursor = connection.execute(
       """
       INSERT INTO locations (
         name,
@@ -20,10 +42,13 @@ def create_location(name, description=None):
       )
       VALUES (?, ?, datetime('now'), datetime('now'))
       """,
-      (name, description),
+      (
+        name,
+        description,
+      ),
     )
 
-    location_id = result.lastrowid
+    location_id = cursor.lastrowid
 
     create_audit_log(
       action="created",
@@ -66,20 +91,24 @@ def get_locations():
       """
       SELECT *
       FROM locations
-      ORDER BY name
+      ORDER BY id
       """
     ).fetchall()
   finally:
     connection.close()
 
 
-def update_location(location_id, name, description=None):
+def update_location(
+  location_id,
+  name=_UNSET,
+  description=_UNSET,
+):
   connection = get_db()
 
   try:
     existing = connection.execute(
       """
-      SELECT name, description
+      SELECT *
       FROM locations
       WHERE id = ?
       """,
@@ -89,32 +118,59 @@ def update_location(location_id, name, description=None):
     if existing is None:
       return False
 
+    updates = []
+    values = []
     details = {}
 
-    if existing["name"] != name:
-      details["name"] = {
-        "old": existing["name"],
-        "new": name,
-      }
+    if name is not _UNSET:
+      _validate_name(name)
 
-    if existing["description"] != description:
-      details["description"] = {
-        "old": existing["description"],
-        "new": description,
-      }
+      if name != existing["name"]:
+        duplicate = connection.execute(
+          """
+          SELECT id
+          FROM locations
+          WHERE name = ?
+            AND id != ?
+          """,
+          (name, location_id),
+        ).fetchone()
 
-    if not details:
+        if duplicate is not None:
+          raise ValueError("Location already exists")
+
+        updates.append("name = ?")
+        values.append(name)
+
+        details["name"] = {
+          "old": existing["name"],
+          "new": name,
+        }
+
+    if description is not _UNSET:
+      if description != existing["description"]:
+        updates.append("description = ?")
+        values.append(description)
+
+        details["description"] = {
+          "old": existing["description"],
+          "new": description,
+        }
+
+    if not updates:
+      connection.commit()
       return True
 
+    updates.append("updated_at = datetime('now')")
+    values.append(location_id)
+
     connection.execute(
-      """
+      f"""
       UPDATE locations
-      SET name = ?,
-          description = ?,
-          updated_at = datetime('now')
+      SET {", ".join(updates)}
       WHERE id = ?
       """,
-      (name, description, location_id),
+      values,
     )
 
     create_audit_log(
@@ -135,65 +191,26 @@ def update_location(location_id, name, description=None):
     connection.close()
 
 
-def delete_location(location_id, confirmed=False):
+def delete_location(location_id, confirm=False):
+  if not confirm:
+    raise LocationDeletionConfirmationRequired(
+      "Deleting a location requires confirmation"
+    )
+
   connection = get_db()
 
   try:
-    location = connection.execute(
-      """
-      SELECT id
-      FROM locations
-      WHERE id = ?
-      """,
-      (location_id,),
-    ).fetchone()
-
-    if location is None:
-      return False
-
-    items = connection.execute(
-      """
-      SELECT id
-      FROM inventory_items
-      WHERE location_id = ?
-      """,
-      (location_id,),
-    ).fetchall()
-
-    if items and not confirmed:
-      raise LocationDeletionConfirmationRequired(
-        f"Location {location_id} contains {len(items)} inventory items"
-      )
-
-    for item in items:
-      connection.execute(
-        """
-        UPDATE inventory_items
-        SET location_id = NULL,
-            updated_at = datetime('now')
-        WHERE id = ?
-        """,
-        (item["id"],),
-      )
-
-      create_audit_log(
-        action="location_changed",
-        entity_type="inventory_item",
-        entity_id=item["id"],
-        details={
-          "old_location_id": location_id,
-          "new_location_id": None,
-        },
-        connection=connection,
-      )
-
-    connection.execute(
+    result = connection.execute(
       """
       DELETE FROM locations
       WHERE id = ?
       """,
       (location_id,),
     )
+
+    if result.rowcount == 0:
+      connection.commit()
+      return False
 
     create_audit_log(
       action="deleted",

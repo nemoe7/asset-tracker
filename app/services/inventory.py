@@ -3,6 +3,8 @@ import uuid
 from app.db import get_db
 from app.services.audit import create_audit_log
 
+_UNSET = object()
+
 
 def _validate_item_name(name):
   if not isinstance(name, str) or not name.strip():
@@ -92,7 +94,11 @@ def create_item(name, location_id=None):
       )
       VALUES (?, ?, ?, datetime('now'), datetime('now'))
       """,
-      (item_id, name, location_id),
+      (
+        item_id,
+        name,
+        location_id,
+      ),
     )
 
     create_audit_log(
@@ -152,12 +158,14 @@ def get_items():
     connection.close()
 
 
-def update_item(item_id, name, location_id=None):
+def update_item(
+  item_id,
+  name=_UNSET,
+  location_id=_UNSET,
+):
   connection = get_db()
 
   try:
-    _validate_item_name(name)
-    _validate_location(connection, location_id)
     existing = connection.execute(
       """
       SELECT *
@@ -171,40 +179,61 @@ def update_item(item_id, name, location_id=None):
     if existing is None:
       return False
 
+    updates = []
+    values = []
     details = {}
 
-    if existing["name"] != name:
-      details["name"] = {
-        "old": existing["name"],
-        "new": name,
-      }
+    if name is not _UNSET:
+      _validate_item_name(name)
 
-    if existing["location_id"] != location_id:
-      details["location_id"] = {
-        "old": existing["location_id"],
-        "new": location_id,
-      }
+      if existing["name"] != name:
+        updates.append("name = ?")
+        values.append(name)
+
+        details["name"] = {
+          "old": existing["name"],
+          "new": name,
+        }
+
+    if location_id is not _UNSET:
+      _validate_location(
+        connection,
+        location_id,
+      )
+
+      if existing["location_id"] != location_id:
+        updates.append("location_id = ?")
+        values.append(location_id)
+
+        details["location_id"] = {
+          "old": existing["location_id"],
+          "new": location_id,
+        }
+
+    if not updates:
+      connection.commit()
+      return True
+
+    updates.append("updated_at = datetime('now')")
+    values.append(item_id)
 
     result = connection.execute(
-      """
+      f"""
       UPDATE inventory_items
-      SET name = ?,
-          location_id = ?,
-          updated_at = datetime('now')
+      SET {", ".join(updates)}
       WHERE id = ?
         AND archived_at IS NULL
       """,
-      (name, location_id, item_id),
+      values,
     )
 
-    if details:
-      create_audit_log(
-        action="updated",
-        entity_type="inventory_item",
-        entity_id=item_id,
-        details=details,
-        connection=connection,
-      )
+    create_audit_log(
+      action="updated",
+      entity_type="inventory_item",
+      entity_id=item_id,
+      details=details,
+      connection=connection,
+    )
 
     connection.commit()
 

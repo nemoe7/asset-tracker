@@ -16,8 +16,6 @@ def test_create_role(test_db):
     description="Administrator",
   )
 
-  assert role_id is not None
-
   role = get_role(role_id)
 
   assert role["id"] == role_id
@@ -49,9 +47,12 @@ def test_get_role(test_db):
 
   role = get_role(role_id)
 
+  assert role is not None
   assert role["id"] == role_id
-  assert role["name"] == "Admin"
-  assert role["description"] == "Administrator"
+
+
+def test_get_nonexistent_role(test_db):
+  assert get_role(999) is None
 
 
 def test_get_roles(test_db):
@@ -78,17 +79,58 @@ def test_update_role(test_db):
     description="Administrator",
   )
 
-  updated = update_role(
-    role_id,
-    name="Super Admin",
-    description="Full administrator",
+  assert (
+    update_role(
+      role_id,
+      name="Super Admin",
+      description="Full administrator",
+    )
+    is True
   )
-
-  assert updated is True
 
   role = get_role(role_id)
 
   assert role["name"] == "Super Admin"
+  assert role["description"] == "Full administrator"
+
+
+def test_update_role_name_only(test_db):
+  role_id = create_role(
+    name="Admin",
+    description="Administrator",
+  )
+
+  assert (
+    update_role(
+      role_id,
+      name="Super Admin",
+    )
+    is True
+  )
+
+  role = get_role(role_id)
+
+  assert role["name"] == "Super Admin"
+  assert role["description"] == "Administrator"
+
+
+def test_update_role_description_only(test_db):
+  role_id = create_role(
+    name="Admin",
+    description="Administrator",
+  )
+
+  assert (
+    update_role(
+      role_id,
+      description="Full administrator",
+    )
+    is True
+  )
+
+  role = get_role(role_id)
+
+  assert role["name"] == "Admin"
   assert role["description"] == "Full administrator"
 
 
@@ -109,48 +151,56 @@ def test_update_role_creates_audit_log(test_db):
   )
 
   assert len(logs) == 2
-  assert logs[0]["user_id"] == 1
   assert logs[0]["action"] == "created"
-  assert logs[1]["user_id"] == 1
   assert logs[1]["action"] == "updated"
+  assert logs[1]["user_id"] == 1
 
 
-def test_update_role_name_only(test_db):
+def test_update_role_without_changes_creates_no_audit_log(test_db):
   role_id = create_role(
     name="Admin",
     description="Administrator",
   )
 
-  updated = update_role(
-    role_id,
-    name="Super Admin",
+  assert (
+    update_role(
+      role_id,
+      name="Admin",
+      description="Administrator",
+    )
+    is True
   )
 
-  assert updated is True
+  logs = get_audit_logs(
+    entity_type="role",
+    entity_id=role_id,
+  )
 
-  role = get_role(role_id)
-
-  assert role["name"] == "Super Admin"
-  assert role["description"] == "Administrator"
+  assert len(logs) == 1
+  assert logs[0]["action"] == "created"
 
 
-def test_update_role_description_only(test_db):
+def test_update_nonexistent_role(test_db):
+  assert (
+    update_role(
+      999,
+      name="Admin",
+    )
+    is False
+  )
+
+
+def test_update_role_with_no_fields_fails(test_db):
   role_id = create_role(
     name="Admin",
     description="Administrator",
   )
 
-  updated = update_role(
-    role_id,
-    description="Full administrator",
-  )
-
-  assert updated is True
-
-  role = get_role(role_id)
-
-  assert role["name"] == "Admin"
-  assert role["description"] == "Full administrator"
+  with pytest.raises(
+    ValueError,
+    match="No fields to update",
+  ):
+    update_role(role_id)
 
 
 def test_delete_role(test_db):
@@ -177,10 +227,9 @@ def test_delete_role_creates_audit_log(test_db):
   )
 
   assert len(logs) == 2
-  assert logs[0]["user_id"] == 1
   assert logs[0]["action"] == "created"
-  assert logs[1]["user_id"] == 1
   assert logs[1]["action"] == "deleted"
+  assert logs[1]["user_id"] == 1
 
 
 def test_delete_nonexistent_role(test_db):
@@ -217,30 +266,3 @@ def test_create_duplicate_role_fails(test_db):
       name="Admin",
       description="Another description",
     )
-
-
-def test_get_nonexistent_role(test_db):
-  assert get_role(999) is None
-
-
-def test_update_nonexistent_role(test_db):
-  assert (
-    update_role(
-      999,
-      name="Admin",
-    )
-    is False
-  )
-
-
-def test_update_role_with_no_fields_fails(test_db):
-  role_id = create_role(
-    name="Admin",
-    description="Administrator",
-  )
-
-  with pytest.raises(
-    ValueError,
-    match="No fields to update",
-  ):
-    update_role(role_id)

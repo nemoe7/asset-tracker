@@ -167,6 +167,20 @@ def update_user(user_id, username=None, password=None):
     details = {}
 
     if username is not None and existing["username"] != username:
+      duplicate = connection.execute(
+        """
+        SELECT id
+        FROM users
+        WHERE username = ?
+          AND id != ?
+          AND archived_at IS NULL
+        """,
+        (username, user_id),
+      ).fetchone()
+
+      if duplicate is not None:
+        raise ValueError("Username already exists")
+
       updates.append("username = ?")
       values.append(username)
 

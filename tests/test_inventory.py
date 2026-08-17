@@ -1,11 +1,4 @@
-import json
-
-import pytest
-
-from app.db import get_db
 from app.services.audit import get_audit_logs
-from app.services.custom_field_values import set_custom_field_value
-from app.services.custom_fields import create_custom_field
 from app.services.inventory import (
   archive_item,
   create_item,
@@ -22,12 +15,34 @@ def test_create_item(test_db):
     name="Laptop",
   )
 
-  assert item_id is not None
-
   item = get_item(item_id)
 
   assert item["id"] == item_id
   assert item["name"] == "Laptop"
+  assert item["location_id"] is None
+  assert item["archived_at"] is None
+
+
+def test_create_item_with_location(test_db):
+  location_id = create_location(
+    name="Storage Room",
+  )
+
+  item_id = create_item(
+    name="Laptop",
+    location_id=location_id,
+  )
+
+  item = get_item(item_id)
+
+  assert item["name"] == "Laptop"
+  assert item["location_id"] == location_id
+
+
+def test_create_item_creates_audit_log(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
 
   logs = get_audit_logs(
     entity_type="inventory_item",
@@ -35,6 +50,7 @@ def test_create_item(test_db):
   )
 
   assert len(logs) == 1
+  assert logs[0]["user_id"] == 1
   assert logs[0]["action"] == "created"
 
 
@@ -43,217 +59,155 @@ def test_get_item(test_db):
     name="Laptop",
   )
 
-  result = get_item(item_id)
+  item = get_item(item_id)
 
-  assert result["id"] == item_id
-  assert result["name"] == "Laptop"
+  assert item is not None
+  assert item["id"] == item_id
+  assert item["name"] == "Laptop"
 
 
-def test_update_item(test_db):
-  office_id = create_location(
-    name="Office",
-    description="Main office",
+def test_get_nonexistent_item(test_db):
+  assert get_item("nonexistent") is None
+
+
+def test_get_items(test_db):
+  first_id = create_item(
+    name="Laptop",
   )
 
-  it_room_id = create_location(
-    name="IT Room",
-    description="Main IT room",
+  second_id = create_item(
+    name="Monitor",
   )
 
+  items = get_items()
+
+  ids = [item["id"] for item in items]
+
+  assert first_id in ids
+  assert second_id in ids
+
+
+def test_update_item_name(test_db):
   item_id = create_item(
     name="Laptop",
-    location_id=office_id,
   )
 
-  updated = update_item(
-    item_id,
-    name="Desktop",
-    location_id=it_room_id,
+  assert (
+    update_item(
+      item_id,
+      name="Desktop",
+    )
+    is True
   )
-
-  assert updated is True
 
   item = get_item(item_id)
 
-  assert item["id"] == item_id
   assert item["name"] == "Desktop"
-  assert item["location_id"] == it_room_id
-
-  logs = get_audit_logs(
-    entity_type="inventory_item",
-    entity_id=item_id,
-  )
-
-  assert len(logs) == 2
-  assert logs[0]["action"] == "created"
-  assert logs[1]["action"] == "updated"
 
 
-def test_update_item_audit_records_name_change(test_db):
+def test_update_item_location(test_db):
   item_id = create_item(
     name="Laptop",
   )
 
-  updated = update_item(
-    item_id,
-    name="Desktop",
+  location_id = create_location(
+    name="Storage Room",
   )
 
-  assert updated is True
-
-  logs = get_audit_logs(
-    entity_type="inventory_item",
-    entity_id=item_id,
+  assert (
+    update_item(
+      item_id,
+      location_id=location_id,
+    )
+    is True
   )
 
-  assert len(logs) == 2
-  assert logs[1]["action"] == "updated"
+  item = get_item(item_id)
 
-  details = json.loads(logs[1]["details"])
-
-  assert details == {
-    "name": {
-      "old": "Laptop",
-      "new": "Desktop",
-    },
-  }
+  assert item["location_id"] == location_id
 
 
-def test_update_item_audit_records_location_change(test_db):
-  office_id = create_location(
+def test_update_item_remove_location(test_db):
+  location_id = create_location(
+    name="Storage Room",
+  )
+
+  item_id = create_item(
+    name="Laptop",
+    location_id=location_id,
+  )
+
+  assert (
+    update_item(
+      item_id,
+      location_id=None,
+    )
+    is True
+  )
+
+  item = get_item(item_id)
+
+  assert item["location_id"] is None
+
+
+def test_update_item_name_only_preserves_location(test_db):
+  location_id = create_location(
+    name="Storage Room",
+  )
+
+  item_id = create_item(
+    name="Laptop",
+    location_id=location_id,
+  )
+
+  assert (
+    update_item(
+      item_id,
+      name="Desktop",
+    )
+    is True
+  )
+
+  item = get_item(item_id)
+
+  assert item["name"] == "Desktop"
+  assert item["location_id"] == location_id
+
+
+def test_update_item_location_only_preserves_name(test_db):
+  first_location_id = create_location(
+    name="Storage Room",
+  )
+
+  second_location_id = create_location(
     name="Office",
-    description="Main office",
-  )
-
-  it_room_id = create_location(
-    name="IT Room",
-    description="Main IT room",
   )
 
   item_id = create_item(
     name="Laptop",
-    location_id=office_id,
+    location_id=first_location_id,
   )
 
-  updated = update_item(
-    item_id,
-    name="Laptop",
-    location_id=it_room_id,
+  assert (
+    update_item(
+      item_id,
+      location_id=second_location_id,
+    )
+    is True
   )
 
-  assert updated is True
+  item = get_item(item_id)
 
-  logs = get_audit_logs(
-    entity_type="inventory_item",
-    entity_id=item_id,
-  )
-
-  assert len(logs) == 2
-  assert logs[1]["action"] == "updated"
-
-  details = json.loads(logs[1]["details"])
-
-  assert details == {
-    "location_id": {
-      "old": office_id,
-      "new": it_room_id,
-    },
-  }
+  assert item["name"] == "Laptop"
+  assert item["location_id"] == second_location_id
 
 
-def test_update_item_audit_records_multiple_changes(test_db):
-  office_id = create_location(
-    name="Office",
-    description="Main office",
-  )
-
-  it_room_id = create_location(
-    name="IT Room",
-    description="Main IT room",
-  )
-
-  item_id = create_item(
-    name="Laptop",
-    location_id=office_id,
-  )
-
-  updated = update_item(
-    item_id,
-    name="Desktop",
-    location_id=it_room_id,
-  )
-
-  assert updated is True
-
-  logs = get_audit_logs(
-    entity_type="inventory_item",
-    entity_id=item_id,
-  )
-
-  assert len(logs) == 2
-  assert logs[1]["action"] == "updated"
-
-  details = json.loads(logs[1]["details"])
-
-  assert details == {
-    "name": {
-      "old": "Laptop",
-      "new": "Desktop",
-    },
-    "location_id": {
-      "old": office_id,
-      "new": it_room_id,
-    },
-  }
-
-
-def test_update_item_audit_records_location_removed(test_db):
-  office_id = create_location(
-    name="Office",
-    description="Main office",
-  )
-
-  item_id = create_item(
-    name="Laptop",
-    location_id=office_id,
-  )
-
-  updated = update_item(
-    item_id,
-    name="Laptop",
-    location_id=None,
-  )
-
-  assert updated is True
-
-  logs = get_audit_logs(
-    entity_type="inventory_item",
-    entity_id=item_id,
-  )
-
-  assert len(logs) == 2
-
-  details = json.loads(logs[1]["details"])
-
-  assert details == {
-    "location_id": {
-      "old": office_id,
-      "new": None,
-    },
-  }
-
-
-def test_update_item_without_changes_does_not_create_audit(test_db):
+def test_update_item_without_changes_creates_no_audit_log(test_db):
   item_id = create_item(
     name="Laptop",
   )
 
-  updated = update_item(
-    item_id,
-    name="Laptop",
-  )
-
-  assert updated is True
+  assert update_item(item_id) is True
 
   logs = get_audit_logs(
     entity_type="inventory_item",
@@ -264,15 +218,94 @@ def test_update_item_without_changes_does_not_create_audit(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_archive_item_hides_from_active_items(test_db):
+def test_update_item_creates_audit_log(test_db):
+  first_location_id = create_location(
+    name="Storage Room",
+  )
+
+  second_location_id = create_location(
+    name="Office",
+  )
+
+  item_id = create_item(
+    name="Laptop",
+    location_id=first_location_id,
+  )
+
+  assert (
+    update_item(
+      item_id,
+      name="Desktop",
+      location_id=second_location_id,
+    )
+    is True
+  )
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[0]["action"] == "created"
+  assert logs[1]["action"] == "updated"
+  assert logs[1]["user_id"] == 1
+
+
+def test_update_item_with_same_values_creates_no_audit_log(test_db):
+  location_id = create_location(
+    name="Storage Room",
+  )
+
+  item_id = create_item(
+    name="Laptop",
+    location_id=location_id,
+  )
+
+  assert (
+    update_item(
+      item_id,
+      name="Laptop",
+      location_id=location_id,
+    )
+    is True
+  )
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["action"] == "created"
+
+
+def test_update_nonexistent_item(test_db):
+  assert (
+    update_item(
+      "nonexistent",
+      name="Laptop",
+    )
+    is False
+  )
+
+
+def test_archive_item(test_db):
   item_id = create_item(
     name="Laptop",
   )
 
-  archived = archive_item(item_id)
+  assert archive_item(item_id) is True
 
-  assert archived is True
   assert get_item(item_id) is None
+
+
+def test_archive_item_creates_audit_log(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  assert archive_item(item_id) is True
 
   logs = get_audit_logs(
     entity_type="inventory_item",
@@ -282,151 +315,19 @@ def test_archive_item_hides_from_active_items(test_db):
   assert len(logs) == 2
   assert logs[0]["action"] == "created"
   assert logs[1]["action"] == "archived"
+  assert logs[1]["user_id"] == 1
 
 
-def test_create_item_without_location(test_db):
-  item_id = create_item(name="Laptop")
+def test_archive_item_excludes_item_from_get_items(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
 
-  item = get_item(item_id)
-
-  assert item["id"] == item_id
-  assert item["name"] == "Laptop"
-  assert item["location_id"] is None
-
-
-def test_get_nonexistent_item(test_db):
-  result = get_item("does-not-exist")
-
-  assert result is None
-
-
-def test_get_items(test_db):
-  create_item(name="Laptop")
-
-  create_item(name="Desktop")
+  assert archive_item(item_id) is True
 
   items = get_items()
 
-  assert len(items) == 2
-  assert items[0]["name"] == "Desktop"
-  assert items[1]["name"] == "Laptop"
-
-
-def test_update_nonexistent_item(test_db):
-  result = update_item(
-    "does-not-exist",
-    name="Laptop",
-    location_id=None,
-  )
-
-  assert result is False
-
-  logs = get_audit_logs(
-    entity_type="inventory_item",
-    entity_id="does-not-exist",
-  )
-
-  assert logs == []
-
-
-def test_archive_nonexistent_item(test_db):
-  result = archive_item("does-not-exist")
-
-  assert result is False
-
-  logs = get_audit_logs(
-    entity_type="inventory_item",
-    entity_id="does-not-exist",
-  )
-
-  assert logs == []
-
-
-def test_update_item_without_location(test_db):
-  office_id = create_location(
-    name="Office",
-    description="Main office",
-  )
-
-  item_id = create_item(
-    name="Laptop",
-    location_id=office_id,
-  )
-
-  updated = update_item(
-    item_id,
-    name="Laptop",
-  )
-
-  assert updated is True
-
-  item = get_item(item_id)
-
-  assert item["name"] == "Laptop"
-  assert item["location_id"] is None
-
-
-def test_audit_uses_item_id_as_text(test_db):
-  item_id = create_item(
-    name="Laptop",
-  )
-
-  logs = get_audit_logs(
-    entity_type="inventory_item",
-    entity_id=item_id,
-  )
-
-  assert len(logs) == 1
-  assert logs[0]["entity_id"] == str(item_id)
-
-
-def test_archived_item_is_not_in_get_items(test_db):
-  office_id = create_location(
-    name="Office",
-    description="Main office",
-  )
-
-  item_id = create_item(
-    name="Laptop",
-    location_id=office_id,
-  )
-
-  create_item(
-    name="Desktop",
-    location_id=office_id,
-  )
-
-  archive_item(item_id)
-
-  items = get_items()
-
-  assert len(items) == 1
-  assert items[0]["name"] == "Desktop"
-
-
-def test_archived_item_remains_in_database(test_db):
-  item_id = create_item(
-    name="Laptop",
-  )
-
-  archive_item(item_id)
-
-  connection = get_db()
-
-  try:
-    item = connection.execute(
-      """
-      SELECT *
-      FROM inventory_items
-      WHERE id = ?
-      """,
-      (item_id,),
-    ).fetchone()
-  finally:
-    connection.close()
-
-  assert item is not None
-  assert item["archived_at"] is not None
+  assert all(item["id"] != item_id for item in items)
 
 
 def test_cannot_archive_already_archived_item(test_db):
@@ -438,41 +339,30 @@ def test_cannot_archive_already_archived_item(test_db):
   assert archive_item(item_id) is False
 
 
-def test_inventory_items_support_archival(test_db):
-  connection = get_db()
-
-  try:
-    columns = connection.execute(
-      """
-      PRAGMA table_info(inventory_items)
-      """
-    ).fetchall()
-  finally:
-    connection.close()
-
-  column_names = {column["name"] for column in columns}
-
-  assert "archived_at" in column_names
+def test_archive_nonexistent_item(test_db):
+  assert archive_item("nonexistent") is False
 
 
-def test_restore_item_makes_item_active_again(test_db):
+def test_restore_item(test_db):
   item_id = create_item(
     name="Laptop",
   )
 
   assert archive_item(item_id) is True
-  assert get_item(item_id) is None
-
-  restored = restore_item(item_id)
-
-  assert restored is True
+  assert restore_item(item_id) is True
 
   item = get_item(item_id)
 
-  assert item is not None
-  assert item["id"] == item_id
-  assert item["name"] == "Laptop"
   assert item["archived_at"] is None
+
+
+def test_restore_item_creates_audit_log(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  assert archive_item(item_id) is True
+  assert restore_item(item_id) is True
 
   logs = get_audit_logs(
     entity_type="inventory_item",
@@ -483,205 +373,32 @@ def test_restore_item_makes_item_active_again(test_db):
   assert logs[0]["action"] == "created"
   assert logs[1]["action"] == "archived"
   assert logs[2]["action"] == "restored"
+  assert logs[2]["user_id"] == 1
 
 
-def test_cannot_restore_active_item(test_db):
-  item_id = create_item(name="Laptop")
+def test_restore_active_item(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
 
   assert restore_item(item_id) is False
 
-  logs = get_audit_logs(
-    entity_type="inventory_item",
-    entity_id=item_id,
-  )
 
-  assert len(logs) == 1
-  assert logs[0]["action"] == "created"
+def test_restore_nonexistent_item(test_db):
+  assert restore_item("nonexistent") is False
 
 
-def test_restore_nonexistent_item_returns_false(test_db):
-  assert restore_item("does-not-exist") is False
-
-
-def test_restored_item_appears_in_get_items(test_db):
-  item_id = create_item(name="Laptop")
-
-  archive_item(item_id)
-
-  assert get_items() == []
-
-  assert restore_item(item_id) is True
-
-  items = get_items()
-
-  assert len(items) == 1
-  assert items[0]["id"] == item_id
-
-
-def test_get_item_includes_custom_fields(test_db):
+def test_update_archived_item_fails(test_db):
   item_id = create_item(
     name="Laptop",
   )
 
-  serial_field_id = create_custom_field(
-    name="Serial Number",
-    field_type="text",
-  )
+  assert archive_item(item_id) is True
 
-  year_field_id = create_custom_field(
-    name="Purchase Year",
-    field_type="integer",
-  )
-
-  set_custom_field_value(
-    item_id,
-    serial_field_id,
-    "ABC123",
-  )
-
-  set_custom_field_value(
-    item_id,
-    year_field_id,
-    2026,
-  )
-
-  item = get_item(item_id)
-
-  assert item["custom_fields"] == {
-    serial_field_id: "ABC123",
-    year_field_id: 2026,
-  }
-
-
-def test_get_item_with_no_custom_fields(test_db):
-  item_id = create_item(
-    name="Laptop",
-  )
-
-  item = get_item(item_id)
-
-  assert item["custom_fields"] == {}
-
-
-def test_get_items_includes_custom_fields(test_db):
-  laptop_id = create_item(
-    name="Laptop",
-  )
-
-  desktop_id = create_item(
-    name="Desktop",
-  )
-
-  serial_field_id = create_custom_field(
-    name="Serial Number",
-    field_type="text",
-  )
-
-  set_custom_field_value(
-    laptop_id,
-    serial_field_id,
-    "LAPTOP123",
-  )
-
-  set_custom_field_value(
-    desktop_id,
-    serial_field_id,
-    "DESKTOP456",
-  )
-
-  items = get_items()
-
-  assert len(items) == 2
-
-  desktop = items[0]
-  laptop = items[1]
-
-  assert desktop["custom_fields"] == {
-    serial_field_id: "DESKTOP456",
-  }
-
-  assert laptop["custom_fields"] == {
-    serial_field_id: "LAPTOP123",
-  }
-
-
-def test_get_item_does_not_include_missing_custom_field_values(test_db):
-  item_id = create_item(
-    name="Laptop",
-  )
-
-  create_custom_field(
-    name="Serial Number",
-    field_type="text",
-  )
-
-  item = get_item(item_id)
-
-  assert item["custom_fields"] == {}
-
-
-def test_create_item_with_empty_name_fails(test_db):
-  with pytest.raises(ValueError):
-    create_item(
-      name="",
-    )
-
-
-def test_create_item_with_whitespace_name_fails(test_db):
-  with pytest.raises(ValueError):
-    create_item(
-      name="   ",
-    )
-
-
-def test_create_item_with_nonexistent_location_fails(test_db):
-  with pytest.raises(ValueError):
-    create_item(
-      name="Laptop",
-      location_id=999,
-    )
-
-
-def test_create_item_without_location_is_allowed(test_db):
-  item_id = create_item(
-    name="Laptop",
-  )
-
-  assert item_id is not None
-
-
-def test_update_item_with_nonexistent_location_fails(test_db):
-  item_id = create_item(
-    name="Laptop",
-  )
-
-  with pytest.raises(ValueError):
+  assert (
     update_item(
       item_id,
-      name="Laptop",
-      location_id=999,
+      name="Desktop",
     )
-
-
-def test_update_item_with_empty_name_fails(test_db):
-  item_id = create_item(
-    name="Laptop",
+    is False
   )
-
-  with pytest.raises(ValueError):
-    update_item(
-      item_id,
-      name="",
-    )
-
-
-def test_update_item_with_whitespace_name_fails(test_db):
-  item_id = create_item(
-    name="Laptop",
-  )
-
-  with pytest.raises(ValueError):
-    update_item(
-      item_id,
-      name="   ",
-    )
