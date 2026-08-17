@@ -1,0 +1,182 @@
+import pytest
+from app.services.permissions import (
+  create_permission,
+  delete_permission,
+  get_permission,
+  get_permissions,
+  update_permission,
+)
+
+
+def test_create_permission(test_db):
+  permission_id = create_permission(
+    name="inventory.view",
+    description="View inventory",
+  )
+
+  assert permission_id is not None
+
+  permission = get_permission(permission_id)
+
+  assert permission["id"] == permission_id
+  assert permission["name"] == "inventory.view"
+  assert permission["description"] == "View inventory"
+
+
+def test_get_permission(test_db):
+  permission_id = create_permission(
+    name="inventory.view",
+    description="View inventory",
+  )
+
+  permission = get_permission(permission_id)
+
+  assert permission["id"] == permission_id
+  assert permission["name"] == "inventory.view"
+  assert permission["description"] == "View inventory"
+
+
+def test_get_permissions(test_db):
+  create_permission(
+    name="inventory.view",
+    description="View inventory",
+  )
+
+  create_permission(
+    name="inventory.edit",
+    description="Edit inventory",
+  )
+
+  permissions = get_permissions()
+
+  assert len(permissions) == 2
+  assert permissions[0]["name"] == "inventory.edit"
+  assert permissions[1]["name"] == "inventory.view"
+
+
+def test_update_permission(test_db):
+  permission_id = create_permission(
+    name="inventory.view",
+    description="View inventory",
+  )
+
+  updated = update_permission(
+    permission_id,
+    name="inventory.read",
+    description="Read inventory",
+  )
+
+  assert updated is True
+
+  permission = get_permission(permission_id)
+
+  assert permission["name"] == "inventory.read"
+  assert permission["description"] == "Read inventory"
+
+
+def test_update_permission_name_only(test_db):
+  permission_id = create_permission(
+    name="inventory.view",
+    description="View inventory",
+  )
+
+  updated = update_permission(
+    permission_id,
+    name="inventory.read",
+  )
+
+  assert updated is True
+
+  permission = get_permission(permission_id)
+
+  assert permission["name"] == "inventory.read"
+  assert permission["description"] == "View inventory"
+
+
+def test_update_permission_description_only(test_db):
+  permission_id = create_permission(
+    name="inventory.view",
+    description="View inventory",
+  )
+
+  updated = update_permission(
+    permission_id,
+    description="Read inventory",
+  )
+
+  assert updated is True
+
+  permission = get_permission(permission_id)
+
+  assert permission["name"] == "inventory.view"
+  assert permission["description"] == "Read inventory"
+
+
+def test_delete_permission(test_db):
+  permission_id = create_permission(
+    name="inventory.view",
+    description="View inventory",
+  )
+
+  assert delete_permission(permission_id) is True
+  assert get_permission(permission_id) is None
+
+
+def test_delete_nonexistent_permission(test_db):
+  assert delete_permission(999) is False
+
+
+def test_create_permission_with_empty_name_fails(test_db):
+  with pytest.raises(ValueError):
+    create_permission(
+      name="",
+      description="View inventory",
+    )
+
+
+def test_create_permission_with_whitespace_name_fails(test_db):
+  with pytest.raises(ValueError):
+    create_permission(
+      name="   ",
+      description="View inventory",
+    )
+
+
+def test_create_duplicate_permission_fails(test_db):
+  create_permission(
+    name="inventory.view",
+    description="View inventory",
+  )
+
+  with pytest.raises(
+    ValueError,
+    match="Permission already exists",
+  ):
+    create_permission(
+      name="inventory.view",
+      description="Another description",
+    )
+
+
+def test_get_nonexistent_permission(test_db):
+  assert get_permission(999) is None
+
+
+def test_update_nonexistent_permission(test_db):
+  assert (
+    update_permission(
+      999,
+      name="inventory.view",
+    )
+    is False
+  )
+
+
+def test_update_permission_with_no_fields_fails(test_db):
+  permission_id = create_permission(
+    name="inventory.view",
+    description="View inventory",
+  )
+
+  with pytest.raises(ValueError, match="No fields to update"):
+    update_permission(permission_id)
