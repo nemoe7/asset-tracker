@@ -9,6 +9,7 @@ class UserPermissionAlreadyExistsError(Exception):
 def assign_permission_to_user(
   user_id,
   permission_id,
+  allowed=True,
 ):
   connection = get_db()
 
@@ -36,6 +37,9 @@ def assign_permission_to_user(
 
     if permission is None:
       raise ValueError("Permission does not exist")
+
+    if not isinstance(allowed, bool):
+      raise ValueError("Allowed must be a boolean")
 
     existing = connection.execute(
       """
@@ -65,7 +69,7 @@ def assign_permission_to_user(
       (
         user_id,
         permission_id,
-        1,
+        1 if allowed else 0,
       ),
     )
 
