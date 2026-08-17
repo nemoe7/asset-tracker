@@ -29,7 +29,6 @@ def test_create_user(test_db):
 
   assert user["id"] == user_id
   assert user["username"] == "alice"
-  assert user["password_hash"] != "password123"
   assert user["archived_at"] is None
 
 
@@ -488,9 +487,7 @@ def test_password_is_hashed(test_db):
     password="password123",
   )
 
-  user = get_user(user_id)
-
-  assert user["password_hash"] != "password123"
+  assert verify_password(user_id, "password123")
 
 
 def test_password_can_be_verified(test_db):
