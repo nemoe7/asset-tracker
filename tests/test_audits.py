@@ -10,7 +10,7 @@ from app.services.audit import (
 )
 
 
-def test_create_audit_log(test_db):
+def test_create_audit_log(test_db, authenticated_test_user):
   audit_id = create_audit_log(
     action="created",
     entity_type="inventory_item",
@@ -28,7 +28,7 @@ def test_create_audit_log(test_db):
   assert audit["timestamp"] is not None
 
 
-def test_create_audit_log_with_details(test_db):
+def test_create_audit_log_with_details(test_db, authenticated_test_user):
   details = {
     "old_location_id": 1,
     "new_location_id": None,
@@ -46,7 +46,7 @@ def test_create_audit_log_with_details(test_db):
   assert json.loads(audit["details"]) == details
 
 
-def test_get_audit_log(test_db):
+def test_get_audit_log(test_db, authenticated_test_user):
   audit_id = create_audit_log(
     action="created",
     entity_type="inventory_item",
@@ -63,7 +63,7 @@ def test_get_nonexistent_audit_log(test_db):
   assert get_audit_log(999) is None
 
 
-def test_get_audit_logs(test_db):
+def test_get_audit_logs(test_db, authenticated_test_user):
   create_audit_log(
     action="created",
     entity_type="inventory_item",
@@ -83,7 +83,7 @@ def test_get_audit_logs(test_db):
   assert logs[1]["action"] == "updated"
 
 
-def test_get_audit_logs_for_entity(test_db):
+def test_get_audit_logs_for_entity(test_db, authenticated_test_user):
   create_audit_log(
     action="created",
     entity_type="inventory_item",
@@ -113,7 +113,7 @@ def test_get_audit_logs_for_entity(test_db):
   assert logs[0]["entity_id"] == "1"
 
 
-def test_get_audit_logs_for_entity_type(test_db):
+def test_get_audit_logs_for_entity_type(test_db, authenticated_test_user):
   create_audit_log(
     action="created",
     entity_type="inventory_item",

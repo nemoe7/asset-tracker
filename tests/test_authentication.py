@@ -9,7 +9,7 @@ from app.services.users import (
 )
 
 
-def test_valid_credentials_are_accepted(test_db):
+def test_valid_credentials_are_accepted(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="correct-password",
@@ -24,7 +24,7 @@ def test_valid_credentials_are_accepted(test_db):
   )
 
 
-def test_invalid_password_is_rejected(test_db):
+def test_invalid_password_is_rejected(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="correct-password",
@@ -49,7 +49,7 @@ def test_nonexistent_user_is_rejected(test_db):
   )
 
 
-def test_archived_user_is_rejected(test_db):
+def test_archived_user_is_rejected(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="correct-password",
@@ -66,7 +66,9 @@ def test_archived_user_is_rejected(test_db):
   )
 
 
-def test_password_hash_is_not_returned_by_user_queries(test_db):
+def test_password_hash_is_not_returned_by_user_queries(
+  test_db, authenticated_test_user
+):
   user_id = create_user(
     username="alice",
     password="correct-password",
@@ -83,7 +85,7 @@ def test_password_hash_is_not_returned_by_user_queries(test_db):
     assert "password_hash" not in result
 
 
-def test_password_is_stored_as_a_hash(test_db):
+def test_password_is_stored_as_a_hash(test_db, authenticated_test_user):
   user_id = create_user(
     username="alice",
     password="correct-password",
@@ -130,7 +132,7 @@ def test_reset_current_user_restores_previous_user(test_db):
 
 
 def test_authentication_contract_valid_credentials_set_current_user(
-  test_db,
+  test_db, authenticated_test_user
 ):
   user_id = create_user(
     username="alice",
@@ -146,7 +148,7 @@ def test_authentication_contract_valid_credentials_set_current_user(
 
 
 def test_failed_authentication_does_not_establish_user(
-  test_db,
+  test_db, authenticated_test_user
 ):
   user_id = create_user(
     username="alice",
@@ -169,7 +171,7 @@ def test_failed_authentication_does_not_establish_user(
     reset_current_user(token)
 
 
-def test_current_user_can_be_replaced(test_db):
+def test_current_user_can_be_replaced(test_db, authenticated_test_user):
   first_user_id = create_user(
     username="alice",
     password="password-one",

@@ -11,7 +11,7 @@ from app.services.user_roles import (
 from app.services.users import create_user
 
 
-def test_assign_role_to_user(test_db):
+def test_assign_role_to_user(test_db, authenticated_test_user):
   role_id = create_role(
     name="admin",
   )
@@ -31,13 +31,11 @@ def test_assign_role_to_user(test_db):
   assert roles[0]["name"] == "admin"
 
 
-def test_get_user_roles_returns_empty_for_user_without_roles(
-  test_db,
-):
+def test_get_user_roles_returns_empty_for_user_without_roles(test_db):
   assert get_user_roles(1) == []
 
 
-def test_user_can_have_multiple_roles(test_db):
+def test_user_can_have_multiple_roles(test_db, authenticated_test_user):
   first_role_id = create_role(
     name="admin",
   )
@@ -68,7 +66,7 @@ def test_user_can_have_multiple_roles(test_db):
   )
 
 
-def test_role_can_be_assigned_to_multiple_users(test_db):
+def test_role_can_be_assigned_to_multiple_users(test_db, authenticated_test_user):
   second_user_id = create_user(
     username="second_user",
     password="test_password",
@@ -92,7 +90,7 @@ def test_role_can_be_assigned_to_multiple_users(test_db):
   assert get_user_roles(second_user_id)[0]["id"] == role_id
 
 
-def test_duplicate_role_assignment_is_rejected(test_db):
+def test_duplicate_role_assignment_is_rejected(test_db, authenticated_test_user):
   role_id = create_role(
     name="admin",
   )
@@ -109,7 +107,7 @@ def test_duplicate_role_assignment_is_rejected(test_db):
     )
 
 
-def test_assign_role_to_nonexistent_user_is_rejected(test_db):
+def test_assign_role_to_nonexistent_user_is_rejected(test_db, authenticated_test_user):
   role_id = create_role(
     name="admin",
   )
@@ -129,7 +127,7 @@ def test_assign_nonexistent_role_to_user_is_rejected(test_db):
     )
 
 
-def test_remove_role_from_user(test_db):
+def test_remove_role_from_user(test_db, authenticated_test_user):
   role_id = create_role(
     name="admin",
   )
@@ -150,7 +148,7 @@ def test_remove_role_from_user(test_db):
   assert get_user_roles(1) == []
 
 
-def test_remove_missing_role_from_user_returns_false(test_db):
+def test_remove_missing_role_from_user_returns_false(test_db, authenticated_test_user):
   role_id = create_role(
     name="admin",
   )
@@ -164,13 +162,11 @@ def test_remove_missing_role_from_user_returns_false(test_db):
   )
 
 
-def test_get_user_roles_for_nonexistent_user_returns_empty(
-  test_db,
-):
+def test_get_user_roles_for_nonexistent_user_returns_empty(test_db):
   assert get_user_roles(999) == []
 
 
-def test_assign_role_creates_audit_log(test_db):
+def test_assign_role_creates_audit_log(test_db, authenticated_test_user):
   role_id = create_role(
     name="admin",
   )
@@ -190,7 +186,7 @@ def test_assign_role_creates_audit_log(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_remove_role_creates_audit_log(test_db):
+def test_remove_role_creates_audit_log(test_db, authenticated_test_user):
   role_id = create_role(
     name="admin",
   )
@@ -218,6 +214,7 @@ def test_remove_role_creates_audit_log(test_db):
 
 def test_failed_duplicate_assignment_creates_no_audit_log(
   test_db,
+  authenticated_test_user,
 ):
   role_id = create_role(
     name="admin",
@@ -243,7 +240,7 @@ def test_failed_duplicate_assignment_creates_no_audit_log(
   assert logs[0]["action"] == "created"
 
 
-def test_delete_role_cascades_user_roles(test_db):
+def test_delete_role_cascades_user_roles(test_db, authenticated_test_user):
   role_id = create_role(
     name="admin",
   )

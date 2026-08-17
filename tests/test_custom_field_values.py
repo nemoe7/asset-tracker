@@ -13,7 +13,7 @@ from app.services.custom_fields import create_custom_field
 from app.services.inventory import create_item
 
 
-def test_set_custom_field_value(test_db):
+def test_set_custom_field_value(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -38,7 +38,7 @@ def test_set_custom_field_value(test_db):
   )
 
 
-def test_get_missing_custom_field_value_returns_none(test_db):
+def test_get_missing_custom_field_value_returns_none(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -57,7 +57,7 @@ def test_get_missing_custom_field_value_returns_none(test_db):
   )
 
 
-def test_update_custom_field_value(test_db):
+def test_update_custom_field_value(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -79,7 +79,7 @@ def test_update_custom_field_value(test_db):
   )
 
 
-def test_clear_custom_field_value(test_db):
+def test_clear_custom_field_value(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -101,7 +101,9 @@ def test_clear_custom_field_value(test_db):
   )
 
 
-def test_clear_missing_custom_field_value_returns_false(test_db):
+def test_clear_missing_custom_field_value_returns_false(
+  test_db, authenticated_test_user
+):
   item_id = create_item(
     name="Laptop",
   )
@@ -120,7 +122,7 @@ def test_clear_missing_custom_field_value_returns_false(test_db):
   )
 
 
-def test_item_can_have_multiple_custom_field_values(test_db):
+def test_item_can_have_multiple_custom_field_values(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -164,7 +166,7 @@ def test_item_can_have_multiple_custom_field_values(test_db):
   )
 
 
-def test_multiple_items_can_use_same_custom_field(test_db):
+def test_multiple_items_can_use_same_custom_field(test_db, authenticated_test_user):
   first_item_id = create_item(
     name="Laptop",
   )
@@ -219,6 +221,7 @@ def test_multiple_items_can_use_same_custom_field(test_db):
 )
 def test_custom_field_value_types(
   test_db,
+  authenticated_test_user,
   field_type,
   value,
   expected,
@@ -258,6 +261,7 @@ def test_custom_field_value_types(
 )
 def test_decimal_values_preserve_precision(
   test_db,
+  authenticated_test_user,
   value,
 ):
   item_id = create_item(
@@ -284,7 +288,7 @@ def test_decimal_values_preserve_precision(
   )
 
 
-def test_invalid_integer_value_is_rejected(test_db):
+def test_invalid_integer_value_is_rejected(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -302,7 +306,7 @@ def test_invalid_integer_value_is_rejected(test_db):
     )
 
 
-def test_invalid_decimal_value_is_rejected(test_db):
+def test_invalid_decimal_value_is_rejected(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -320,7 +324,7 @@ def test_invalid_decimal_value_is_rejected(test_db):
     )
 
 
-def test_invalid_boolean_value_is_rejected(test_db):
+def test_invalid_boolean_value_is_rejected(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -338,7 +342,7 @@ def test_invalid_boolean_value_is_rejected(test_db):
     )
 
 
-def test_invalid_date_value_is_rejected(test_db):
+def test_invalid_date_value_is_rejected(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -356,7 +360,7 @@ def test_invalid_date_value_is_rejected(test_db):
     )
 
 
-def test_set_custom_field_value_creates_audit(test_db):
+def test_set_custom_field_value_creates_audit(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -381,7 +385,7 @@ def test_set_custom_field_value_creates_audit(test_db):
   assert logs[0]["action"] == "created"
 
 
-def test_update_custom_field_value_creates_audit(test_db):
+def test_update_custom_field_value_creates_audit(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
@@ -412,7 +416,7 @@ def test_update_custom_field_value_creates_audit(test_db):
   }
 
 
-def test_clear_custom_field_value_creates_audit(test_db):
+def test_clear_custom_field_value_creates_audit(test_db, authenticated_test_user):
   item_id = create_item(
     name="Laptop",
   )
