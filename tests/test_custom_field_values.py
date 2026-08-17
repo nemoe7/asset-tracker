@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 
 import pytest
 
@@ -211,7 +212,7 @@ def test_multiple_items_can_use_same_custom_field(test_db):
   [
     ("text", "ABC123", "ABC123"),
     ("integer", 123, 123),
-    ("decimal", 12.5, 12.5),
+    ("decimal", Decimal("12.50"), Decimal("12.50")),
     ("boolean", True, True),
     ("date", "2026-08-16", "2026-08-16"),
   ],
@@ -243,6 +244,43 @@ def test_custom_field_value_types(
       field_id,
     )
     == expected
+  )
+
+
+@pytest.mark.parametrize(
+  "value",
+  [
+    Decimal("0.01"),
+    Decimal("12.50"),
+    Decimal("1000.00"),
+    Decimal("123456789.123456"),
+  ],
+)
+def test_decimal_values_preserve_precision(
+  test_db,
+  value,
+):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  field_id = create_custom_field(
+    name="Purchase Price",
+    field_type="decimal",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    value,
+  )
+
+  assert (
+    get_custom_field_value(
+      item_id,
+      field_id,
+    )
+    == value
   )
 
 
@@ -353,17 +391,8 @@ def test_update_custom_field_value_creates_audit(test_db):
     field_type="text",
   )
 
-  set_custom_field_value(
-    item_id,
-    field_id,
-    "ABC123",
-  )
-
-  set_custom_field_value(
-    item_id,
-    field_id,
-    "XYZ789",
-  )
+  set_custom_field_value(item_id, field_id, "ABC123")
+  set_custom_field_value(item_id, field_id, "XYZ789")
 
   logs = get_audit_logs(
     entity_type="inventory_item_field",

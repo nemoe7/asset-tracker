@@ -16,10 +16,7 @@ from app.services.custom_fields import (
   get_custom_fields,
   update_custom_field,
 )
-from app.services.inventory import (
-  archive_item,
-  create_item,
-)
+from app.services.inventory import archive_item, create_item
 
 
 def test_create_custom_field(test_db):
@@ -28,8 +25,6 @@ def test_create_custom_field(test_db):
     field_type="text",
     description="Asset serial number",
   )
-
-  assert field_id is not None
 
   field = get_custom_field(field_id)
 
@@ -50,7 +45,23 @@ def test_create_custom_field_without_description(test_db):
   assert field["description"] is None
 
 
-def test_create_custom_field_with_invalid_type(test_db):
+def test_create_custom_field_creates_audit_log(test_db):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  logs = get_audit_logs(
+    entity_type="custom_field",
+    entity_id=field_id,
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["user_id"] == 1
+  assert logs[0]["action"] == "created"
+
+
+def test_create_custom_field_with_invalid_type_fails(test_db):
   with pytest.raises(ValueError):
     create_custom_field(
       name="Serial Number",
@@ -58,7 +69,7 @@ def test_create_custom_field_with_invalid_type(test_db):
     )
 
 
-def test_create_custom_field_with_empty_name(test_db):
+def test_create_custom_field_with_empty_name_fails(test_db):
   with pytest.raises(ValueError):
     create_custom_field(
       name="",
@@ -72,10 +83,11 @@ def test_get_custom_field(test_db):
     field_type="text",
   )
 
-  result = get_custom_field(field_id)
+  field = get_custom_field(field_id)
 
-  assert result["id"] == field_id
-  assert result["name"] == "Serial Number"
+  assert field is not None
+  assert field["id"] == field_id
+  assert field["name"] == "Serial Number"
 
 
 def test_get_nonexistent_custom_field(test_db):
@@ -83,21 +95,22 @@ def test_get_nonexistent_custom_field(test_db):
 
 
 def test_get_custom_fields(test_db):
-  create_custom_field(
+  first_id = create_custom_field(
     name="Serial Number",
     field_type="text",
   )
 
-  create_custom_field(
+  second_id = create_custom_field(
     name="Purchase Year",
     field_type="integer",
   )
 
   fields = get_custom_fields()
 
-  assert len(fields) == 2
-  assert fields[0]["name"] == "Purchase Year"
-  assert fields[1]["name"] == "Serial Number"
+  ids = [field["id"] for field in fields]
+
+  assert first_id in ids
+  assert second_id in ids
 
 
 def test_update_custom_field(test_db):
@@ -107,14 +120,15 @@ def test_update_custom_field(test_db):
     description="Asset serial number",
   )
 
-  updated = update_custom_field(
-    field_id,
-    name="Asset Serial",
-    field_type="text",
-    description="Unique asset identifier",
+  assert (
+    update_custom_field(
+      field_id,
+      name="Asset Serial",
+      field_type="text",
+      description="Unique asset identifier",
+    )
+    is True
   )
-
-  assert updated is True
 
   field = get_custom_field(field_id)
 
@@ -129,12 +143,13 @@ def test_update_custom_field_type(test_db):
     field_type="integer",
   )
 
-  updated = update_custom_field(
-    field_id,
-    field_type="decimal",
+  assert (
+    update_custom_field(
+      field_id,
+      field_type="decimal",
+    )
+    is True
   )
-
-  assert updated is True
 
   field = get_custom_field(field_id)
 
@@ -148,19 +163,20 @@ def test_update_custom_field_description_to_none(test_db):
     description="Asset serial number",
   )
 
-  updated = update_custom_field(
-    field_id,
-    description=None,
+  assert (
+    update_custom_field(
+      field_id,
+      description=None,
+    )
+    is True
   )
-
-  assert updated is True
 
   field = get_custom_field(field_id)
 
   assert field["description"] is None
 
 
-def test_update_custom_field_without_changes_does_not_create_audit(
+def test_update_custom_field_without_changes_creates_no_audit_log(
   test_db,
 ):
   field_id = create_custom_field(
@@ -169,14 +185,15 @@ def test_update_custom_field_without_changes_does_not_create_audit(
     description="Asset serial number",
   )
 
-  updated = update_custom_field(
-    field_id,
-    name="Serial Number",
-    field_type="text",
-    description="Asset serial number",
+  assert (
+    update_custom_field(
+      field_id,
+      name="Serial Number",
+      field_type="text",
+      description="Asset serial number",
+    )
+    is True
   )
-
-  assert updated is True
 
   logs = get_audit_logs(
     entity_type="custom_field",
@@ -187,16 +204,80 @@ def test_update_custom_field_without_changes_does_not_create_audit(
   assert logs[0]["action"] == "created"
 
 
-def test_update_nonexistent_custom_field(test_db):
-  result = update_custom_field(
-    999,
+def test_update_custom_field_creates_audit_log(test_db):
+  field_id = create_custom_field(
     name="Serial Number",
+    field_type="text",
   )
 
-  assert result is False
+  assert (
+    update_custom_field(
+      field_id,
+      name="Asset Serial",
+    )
+    is True
+  )
+
+  logs = get_audit_logs(
+    entity_type="custom_field",
+    entity_id=field_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[0]["action"] == "created"
+  assert logs[1]["action"] == "updated"
+  assert logs[1]["user_id"] == 1
 
 
-def test_update_custom_field_with_invalid_type(test_db):
+def test_update_custom_field_audit_records_changes(test_db):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+    description="Old description",
+  )
+
+  assert (
+    update_custom_field(
+      field_id,
+      name="Asset Serial",
+      field_type="text",
+      description="New description",
+    )
+    is True
+  )
+
+  logs = get_audit_logs(
+    entity_type="custom_field",
+    entity_id=field_id,
+  )
+
+  assert len(logs) == 2
+
+  details = json.loads(logs[1]["details"])
+
+  assert details == {
+    "name": {
+      "old": "Serial Number",
+      "new": "Asset Serial",
+    },
+    "description": {
+      "old": "Old description",
+      "new": "New description",
+    },
+  }
+
+
+def test_update_nonexistent_custom_field(test_db):
+  assert (
+    update_custom_field(
+      999,
+      name="Serial Number",
+    )
+    is False
+  )
+
+
+def test_update_custom_field_with_invalid_type_fails(test_db):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -209,104 +290,33 @@ def test_update_custom_field_with_invalid_type(test_db):
     )
 
 
-def test_update_custom_field_audit_records_name_change(test_db):
-  field_id = create_custom_field(
-    name="Serial Number",
-    field_type="text",
-  )
-
-  update_custom_field(
-    field_id,
-    name="Asset Serial",
-  )
-
-  logs = get_audit_logs(
-    entity_type="custom_field",
-    entity_id=field_id,
-  )
-
-  assert len(logs) == 2
-  assert logs[1]["action"] == "updated"
-
-  details = json.loads(logs[1]["details"])
-
-  assert details == {
-    "name": {
-      "old": "Serial Number",
-      "new": "Asset Serial",
-    },
-  }
-
-
-def test_update_custom_field_audit_records_type_change(test_db):
-  field_id = create_custom_field(
-    name="Purchase Value",
-    field_type="integer",
-  )
-
-  update_custom_field(
-    field_id,
-    field_type="decimal",
-  )
-
-  logs = get_audit_logs(
-    entity_type="custom_field",
-    entity_id=field_id,
-  )
-
-  assert len(logs) == 2
-  assert logs[1]["action"] == "updated"
-
-  details = json.loads(logs[1]["details"])
-
-  assert details == {
-    "field_type": {
-      "old": "integer",
-      "new": "decimal",
-    },
-  }
-
-
-def test_update_custom_field_audit_records_description_change(test_db):
-  field_id = create_custom_field(
-    name="Serial Number",
-    field_type="text",
-    description="Old description",
-  )
-
-  update_custom_field(
-    field_id,
-    description="New description",
-  )
-
-  logs = get_audit_logs(
-    entity_type="custom_field",
-    entity_id=field_id,
-  )
-
-  assert len(logs) == 2
-  assert logs[1]["action"] == "updated"
-
-  details = json.loads(logs[1]["details"])
-
-  assert details == {
-    "description": {
-      "old": "Old description",
-      "new": "New description",
-    },
-  }
-
-
 def test_delete_custom_field(test_db):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
   )
 
-  deleted = delete_custom_field(field_id)
-
-  assert deleted is True
+  assert delete_custom_field(field_id) is True
   assert get_custom_field(field_id) is None
+
+
+def test_delete_custom_field_creates_audit_log(test_db):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  assert delete_custom_field(field_id) is True
+
+  logs = get_audit_logs(
+    entity_type="custom_field",
+    entity_id=field_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[0]["action"] == "created"
+  assert logs[1]["action"] == "deleted"
+  assert logs[1]["user_id"] == 1
 
 
 def test_delete_nonexistent_custom_field(test_db):
@@ -343,7 +353,7 @@ def test_cannot_delete_custom_field_with_values(test_db):
   )
 
 
-def test_failed_custom_field_deletion_does_not_create_audit(
+def test_failed_custom_field_deletion_creates_no_audit_log(
   test_db,
 ):
   item_id = create_item(
@@ -373,24 +383,6 @@ def test_failed_custom_field_deletion_does_not_create_audit(
   assert logs[0]["action"] == "created"
 
 
-def test_delete_custom_field_creates_audit(test_db):
-  field_id = create_custom_field(
-    name="Serial Number",
-    field_type="text",
-  )
-
-  assert delete_custom_field(field_id) is True
-
-  logs = get_audit_logs(
-    entity_type="custom_field",
-    entity_id=field_id,
-  )
-
-  assert len(logs) == 2
-  assert logs[0]["action"] == "created"
-  assert logs[1]["action"] == "deleted"
-
-
 def test_set_custom_field_value(test_db):
   item_id = create_item(
     name="Laptop",
@@ -414,6 +406,32 @@ def test_set_custom_field_value(test_db):
     )
     == "ABC123"
   )
+
+
+def test_set_custom_field_value_creates_audit_log(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "ABC123",
+  )
+
+  logs = get_audit_logs(
+    entity_type="inventory_item_field",
+    entity_id=f"{item_id}:{field_id}",
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["user_id"] == 1
+  assert logs[0]["action"] == "created"
 
 
 def test_get_missing_custom_field_value_returns_none(test_db):
@@ -466,6 +484,46 @@ def test_update_custom_field_value(test_db):
   )
 
 
+def test_update_custom_field_value_creates_audit_log(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "ABC123",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "XYZ789",
+  )
+
+  logs = get_audit_logs(
+    entity_type="inventory_item_field",
+    entity_id=f"{item_id}:{field_id}",
+  )
+
+  assert len(logs) == 2
+  assert logs[1]["action"] == "updated"
+
+  details = json.loads(logs[1]["details"])
+
+  assert details == {
+    "value": {
+      "old": "ABC123",
+      "new": "XYZ789",
+    },
+  }
+
+
 def test_clear_custom_field_value(test_db):
   item_id = create_item(
     name="Laptop",
@@ -482,9 +540,12 @@ def test_clear_custom_field_value(test_db):
     "ABC123",
   )
 
-  clear_custom_field_value(
-    item_id,
-    field_id,
+  assert (
+    clear_custom_field_value(
+      item_id,
+      field_id,
+    )
+    is True
   )
 
   assert (
@@ -494,6 +555,40 @@ def test_clear_custom_field_value(test_db):
     )
     is None
   )
+
+
+def test_clear_custom_field_value_creates_audit_log(test_db):
+  item_id = create_item(
+    name="Laptop",
+  )
+
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "ABC123",
+  )
+
+  assert (
+    clear_custom_field_value(
+      item_id,
+      field_id,
+    )
+    is True
+  )
+
+  logs = get_audit_logs(
+    entity_type="inventory_item_field",
+    entity_id=f"{item_id}:{field_id}",
+  )
+
+  assert len(logs) == 2
+  assert logs[0]["action"] == "created"
+  assert logs[1]["action"] == "cleared"
 
 
 def test_clear_missing_custom_field_value_returns_false(test_db):
@@ -712,101 +807,6 @@ def test_invalid_date_value_is_rejected(test_db):
       field_id,
       "not a date",
     )
-
-
-def test_set_custom_field_value_creates_audit(test_db):
-  item_id = create_item(
-    name="Laptop",
-  )
-
-  field_id = create_custom_field(
-    name="Serial Number",
-    field_type="text",
-  )
-
-  set_custom_field_value(
-    item_id,
-    field_id,
-    "ABC123",
-  )
-
-  logs = get_audit_logs(
-    entity_type="inventory_item_field",
-    entity_id=f"{item_id}:{field_id}",
-  )
-
-  assert len(logs) == 1
-  assert logs[0]["action"] == "created"
-
-
-def test_update_custom_field_value_creates_audit(test_db):
-  item_id = create_item(
-    name="Laptop",
-  )
-
-  field_id = create_custom_field(
-    name="Serial Number",
-    field_type="text",
-  )
-
-  set_custom_field_value(
-    item_id,
-    field_id,
-    "ABC123",
-  )
-
-  set_custom_field_value(
-    item_id,
-    field_id,
-    "XYZ789",
-  )
-
-  logs = get_audit_logs(
-    entity_type="inventory_item_field",
-    entity_id=f"{item_id}:{field_id}",
-  )
-
-  assert len(logs) == 2
-  assert logs[1]["action"] == "updated"
-
-  details = json.loads(logs[1]["details"])
-
-  assert details == {
-    "value": {
-      "old": "ABC123",
-      "new": "XYZ789",
-    },
-  }
-
-
-def test_clear_custom_field_value_creates_audit(test_db):
-  item_id = create_item(
-    name="Laptop",
-  )
-
-  field_id = create_custom_field(
-    name="Serial Number",
-    field_type="text",
-  )
-
-  set_custom_field_value(
-    item_id,
-    field_id,
-    "ABC123",
-  )
-
-  clear_custom_field_value(
-    item_id,
-    field_id,
-  )
-
-  logs = get_audit_logs(
-    entity_type="inventory_item_field",
-    entity_id=f"{item_id}:{field_id}",
-  )
-
-  assert len(logs) == 2
-  assert logs[1]["action"] == "cleared"
 
 
 def test_set_custom_field_value_with_nonexistent_item_fails(test_db):

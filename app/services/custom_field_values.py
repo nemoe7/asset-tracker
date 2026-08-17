@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
 from app.db import get_db
 from app.services.audit import create_audit_log
@@ -48,8 +49,8 @@ def _validate_value(field_type, value):
       raise ValueError("Invalid decimal value")
 
     try:
-      return float(value)
-    except (TypeError, ValueError):
+      return Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
       raise ValueError("Invalid decimal value")
 
   if field_type == "boolean":
@@ -84,7 +85,7 @@ def _deserialize_value(field_type, value):
     return int(value)
 
   if field_type == "decimal":
-    return float(value)
+    return Decimal(value)
 
   if field_type == "boolean":
     return value == "1"
