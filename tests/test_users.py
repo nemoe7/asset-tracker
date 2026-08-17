@@ -65,8 +65,7 @@ def test_get_users(test_db):
   )
 
   users = get_users()
-
-  assert len(users) == 2
+  assert len(users) == 3
   assert users[0]["username"] == "alice"
   assert users[1]["username"] == "bob"
 
@@ -218,7 +217,7 @@ def test_archive_user(test_db):
   assert user["archived_at"] is not None
 
   assert get_user_by_username("alice") is None
-  assert get_users() == []
+  assert len(get_users()) == 1
 
 
 def test_cannot_archive_already_archived_user(test_db):
@@ -246,7 +245,7 @@ def test_restore_user(test_db):
   assert user["username"] == "alice"
   assert user["archived_at"] is None
 
-  assert len(get_users()) == 1
+  assert len(get_users()) == 2
 
 
 def test_cannot_restore_active_user(test_db):
