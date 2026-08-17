@@ -617,3 +617,147 @@ def test_direct_field_deny_overrides_role_allow(test_db, authenticated_test_user
     )
     is False
   )
+
+
+def test_namespace_wildcard_permission_allows_operations(
+  test_db, authenticated_test_user
+):
+  permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    permission_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.update",
+    )
+    is True
+  )
+
+
+def test_namespace_wildcard_permission_does_not_allow_other_namespace(
+  test_db, authenticated_test_user
+):
+  permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    permission_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "users.read",
+    )
+    is False
+  )
+
+
+def test_global_wildcard_permission_allows_any_permission(
+  test_db, authenticated_test_user
+):
+  permission_id = create_permission(
+    name="*",
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    permission_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "users.delete",
+    )
+    is True
+  )
+
+
+def test_direct_deny_overrides_namespace_wildcard(test_db, authenticated_test_user):
+  wildcard_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  read_permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  role_id = create_role(
+    name="inventory_admin",
+  )
+
+  assign_permission_to_role(
+    role_id,
+    wildcard_permission_id,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    role_id,
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    read_permission_id,
+    allowed=False,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is False
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.update",
+    )
+    is True
+  )
+
+
+def test_wildcard_request_is_not_expanded(test_db, authenticated_test_user):
+  read_permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    read_permission_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.*",
+    )
+    is False
+  )
