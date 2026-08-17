@@ -1,21 +1,20 @@
 # Environment
 .env
 
-# Bruno local environments
+# Bruno
 bruno/**/environments/local.*
 
-# Virtual environments
+# Python
 .venv/
 venv/
 env/
-
-# Python cache
 __pycache__/
 *.py[cod]
-.pytest_cache
 
-# VS Code
-.vscode/
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
 
 # App data
 .cache/

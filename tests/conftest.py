@@ -21,7 +21,8 @@ def test_db(tmp_path, monkeypatch):
 
   connection = sqlite3.connect(db_path)
 
-  connection.execute("""
+  result = connection.execute(
+    """
     INSERT INTO users (
       username,
       password_hash,
@@ -34,12 +35,15 @@ def test_db(tmp_path, monkeypatch):
       datetime('now'),
       datetime('now')
     )
-  """)
+    """
+  )
+
+  user_id = result.lastrowid
 
   connection.commit()
   connection.close()
 
-  token = set_current_user(1)
+  token = set_current_user(user_id)
 
   try:
     yield db_path
