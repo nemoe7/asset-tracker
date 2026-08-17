@@ -3,7 +3,7 @@
 **Client:** The Birth-Giver
 **Developer:** nemoe7
 **Version:** 0.1
-**Last Updated:** 2026-08-15
+**Last Updated:** 2026-08-17
 
 ## 1. Introduction
 
@@ -173,6 +173,28 @@ The system shall authenticate users and enforce their assigned permissions.
 - **FR-004:** The system shall restrict access to asset information according to the user's permissions.
 - **FR-005:** The system shall enforce the same permission rules on supported desktop and mobile interfaces.
 - **FR-006:** The system shall prevent unauthenticated users from accessing protected functionality.
+
+### Permission Matching
+
+Permissions shall support wildcard matching.
+
+- An exact permission grants access only to the matching operation.
+- A permission ending in `.*` grants access to all operations within that permission namespace.
+- The permission `*` grants access to all permissions.
+- Wildcard matching applies only to permissions assigned to a user or inherited from a role.
+- Permission checks shall request a concrete permission and shall not treat a wildcard request as a request for all permissions.
+
+Examples:
+
+| Granted Permission | Requested Permission | Result |
+| --- | --- | --- |
+| `inventory.read` | `inventory.read` | Allowed |
+| `inventory.*` | `inventory.read` | Allowed |
+| `inventory.*` | `inventory.update` | Allowed |
+| `*` | `inventory.read` | Allowed |
+| `*` | `users.create` | Allowed |
+| `inventory.read` | `inventory.update` | Denied |
+| `inventory.*` | `users.create` | Denied |
 
 ## 3.2 User Management and Permissions
 
@@ -660,3 +682,4 @@ The project will be considered complete when:
 | Version | Date | Changes |
 | --- | --- | --- |
 | 0.1 | 2026-08-15 | Initial requirements |
+| 0.2 | 2026-08-17 | Defined permission matching. |
