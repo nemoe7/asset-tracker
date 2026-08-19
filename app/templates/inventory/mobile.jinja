@@ -1,0 +1,249 @@
+{% extends "base.jinja" %}
+
+{% block title %}
+Inventory
+{% endblock %}
+
+{% block content %}
+
+<main class="p-6">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <h1 class="text-2xl font-bold">
+        Inventory
+      </h1>
+
+
+      <button type="button" onclick="openQrScanner()"
+        class="rounded-lg bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-100 hover:bg-zinc-600">
+        Scan QR
+      </button>
+    </div>
+
+    <div class="relative">
+      <details class="group">
+        <summary
+          class="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full bg-zinc-700 text-sm font-semibold text-zinc-100 hover:bg-zinc-600"
+          title="{{ username }}">
+          {{ username[0]|upper }}
+        </summary>
+
+        <div class="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-zinc-700 bg-zinc-800 p-2 shadow-xl">
+          <div class="border-b border-zinc-700 px-3 py-2">
+            <p class="truncate text-sm font-medium text-zinc-100">
+              {{ username }}
+            </p>
+          </div>
+
+          <form method="post" action="{{ url_for('auth.logout') }}" class="mt-2">
+            <button type="submit"
+              class="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
+              Log out
+            </button>
+          </form>
+        </div>
+      </details>
+    </div>
+
+
+  </div>
+
+  <div class="mt-6">
+    <div class="rounded-xl border border-zinc-700 bg-zinc-800">
+      <div class="border-b border-zinc-700 p-4">
+        <form method="get" class="flex gap-3">
+          <input type="search" name="search" value="{{ search }}" placeholder="Search inventory..."
+            class="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 placeholder-zinc-500 outline-none focus:border-zinc-400">
+
+
+          <button type="submit" class="rounded-lg bg-zinc-100 px-4 py-2 font-medium text-zinc-900 hover:bg-zinc-200">
+            Search
+          </button>
+        </form>
+      </div>
+
+      <div class="divide-y divide-zinc-700">
+        {% for item in items %}
+        <div class="px-4 py-4 hover:bg-zinc-700/40">
+          <div class="font-medium text-zinc-100">
+            {{ item.name }}
+          </div>
+
+          <div class="mt-1 text-sm text-zinc-300">
+            {{ item.location_name or "—" }}
+          </div>
+
+          <div class="mt-1 text-xs text-zinc-400">
+            Updated {{ item.updated_at|datetime }}
+          </div>
+        </div>
+        {% else %}
+        <div class="px-4 py-10 text-center text-zinc-500">
+          No inventory items found.
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="flex items-center justify-between border-t border-zinc-700 p-4">
+        <span class="text-sm text-zinc-400">
+          Page {{ page }} of {{ total_pages }}
+        </span>
+
+        <div class="flex gap-2">
+          {% if page > 1 %}
+          <a href="?page={{ page - 1 }}&search={{ search }}"
+            class="rounded-lg border border-zinc-600 px-4 py-2 text-sm hover:bg-zinc-700">
+            Previous
+          </a>
+          {% endif %}
+
+          {% if page < total_pages %} <a href="?page={{ page + 1 }}&search={{ search }}"
+            class="rounded-lg border border-zinc-600 px-4 py-2 text-sm hover:bg-zinc-700">
+            Next
+            </a>
+            {% endif %}
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+</main>
+
+<dialog id="qr-scanner-modal"
+  class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+  <div class="p-6">
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-semibold">
+        Scan QR Code
+      </h2>
+
+
+      <button type="button" onclick="closeQrScanner()" class="text-2xl text-zinc-400 hover:text-zinc-100">
+        &times;
+      </button>
+    </div>
+
+    <div class="mt-5 overflow-hidden rounded-xl bg-black">
+      <div id="qr-reader" class="w-full"></div>
+    </div>
+
+    <p id="qr-scanner-status" class="mt-4 text-center text-sm text-zinc-400">
+      Point your camera at an inventory QR code.
+    </p>
+
+
+  </div>
+</dialog>
+
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<script>
+  let qrScanner = null;
+  let qrScannerRunning = false;
+
+  function openQrScanner() {
+    const modal = document.getElementById("qr-scanner-modal");
+
+    modal.showModal();
+
+    startQrScanner();
+  }
+
+  async function startQrScanner() {
+    const status = document.getElementById("qr-scanner-status");
+
+    if (qrScannerRunning) {
+      return;
+    }
+
+    try {
+      status.textContent = "Requesting camera access...";
+
+      qrScanner = new Html5Qrcode("qr-reader");
+
+      await qrScanner.start(
+        {
+          facingMode: "environment"
+        },
+        {
+          fps: 10,
+          qrbox: {
+            width: 250,
+            height: 250
+          }
+        },
+        onQrCodeScanned,
+        () => {
+          // Ignore failed frames.
+        }
+      );
+
+      qrScannerRunning = true;
+
+      status.textContent =
+        "Point your camera at an inventory QR code.";
+    } catch (error) {
+      console.error("QR scanner error:", error);
+
+      qrScanner = null;
+      qrScannerRunning = false;
+
+      status.textContent =
+        error?.message ||
+        "Unable to access the camera.";
+    }
+  }
+
+  async function onQrCodeScanned(decodedText) {
+    if (!qrScannerRunning) {
+      return;
+    }
+
+    document.getElementById("qr-scanner-status").textContent =
+      "QR code scanned.";
+
+    await stopQrScanner();
+
+    window.location.href =
+      "{{ url_for('main.index') }}" +
+      "?id=" +
+      encodeURIComponent(decodedText);
+  }
+
+  async function stopQrScanner() {
+    if (!qrScanner) {
+      qrScannerRunning = false;
+      return;
+    }
+
+    try {
+      if (qrScannerRunning) {
+        await qrScanner.stop();
+      }
+
+      qrScanner.clear();
+    } catch (error) {
+      console.error("QR scanner stop error:", error);
+    } finally {
+      qrScanner = null;
+      qrScannerRunning = false;
+    }
+  }
+
+  async function closeQrScanner() {
+    await stopQrScanner();
+
+    document
+      .getElementById("qr-scanner-modal")
+      .close();
+  }
+
+  document
+    .getElementById("qr-scanner-modal")
+    .addEventListener("close", () => {
+      stopQrScanner();
+    });
+</script>
+
+{% endblock %}
