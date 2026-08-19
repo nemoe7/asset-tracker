@@ -13,7 +13,6 @@ Manage Users
         Manage Users
       </h1>
 
-
       <p class="mt-1 text-sm text-zinc-400">
         Manage user accounts and access.
       </p>
@@ -23,8 +22,6 @@ Manage Users
       class="rounded-lg border border-zinc-600 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700">
       Back
     </a>
-
-
   </div>
 
   <div class="mt-6 rounded-xl border border-zinc-700 bg-zinc-800">
@@ -32,7 +29,6 @@ Manage Users
       <h2 class="font-semibold">
         Users
       </h2>
-
 
       <button type="button" onclick="document.getElementById('add-user-modal').showModal()"
         class="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-200">
@@ -115,8 +111,6 @@ Manage Users
         </tbody>
       </table>
     </div>
-
-
   </div>
 </main>
 
@@ -129,20 +123,51 @@ Manage Users
         Add User
       </h2>
 
-
       <button type="button" onclick="document.getElementById('add-user-modal').close()"
         class="text-2xl text-zinc-400 hover:text-zinc-100">
         &times;
       </button>
     </div>
 
+    {% if archived_user %}
+    <div class="mt-4 rounded-lg border border-yellow-900 bg-yellow-950/50 px-4 py-3">
+      <p class="text-sm font-medium text-yellow-300">
+        This username belongs to an archived user.
+      </p>
+
+      <p class="mt-1 text-sm text-yellow-400">
+        Do you want to restore <strong>{{ archived_user.username }}</strong>
+        instead of creating a new user?
+      </p>
+
+      <form method="post" action="{{ url_for('admin.restore_user_route', user_id=archived_user.id) }}"
+        class="mt-4 flex justify-end gap-3">
+
+        <button type="button" onclick="document.getElementById('add-user-modal').close()"
+          class="rounded-lg border border-zinc-600 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700">
+          Cancel
+        </button>
+
+        <button type="submit"
+          class="rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-zinc-950 hover:bg-yellow-400">
+          Restore User
+        </button>
+      </form>
+    </div>
+    {% elif error %}
+    <div class="mt-4 rounded-lg border border-red-900 bg-red-950/50 px-4 py-3 text-sm text-red-300">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    {% if not archived_user %}
     <form method="post" action="{{ url_for('admin.create_user_route') }}" class="mt-6 space-y-5">
       <div>
         <label for="user-username" class="block text-sm font-medium text-zinc-300">
           Username
         </label>
 
-        <input id="user-username" name="username" type="text" required
+        <input id="user-username" name="username" type="text" value="{{ username or '' }}" required
           class="mt-2 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
       </div>
 
@@ -181,13 +206,11 @@ Manage Users
         </button>
       </div>
     </form>
-
-
+    {% endif %}
   </div>
 </dialog>
 
 {% for user in users %}
-
 <dialog id="edit-user-{{ user.id }}"
   class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
 
@@ -196,7 +219,6 @@ Manage Users
       <h2 class="text-xl font-semibold">
         Edit User
       </h2>
-
 
       <button type="button" onclick="document.getElementById('edit-user-{{ user.id }}').close()"
         class="text-2xl text-zinc-400 hover:text-zinc-100">
@@ -248,7 +270,7 @@ Manage Users
           Archive
         </button>
         {% else %}
-        <button type="submit" formaction="{{ url_for('admin.restore_user', user_id=user.id) }}"
+        <button type="submit" formaction="{{ url_for('admin.restore_user_route', user_id=user.id) }}"
           class="rounded-lg px-4 py-2 text-sm text-green-400 hover:bg-green-950/50 hover:text-green-300">
           Restore
         </button>
@@ -266,9 +288,14 @@ Manage Users
         </div>
       </div>
     </form>
-
-
   </div>
 </dialog>
 {% endfor %}
+
+{% if error or archived_user %}
+<script>
+  document.getElementById("add-user-modal").showModal();
+</script>
+{% endif %}
+
 {% endblock %}

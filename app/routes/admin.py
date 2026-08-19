@@ -1,6 +1,5 @@
 from flask import (
   Blueprint,
-  flash,
   redirect,
   render_template,
   request,
@@ -12,6 +11,7 @@ from app.services.authorization import permission_required
 from app.services.users import (
   archive_user,
   create_user,
+  get_user_by_username,
   get_users,
   restore_user,
   update_user,
@@ -47,11 +47,28 @@ def create_user_route():
       password=password,
     )
   except ValueError as error:
+    archived_user = None
+
+    if str(error) == "Username belongs to an archived user":
+      archived_user = get_user_by_username(
+        username,
+        include_archived=True,
+      )
+
+      if archived_user is None:
+        return render_template(
+          "admin/users.jinja",
+          users=get_users(),
+          error="Unable to restore archived user.",
+          username=username,
+        )
+
     return render_template(
       "admin/users.jinja",
       users=get_users(),
       error=str(error),
       username=username,
+      archived_user=archived_user,
     )
 
   return redirect(url_for("admin.users"))
