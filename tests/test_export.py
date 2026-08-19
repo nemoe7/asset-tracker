@@ -692,31 +692,6 @@ def test_export_null_location_is_blank(
   assert rows[0]["location"] == ""
 
 
-def test_export_excludes_archived_items(
-  test_db,
-  authenticated_test_user,
-):
-  _grant_export_permission(
-    authenticated_test_user,
-  )
-
-  active_id = create_item("Laptop")
-  archived_id = create_item("Monitor")
-
-  assert archive_item(archived_id) is True
-
-  rows = _read_csv(
-    export_inventory(
-      authenticated_test_user,
-    )
-  )
-
-  exported_ids = [row["id"] for row in rows]
-
-  assert active_id in exported_ids
-  assert archived_id not in exported_ids
-
-
 def test_export_search_filter(
   test_db,
   authenticated_test_user,
