@@ -23,7 +23,7 @@ def create_permission(name, description=None):
     ).fetchone()
 
     if existing is not None:
-      raise ValueError("Permission already exists")
+      return existing["id"]
 
     cursor = connection.execute(
       """

@@ -1,3 +1,7 @@
+from functools import wraps
+
+from flask import abort, session
+
 from app.db import get_db
 
 
@@ -126,3 +130,22 @@ def has_permission(user_id, permission_name):
     return False
   finally:
     connection.close()
+
+
+def permission_required(permission_name):
+  def decorator(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+      user_id = session.get("user_id")
+
+      if user_id is None:
+        abort(403)
+
+      if not has_permission(user_id, permission_name):
+        abort(403)
+
+      return view(*args, **kwargs)
+
+    return wrapped
+
+  return decorator

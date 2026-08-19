@@ -1,0 +1,274 @@
+{% extends "base.jinja" %}
+
+{% block title %}
+Manage Users
+{% endblock %}
+
+{% block content %}
+
+<main class="p-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold">
+        Manage Users
+      </h1>
+
+
+      <p class="mt-1 text-sm text-zinc-400">
+        Manage user accounts and access.
+      </p>
+    </div>
+
+    <a href="{{ url_for('main.index') }}"
+      class="rounded-lg border border-zinc-600 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700">
+      Back
+    </a>
+
+
+  </div>
+
+  <div class="mt-6 rounded-xl border border-zinc-700 bg-zinc-800">
+    <div class="flex items-center justify-between border-b border-zinc-700 p-4">
+      <h2 class="font-semibold">
+        Users
+      </h2>
+
+
+      <button type="button" onclick="document.getElementById('add-user-modal').showModal()"
+        class="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-200">
+        Add User
+      </button>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="border-b border-zinc-700 text-zinc-400">
+          <tr>
+            <th class="px-4 py-3 font-medium">
+              Username
+            </th>
+
+            <th class="px-4 py-3 font-medium">
+              Roles
+            </th>
+
+            <th class="px-4 py-3 font-medium">
+              Created
+            </th>
+
+            <th class="px-4 py-3 font-medium">
+              Status
+            </th>
+
+            <th class="px-4 py-3">
+            </th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-zinc-700">
+          {% for user in users %}
+          <tr class="hover:bg-zinc-700/40">
+            <td class="px-4 py-3 font-medium text-zinc-100">
+              {{ user.username }}
+            </td>
+
+            <td class="px-4 py-3 text-zinc-300">
+              {% if user.roles %}
+              {{ user.roles|join(", ") }}
+              {% else %}
+              <span class="text-zinc-500">
+                No roles
+              </span>
+              {% endif %}
+            </td>
+
+            <td class="px-4 py-3 text-zinc-400">
+              {{ user.created_at|datetime }}
+            </td>
+
+            <td class="px-4 py-3">
+              {% if user.archived_at %}
+              <span class="text-red-400">
+                Archived
+              </span>
+              {% else %}
+              <span class="text-green-400">
+                Active
+              </span>
+              {% endif %}
+            </td>
+
+            <td class="px-4 py-3 text-right">
+              <button type="button" onclick="document.getElementById('edit-user-{{ user.id }}').showModal()"
+                class="rounded-lg px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
+                Edit
+              </button>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="px-4 py-10 text-center text-zinc-500">
+              No users found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+
+  </div>
+</main>
+
+<dialog id="add-user-modal"
+  class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+
+  <div class="p-6">
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-semibold">
+        Add User
+      </h2>
+
+
+      <button type="button" onclick="document.getElementById('add-user-modal').close()"
+        class="text-2xl text-zinc-400 hover:text-zinc-100">
+        &times;
+      </button>
+    </div>
+
+    <form method="post" action="{{ url_for('admin.create_user_route') }}" class="mt-6 space-y-5">
+      <div>
+        <label for="user-username" class="block text-sm font-medium text-zinc-300">
+          Username
+        </label>
+
+        <input id="user-username" name="username" type="text" required
+          class="mt-2 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
+      </div>
+
+      <div>
+        <label for="user-password" class="block text-sm font-medium text-zinc-300">
+          Password
+        </label>
+
+        <input id="user-password" name="password" type="password" required
+          class="mt-2 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-zinc-300">
+          Roles
+        </label>
+
+        <div class="mt-2 space-y-2">
+          {% for role in roles %}
+          <label class="flex items-center gap-2 text-sm text-zinc-300">
+            <input type="checkbox" name="role_ids" value="{{ role.id }}" class="rounded border-zinc-600 bg-zinc-900">
+            {{ role.name }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button type="button" onclick="document.getElementById('add-user-modal').close()"
+          class="rounded-lg border border-zinc-600 px-4 py-2 text-zinc-300 hover:bg-zinc-700">
+          Cancel
+        </button>
+
+        <button type="submit" class="rounded-lg bg-zinc-100 px-4 py-2 font-medium text-zinc-900 hover:bg-zinc-200">
+          Create User
+        </button>
+      </div>
+    </form>
+
+
+  </div>
+</dialog>
+
+{% for user in users %}
+
+<dialog id="edit-user-{{ user.id }}"
+  class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+
+  <div class="p-6">
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-semibold">
+        Edit User
+      </h2>
+
+
+      <button type="button" onclick="document.getElementById('edit-user-{{ user.id }}').close()"
+        class="text-2xl text-zinc-400 hover:text-zinc-100">
+        &times;
+      </button>
+    </div>
+
+    <form method="post" action="{{ url_for('admin.update_user_route', user_id=user.id) }}" class="mt-6 space-y-5">
+
+      <div>
+        <label for="edit-username-{{ user.id }}" class="block text-sm font-medium text-zinc-300">
+          Username
+        </label>
+
+        <input id="edit-username-{{ user.id }}" name="username" type="text" value="{{ user.username }}" required
+          class="mt-2 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
+      </div>
+
+      <div>
+        <label for="edit-password-{{ user.id }}" class="block text-sm font-medium text-zinc-300">
+          New Password
+        </label>
+
+        <input id="edit-password-{{ user.id }}" name="password" type="password"
+          placeholder="Leave blank to keep current password"
+          class="mt-2 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 placeholder-zinc-500 outline-none focus:border-zinc-400">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-zinc-300">
+          Roles
+        </label>
+
+        <div class="mt-2 space-y-2">
+          {% for role in roles %}
+          <label class="flex items-center gap-2 text-sm text-zinc-300">
+            <input type="checkbox" name="role_ids" value="{{ role.id }}" {% if role.id in user.role_ids %}checked{%
+              endif %} class="rounded border-zinc-600 bg-zinc-900">
+            {{ role.name }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2">
+        {% if not user.archived_at %}
+        <button type="submit" formaction="{{ url_for('admin.archive_user_route', user_id=user.id) }}"
+          class="rounded-lg px-4 py-2 text-sm text-red-400 hover:bg-red-950/50 hover:text-red-300">
+          Archive
+        </button>
+        {% else %}
+        <button type="submit" formaction="{{ url_for('admin.restore_user', user_id=user.id) }}"
+          class="rounded-lg px-4 py-2 text-sm text-green-400 hover:bg-green-950/50 hover:text-green-300">
+          Restore
+        </button>
+        {% endif %}
+
+        <div class="flex gap-3">
+          <button type="button" onclick="document.getElementById('edit-user-{{ user.id }}').close()"
+            class="rounded-lg border border-zinc-600 px-4 py-2 text-zinc-300 hover:bg-zinc-700">
+            Cancel
+          </button>
+
+          <button type="submit" class="rounded-lg bg-zinc-100 px-4 py-2 font-medium text-zinc-900 hover:bg-zinc-200">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </form>
+
+
+  </div>
+</dialog>
+{% endfor %}
+{% endblock %}
