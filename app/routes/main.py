@@ -8,8 +8,8 @@ from flask import (
   url_for,
 )
 
+from app.auth import login_required
 from app.db import get_db
-from app.routes.auth import login_required
 from app.services.inventory import get_items
 
 main = Blueprint("main", __name__)
