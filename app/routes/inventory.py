@@ -1,13 +1,11 @@
-from flask import (
-  Blueprint,
-  redirect,
-  render_template,
-  request,
-  url_for,
-)
+from flask import Blueprint, redirect, request, url_for
 
 from app.auth import login_required
-from app.services.inventory import create_item
+from app.services.inventory import (
+  archive_item,
+  create_item,
+  update_item,
+)
 
 inventory = Blueprint(
   "inventory",
@@ -23,15 +21,34 @@ def create():
 
   try:
     create_item(name=name)
-  except ValueError as error:
-    return render_template(
-      "index.jinja",
-      error=str(error),
+  except ValueError:
+    return redirect(url_for("main.index"))
+
+  return redirect(url_for("main.index"))
+
+
+@inventory.route("/<item_id>", methods=["POST"])
+@login_required
+def update(item_id):
+  name = request.form.get("name", "").strip()
+
+  try:
+    updated = update_item(
+      item_id,
       name=name,
-      items=[],
-      search="",
-      page=1,
-      total_pages=1,
     )
+  except ValueError:
+    return redirect(url_for("main.index"))
+
+  if not updated:
+    return redirect(url_for("main.index"))
+
+  return redirect(url_for("main.index"))
+
+
+@inventory.route("/<item_id>/archive", methods=["POST"])
+@login_required
+def archive(item_id):
+  archive_item(item_id)
 
   return redirect(url_for("main.index"))
