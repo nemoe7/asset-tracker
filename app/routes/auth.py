@@ -69,9 +69,34 @@ def setup_post():
       ),
     )
 
-    connection.commit()
-
     user_id = cursor.lastrowid
+
+    admin_role = connection.execute(
+      """
+      SELECT id
+      FROM roles
+      WHERE name = 'Admin'
+      """
+    ).fetchone()
+
+    if admin_role is None:
+      raise RuntimeError("Admin role is missing from the database.")
+
+    connection.execute(
+      """
+      INSERT INTO user_roles (
+        user_id,
+        role_id
+      )
+      VALUES (?, ?)
+      """,
+      (
+        user_id,
+        admin_role["id"],
+      ),
+    )
+
+    connection.commit()
 
   except Exception:
     connection.rollback()
