@@ -5,6 +5,7 @@ from flask import Flask
 from app.db import get_db, init_db
 from app.routes import register_routes
 from app.services.setup import is_first_run
+from app.templatetags import format_datetime
 
 
 def _database_initialized():
@@ -30,6 +31,8 @@ def create_app():
   app.config.from_object("config")
 
   app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+
+  app.jinja_env.filters["datetime"] = format_datetime
 
   if not _database_initialized():
     init_db()
