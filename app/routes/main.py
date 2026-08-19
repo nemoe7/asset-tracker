@@ -3,6 +3,7 @@ from flask import (
   current_app,
   redirect,
   render_template,
+  request,
   send_from_directory,
   session,
   url_for,
@@ -11,6 +12,7 @@ from flask import (
 from app.auth import login_required
 from app.db import get_db
 from app.services.inventory import get_items
+from app.services.locations import get_locations
 
 main = Blueprint("main", __name__)
 
@@ -45,12 +47,19 @@ def index():
     session.clear()
     return redirect(url_for("auth.login"))
 
-  items = get_items()
+  search = request.args.get("search", "").strip()
+
+  items = get_items(
+    search=search,
+  )
+
+  locations = get_locations()
 
   return render_template(
     "index.jinja",
     items=items,
-    search="",
+    locations=locations,
+    search=search,
     page=1,
     total_pages=1,
     username=user["username"],
