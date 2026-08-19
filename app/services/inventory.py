@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from app.db import get_db
 from app.services.audit import create_audit_log
@@ -52,7 +53,7 @@ def _get_custom_fields(connection, item_id):
     if field_type == "integer":
       value = int(value)
     elif field_type == "decimal":
-      value = float(value)
+      value = Decimal(value)
     elif field_type == "boolean":
       value = value == "1"
 
