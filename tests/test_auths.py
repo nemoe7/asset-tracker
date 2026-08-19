@@ -49,7 +49,7 @@ def test_login_required_allows_valid_session(
   assert response.data == str(authenticated_test_user).encode()
 
 
-def test_login_required_clears_session_for_missing_user():
+def test_login_required_clears_session_for_missing_user(test_db):
   app = _create_test_app()
 
   with app.test_client() as client:
