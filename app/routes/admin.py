@@ -3,6 +3,7 @@ from flask import (
   redirect,
   render_template,
   request,
+  session,
   url_for,
 )
 
@@ -107,6 +108,9 @@ def update_user_route(user_id):
 @login_required
 @permission_required("users.manage")
 def archive_user_route(user_id):
+  if user_id == session.get("user_id"):
+    return redirect(url_for("admin.users"))
+
   archive_user(user_id)
 
   return redirect(url_for("admin.users"))
