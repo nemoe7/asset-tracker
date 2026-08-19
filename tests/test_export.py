@@ -26,7 +26,6 @@ def _grant_export_permission(user_id):
   permission_id = create_permission(
     name="inventory.export",
   )
-
   assign_permission_to_user(
     user_id,
     permission_id,
@@ -37,7 +36,6 @@ def _grant_field_read_permission(user_id, field_id):
   permission_id = create_permission(
     name=f"field.{field_id}.read",
   )
-
   assign_permission_to_user(
     user_id,
     permission_id,
@@ -165,6 +163,7 @@ def test_export_can_filter_by_location(
   warehouse_id = create_location(
     name="Warehouse",
   )
+
   office_id = create_location(
     name="Office",
   )
@@ -173,6 +172,7 @@ def test_export_can_filter_by_location(
     "Laptop",
     location_id=warehouse_id,
   )
+
   office_item_id = create_item(
     "Monitor",
     location_id=office_id,
@@ -420,10 +420,12 @@ def test_export_includes_all_custom_fields_that_have_values(
     authenticated_test_user,
     purchase_price_id,
   )
+
   _grant_field_read_permission(
     authenticated_test_user,
     supplier_id,
   )
+
   _grant_field_read_permission(
     authenticated_test_user,
     serial_number_id,
@@ -482,6 +484,7 @@ def test_export_prunes_custom_fields_with_no_values(
     authenticated_test_user,
     populated_field_id,
   )
+
   _grant_field_read_permission(
     authenticated_test_user,
     empty_field_id,
@@ -727,6 +730,7 @@ def test_export_location_filter(
   first_location_id = create_location(
     name="Warehouse",
   )
+
   second_location_id = create_location(
     name="Office",
   )
@@ -735,6 +739,7 @@ def test_export_location_filter(
     "Laptop",
     location_id=first_location_id,
   )
+
   non_matching_id = create_item(
     "Monitor",
     location_id=second_location_id,
@@ -765,6 +770,7 @@ def test_export_omits_unauthorized_custom_fields(
     name="Purchase Price",
     field_type="decimal",
   )
+
   denied_field_id = create_custom_field(
     name="Supplier Cost",
     field_type="decimal",
@@ -782,6 +788,7 @@ def test_export_omits_unauthorized_custom_fields(
     allowed_field_id,
     "45000",
   )
+
   set_custom_field_value(
     item_id,
     denied_field_id,
@@ -814,6 +821,66 @@ def test_export_invalid_field_is_rejected(
       fields=[
         "id",
         "does_not_exist",
+      ],
+    )
+
+
+def test_export_invalid_field_creates_no_audit_log(
+  test_db,
+  authenticated_test_user,
+):
+  _grant_export_permission(
+    authenticated_test_user,
+  )
+
+  create_item("Laptop")
+
+  with pytest.raises(ValueError):
+    export_inventory(
+      authenticated_test_user,
+      fields=[
+        "id",
+        "does_not_exist",
+      ],
+    )
+
+  logs = get_audit_logs(
+    entity_type="inventory_export",
+  )
+
+  assert logs == []
+
+
+def test_export_empty_field_selection_is_rejected(
+  test_db,
+  authenticated_test_user,
+):
+  _grant_export_permission(
+    authenticated_test_user,
+  )
+
+  with pytest.raises(ValueError):
+    export_inventory(
+      authenticated_test_user,
+      fields=[],
+    )
+
+
+def test_export_duplicate_fields_are_rejected(
+  test_db,
+  authenticated_test_user,
+):
+  _grant_export_permission(
+    authenticated_test_user,
+  )
+
+  with pytest.raises(ValueError):
+    export_inventory(
+      authenticated_test_user,
+      fields=[
+        "id",
+        "name",
+        "id",
       ],
     )
 
@@ -926,6 +993,7 @@ def test_export_header_order_is_deterministic(
     name="Purchase Price",
     field_type="decimal",
   )
+
   second_field_id = create_custom_field(
     name="Supplier",
     field_type="text",
@@ -935,6 +1003,7 @@ def test_export_header_order_is_deterministic(
     authenticated_test_user,
     first_field_id,
   )
+
   _grant_field_read_permission(
     authenticated_test_user,
     second_field_id,
@@ -947,6 +1016,7 @@ def test_export_header_order_is_deterministic(
     first_field_id,
     "45000",
   )
+
   set_custom_field_value(
     item_id,
     second_field_id,
@@ -964,3 +1034,160 @@ def test_export_header_order_is_deterministic(
     "Purchase Price",
     "Supplier",
   ]
+
+
+def test_export_combines_search_and_location_filters(
+  test_db,
+  authenticated_test_user,
+):
+  _grant_export_permission(
+    authenticated_test_user,
+  )
+
+  warehouse_id = create_location(
+    name="Warehouse",
+  )
+
+  matching_id = create_item(
+    "Gaming Laptop",
+    location_id=warehouse_id,
+  )
+
+  create_item(
+    "Gaming Laptop",
+  )
+
+  create_item(
+    "Monitor",
+    location_id=warehouse_id,
+  )
+
+  rows = _read_csv(
+    export_inventory(
+      authenticated_test_user,
+      search="Laptop",
+      location_id=warehouse_id,
+    )
+  )
+
+  assert [row["id"] for row in rows] == [
+    matching_id,
+  ]
+
+
+def test_export_filters_exclude_archived_items(
+  test_db,
+  authenticated_test_user,
+):
+  _grant_export_permission(
+    authenticated_test_user,
+  )
+
+  active_id = create_item("Laptop")
+  archived_id = create_item("Laptop")
+
+  assert archive_item(archived_id) is True
+
+  rows = _read_csv(
+    export_inventory(
+      authenticated_test_user,
+      search="Laptop",
+    )
+  )
+
+  exported_ids = [row["id"] for row in rows]
+
+  assert active_id in exported_ids
+  assert archived_id not in exported_ids
+
+
+def test_export_unauthorized_export_creates_no_audit_log(
+  test_db,
+  authenticated_test_user,
+):
+  create_item("Laptop")
+
+  with pytest.raises(PermissionError):
+    export_inventory(
+      authenticated_test_user,
+    )
+
+  logs = get_audit_logs(
+    entity_type="inventory_export",
+  )
+
+  assert logs == []
+
+
+def test_export_serializes_all_custom_field_types(
+  test_db,
+  authenticated_test_user,
+):
+  _grant_export_permission(
+    authenticated_test_user,
+  )
+
+  fields = [
+    (
+      create_custom_field(
+        name="Text",
+        field_type="text",
+      ),
+      "hello",
+    ),
+    (
+      create_custom_field(
+        name="Integer",
+        field_type="integer",
+      ),
+      42,
+    ),
+    (
+      create_custom_field(
+        name="Decimal",
+        field_type="decimal",
+      ),
+      "12.50",
+    ),
+    (
+      create_custom_field(
+        name="Boolean",
+        field_type="boolean",
+      ),
+      True,
+    ),
+    (
+      create_custom_field(
+        name="Date",
+        field_type="date",
+      ),
+      "2026-08-19",
+    ),
+  ]
+
+  for field_id, _ in fields:
+    _grant_field_read_permission(
+      authenticated_test_user,
+      field_id,
+    )
+
+  item_id = create_item("Laptop")
+
+  for field_id, value in fields:
+    set_custom_field_value(
+      item_id,
+      field_id,
+      value,
+    )
+
+  rows = _read_csv(
+    export_inventory(
+      authenticated_test_user,
+    )
+  )
+
+  assert rows[0]["Text"] == "hello"
+  assert rows[0]["Integer"] == "42"
+  assert rows[0]["Decimal"] == "12.50"
+  assert rows[0]["Boolean"] == "True"
+  assert rows[0]["Date"] == "2026-08-19"

@@ -63,6 +63,36 @@ def _get_custom_field_value(item, field_id):
   return item["custom_fields"].get(field_id)
 
 
+def _validate_requested_fields(
+  fields,
+  base_fields,
+  all_custom_fields,
+  exportable_custom_fields,
+):
+  if not fields:
+    raise ValueError("Export field selection cannot be empty")
+
+  if len(fields) != len(set(fields)):
+    raise ValueError("Duplicate export fields are not allowed")
+
+  all_available_fields = set(base_fields)
+
+  for field in all_custom_fields:
+    all_available_fields.add(field["name"])
+
+  invalid_fields = [field for field in fields if field not in all_available_fields]
+
+  if invalid_fields:
+    raise ValueError(f"Invalid export field: {invalid_fields[0]}")
+
+  exportable_fields = set(base_fields)
+
+  for field in exportable_custom_fields:
+    exportable_fields.add(field["name"])
+
+  return [field for field in fields if field in exportable_fields]
+
+
 def export_inventory(
   user_id,
   fields=None,
@@ -75,20 +105,40 @@ def export_inventory(
   ):
     raise PermissionError("Inventory export permission is required")
 
+  items = get_items(
+    search=search,
+    location_id=location_id,
+  )
+
   items = sorted(
-    get_items(
-      search=search,
-      location_id=location_id,
-    ),
+    items,
     key=lambda item: item["id"],
   )
 
-  custom_fields = _get_custom_fields()
+  all_custom_fields = _get_custom_fields()
 
   exportable_custom_fields = _get_exportable_custom_fields(
     user_id,
-    custom_fields,
+    all_custom_fields,
   )
+
+  base_fields = [
+    "id",
+    "name",
+    "location",
+  ]
+
+  if fields is None:
+    selected_fields = [
+      *base_fields,
+    ]
+  else:
+    selected_fields = _validate_requested_fields(
+      fields,
+      base_fields,
+      all_custom_fields,
+      exportable_custom_fields,
+    )
 
   populated_custom_fields = [
     field
@@ -103,37 +153,24 @@ def export_inventory(
     )
   ]
 
-  custom_field_by_name = {field["name"]: field for field in exportable_custom_fields}
+  populated_custom_field_by_name = {
+    field["name"]: field for field in populated_custom_fields
+  }
 
-  base_fields = [
-    "id",
-    "name",
-    "location",
-  ]
+  exportable_custom_field_by_name = {
+    field["name"]: field for field in exportable_custom_fields
+  }
 
   if fields is None:
-    selected_fields = [
-      *base_fields,
-      *[field["name"] for field in populated_custom_fields],
-    ]
+    selected_fields.extend(populated_custom_field_by_name)
+
+    custom_field_by_name = populated_custom_field_by_name
   else:
-    available_fields = {
-      *base_fields,
-      *custom_field_by_name.keys(),
+    custom_field_by_name = {
+      field_name: exportable_custom_field_by_name[field_name]
+      for field_name in selected_fields
+      if field_name in exportable_custom_field_by_name
     }
-
-    existing_custom_field_names = {field["name"] for field in custom_fields}
-
-    invalid_fields = [
-      field
-      for field in fields
-      if field not in available_fields and field not in existing_custom_field_names
-    ]
-
-    if invalid_fields:
-      raise ValueError(f"Invalid export field: {invalid_fields[0]}")
-
-    selected_fields = [field for field in fields if field in available_fields]
 
   location_ids = {
     item["location_id"] for item in items if item["location_id"] is not None
@@ -168,9 +205,6 @@ def export_inventory(
       )
 
     for field_name, field in custom_field_by_name.items():
-      if field_name not in selected_fields:
-        continue
-
       value = _get_custom_field_value(
         item,
         field["id"],
