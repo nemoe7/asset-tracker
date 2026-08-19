@@ -9,12 +9,14 @@ from flask import (
 )
 
 from app.db import get_db
+from app.routes.auth import login_required
 from app.services.inventory import get_items
 
 main = Blueprint("main", __name__)
 
 
 @main.route("/")
+@login_required
 def index():
   if current_app.config["FIRST_RUN"]:
     return redirect(url_for("auth.setup"))
