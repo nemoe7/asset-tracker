@@ -4,9 +4,13 @@ from flask import (
   redirect,
   render_template,
   request,
+  session,
   url_for,
 )
-from werkzeug.security import generate_password_hash
+from werkzeug.security import (
+  check_password_hash,
+  generate_password_hash,
+)
 
 from app.db import get_db
 from app.services.setup import is_first_run
@@ -48,7 +52,7 @@ def setup_post():
   connection = get_db()
 
   try:
-    connection.execute(
+    cursor = connection.execute(
       """
       INSERT INTO users (
         username,
@@ -66,6 +70,8 @@ def setup_post():
 
     connection.commit()
 
+    user_id = cursor.lastrowid
+
   except Exception:
     connection.rollback()
     raise
@@ -73,6 +79,67 @@ def setup_post():
   finally:
     connection.close()
 
+  session.clear()
+  session["user_id"] = user_id
+
   current_app.config["FIRST_RUN"] = is_first_run()
 
   return redirect(url_for("main.index"))
+
+
+@auth.route("/login", methods=["GET"])
+def login():
+  if current_app.config["FIRST_RUN"]:
+    return redirect(url_for("auth.setup"))
+
+  if session.get("user_id") is not None:
+    return redirect(url_for("main.index"))
+
+  return render_template("login.jinja")
+
+
+@auth.route("/login", methods=["POST"])
+def login_post():
+  if current_app.config["FIRST_RUN"]:
+    return redirect(url_for("auth.setup"))
+
+  username = request.form["username"].strip()
+  password = request.form["password"]
+
+  connection = get_db()
+
+  try:
+    user = connection.execute(
+      """
+      SELECT id, password_hash
+      FROM users
+      WHERE username = ?
+        AND archived_at IS NULL
+      """,
+      (username,),
+    ).fetchone()
+  finally:
+    connection.close()
+
+  if user is None or not check_password_hash(
+    user["password_hash"],
+    password,
+  ):
+    return render_template(
+      "login.jinja",
+      error="Invalid username or password.",
+      username=username,
+    )
+
+  session.clear()
+  session.permanent = True
+  session["user_id"] = user["id"]
+
+  return redirect(url_for("main.index"))
+
+
+@auth.route("/logout", methods=["POST"])
+def logout():
+  session.clear()
+
+  return redirect(url_for("auth.login"))
