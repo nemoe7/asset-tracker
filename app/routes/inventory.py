@@ -18,9 +18,16 @@ inventory = Blueprint(
 @login_required
 def create():
   name = request.form.get("name", "").strip()
+  location_id = request.form.get("location_id") or None
+
+  if location_id is not None:
+    location_id = int(location_id)
 
   try:
-    create_item(name=name)
+    create_item(
+      name=name,
+      location_id=location_id,
+    )
   except ValueError:
     return redirect(url_for("main.index"))
 
@@ -31,11 +38,16 @@ def create():
 @login_required
 def update(item_id):
   name = request.form.get("name", "").strip()
+  location_id = request.form.get("location_id") or None
+
+  if location_id is not None:
+    location_id = int(location_id)
 
   try:
     updated = update_item(
       item_id,
       name=name,
+      location_id=location_id,
     )
   except ValueError:
     return redirect(url_for("main.index"))
