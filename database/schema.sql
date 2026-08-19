@@ -68,6 +68,7 @@ CREATE TABLE user_roles (
 CREATE TABLE role_permissions (
   role_id INTEGER NOT NULL,
   permission_id INTEGER NOT NULL,
+  allowed INTEGER NOT NULL,
   PRIMARY KEY (role_id, permission_id),
   FOREIGN KEY (role_id)
     REFERENCES roles(id)
