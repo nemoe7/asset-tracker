@@ -26,7 +26,6 @@ def create_user(username, password):
       SELECT id
       FROM users
       WHERE username = ?
-        AND archived_at IS NULL
       """,
       (username,),
     ).fetchone()
@@ -170,7 +169,6 @@ def update_user(user_id, username=None, password=None):
         FROM users
         WHERE username = ?
           AND id != ?
-          AND archived_at IS NULL
         """,
         (username, user_id),
       ).fetchone()

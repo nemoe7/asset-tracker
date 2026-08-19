@@ -530,3 +530,44 @@ def test_archived_user_password_cannot_be_verified(test_db, authenticated_test_u
     user_id,
     "password123",
   )
+
+
+def test_create_user_with_archived_username_fails(test_db, authenticated_test_user):
+  user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  assert archive_user(user_id) is True
+
+  with pytest.raises(
+    ValueError,
+    match="Username already exists",
+  ):
+    create_user(
+      username="alice",
+      password="password456",
+    )
+
+
+def test_update_user_to_archived_username_fails(test_db, authenticated_test_user):
+  archived_user_id = create_user(
+    username="alice",
+    password="password123",
+  )
+
+  assert archive_user(archived_user_id) is True
+
+  user_id = create_user(
+    username="bob",
+    password="password456",
+  )
+
+  with pytest.raises(
+    ValueError,
+    match="Username already exists",
+  ):
+    update_user(
+      user_id,
+      username="alice",
+    )
