@@ -86,9 +86,21 @@ Inventory
 
           <tbody class="divide-y divide-zinc-700">
             {% for item in items %}
-            <tr class="hover:bg-zinc-700/40">
+            <tr class="cursor-pointer hover:bg-zinc-700/40"
+              onclick="document.getElementById('edit-item-{{ item.id }}').showModal()">
               <td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-zinc-400">
-                {{ item.id }}
+                <div class="flex items-center gap-2">
+                  <span>{{ item.id }}</span>
+
+                  <button type="button" title="Copy ID" onclick="event.stopPropagation(); copyItemId('{{ item.id }}')"
+                    class="rounded p-1 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 4h8a2 2 0 012 2v6a2 2 0 01-2 2h-8a2 2 0 01-2-2v-6a2 2 0 012-2z" />
+                    </svg>
+                  </button>
+                </div>
               </td>
 
               <td class="px-4 py-3 font-medium">
@@ -140,6 +152,7 @@ Inventory
   </div>
 </main>
 
+<!-- Add Item Modal -->
 <dialog id="add-item-modal"
   class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
   <div class="p-6">
@@ -183,6 +196,83 @@ Inventory
     </form>
   </div>
 </dialog>
+
+<!-- Edit Item Modals -->
+{% for item in items %}
+<dialog id="edit-item-{{ item.id }}"
+  class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+  <div class="p-6">
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-semibold">
+        Edit Item
+      </h2>
+
+      <button type="button" onclick="document.getElementById('edit-item-{{ item.id }}').close()"
+        class="text-2xl text-zinc-400 hover:text-zinc-100">
+        &times;
+      </button>
+    </div>
+
+    <p class="mt-2 font-mono text-xs text-zinc-500">
+      {{ item.id }}
+    </p>
+
+    <form method="post" action="{{ url_for('inventory.update', item_id=item.id) }}" class="mt-6 space-y-5">
+      <div>
+        <label for="edit-name-{{ item.id }}" class="block text-sm font-medium text-zinc-300">
+          Name
+        </label>
+
+        <input id="edit-name-{{ item.id }}" name="name" type="text" value="{{ item.name }}" required
+          class="mt-2 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
+      </div>
+
+      <div class="flex items-center justify-between pt-2">
+        <button type="submit" formaction="{{ url_for('inventory.archive', item_id=item.id) }}"
+          class="rounded-lg px-4 py-2 text-sm text-red-400 hover:bg-red-950/50 hover:text-red-300">
+          Archive
+        </button>
+
+        <div class="flex gap-3">
+          <button type="button" onclick="document.getElementById('edit-item-{{ item.id }}').close()"
+            class="rounded-lg border border-zinc-600 px-4 py-2 text-zinc-300 hover:bg-zinc-700">
+            Cancel
+          </button>
+
+          <button type="submit" class="rounded-lg bg-zinc-100 px-4 py-2 font-medium text-zinc-900 hover:bg-zinc-200">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</dialog>
+{% endfor %}
+
+<div id="copy-toast"
+  class="pointer-events-none fixed top-6 left-1/2 z-50 -translate-x-1/2 translate-y-4 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm text-zinc-100 opacity-0 shadow-xl transition-all duration-200">
+  ID copied
+</div>
+
+<script>
+  let copyToastTimeout;
+
+  function copyItemId(id) {
+    navigator.clipboard.writeText(id);
+
+    const toast = document.getElementById("copy-toast");
+
+    clearTimeout(copyToastTimeout);
+
+    toast.classList.remove("-translate-y-4", "opacity-0");
+    toast.classList.add("translate-y-0", "opacity-100");
+
+    copyToastTimeout = setTimeout(() => {
+      toast.classList.remove("translate-y-0", "opacity-100");
+      toast.classList.add("-translate-y-4", "opacity-0");
+    }, 1500);
+  }
+</script>
 
 {% if error %}
 <script>
