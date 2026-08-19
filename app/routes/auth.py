@@ -1,3 +1,5 @@
+from functools import wraps
+
 from flask import (
   Blueprint,
   current_app,
@@ -16,6 +18,38 @@ from app.db import get_db
 from app.services.setup import is_first_run
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")
+
+
+def login_required(view):
+  @wraps(view)
+  def wrapped_view(*args, **kwargs):
+    user_id = session.get("user_id")
+
+    if user_id is None:
+      return redirect(url_for("auth.login"))
+
+    connection = get_db()
+
+    try:
+      user = connection.execute(
+        """
+        SELECT id
+        FROM users
+        WHERE id = ?
+          AND archived_at IS NULL
+        """,
+        (user_id,),
+      ).fetchone()
+    finally:
+      connection.close()
+
+    if user is None:
+      session.clear()
+      return redirect(url_for("auth.login"))
+
+    return view(*args, **kwargs)
+
+  return wrapped_view
 
 
 @auth.route("/setup", methods=["GET"])
@@ -139,6 +173,7 @@ def login_post():
 
 
 @auth.route("/logout", methods=["POST"])
+@login_required
 def logout():
   session.clear()
 
