@@ -93,12 +93,11 @@ def _deserialize_value(field_type, value):
   return value
 
 
-def set_custom_field_value(
-  item_id,
-  field_id,
-  value,
-):
-  connection = get_db()
+def set_custom_field_value(item_id, field_id, value, connection=None):
+  owns_connection = connection is None
+
+  if owns_connection:
+    connection = get_db()
 
   try:
     item = _get_item(connection, item_id)
@@ -191,14 +190,17 @@ def set_custom_field_value(
         connection=connection,
       )
 
-    connection.commit()
+    if owns_connection:
+      connection.commit()
 
     return True
   except:
-    connection.rollback()
+    if owns_connection:
+      connection.rollback()
     raise
   finally:
-    connection.close()
+    if owns_connection:
+      connection.close()
 
 
 def get_custom_field_value(item_id, field_id):
