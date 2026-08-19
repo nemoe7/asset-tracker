@@ -2,6 +2,7 @@ from flask import Flask
 
 from app.db import get_db, init_db
 from app.routes import register_routes
+from app.services.setup import is_first_run
 
 
 def _database_initialized():
@@ -28,6 +29,8 @@ def create_app():
 
   if not _database_initialized():
     init_db()
+
+  app.config["FIRST_RUN"] = is_first_run()
 
   register_routes(app)
 
