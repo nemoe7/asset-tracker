@@ -23,7 +23,7 @@ def create_user(username, password):
   try:
     existing = connection.execute(
       """
-      SELECT id
+      SELECT id, archived_at
       FROM users
       WHERE username = ?
       """,
@@ -31,6 +31,11 @@ def create_user(username, password):
     ).fetchone()
 
     if existing is not None:
+      if existing["archived_at"] is not None:
+        raise ValueError(
+          "Username belongs to an archived user",
+        )
+
       raise ValueError("Username already exists")
 
     cursor = connection.execute(
@@ -89,12 +94,11 @@ def get_user(user_id):
     connection.close()
 
 
-def get_user_by_username(username):
+def get_user_by_username(username, include_archived=False):
   connection = get_db()
 
   try:
-    return connection.execute(
-      """
+    query = """
       SELECT
         id,
         username,
@@ -103,9 +107,18 @@ def get_user_by_username(username):
         archived_at
       FROM users
       WHERE username = ?
+    """
+
+    parameters = [username]
+
+    if not include_archived:
+      query += """
         AND archived_at IS NULL
-      """,
-      (username,),
+      """
+
+    return connection.execute(
+      query,
+      parameters,
     ).fetchone()
   finally:
     connection.close()

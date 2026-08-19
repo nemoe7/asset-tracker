@@ -542,7 +542,7 @@ def test_create_user_with_archived_username_fails(test_db, authenticated_test_us
 
   with pytest.raises(
     ValueError,
-    match="Username already exists",
+    match="Username belongs to an archived user",
   ):
     create_user(
       username="alice",
