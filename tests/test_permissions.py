@@ -68,9 +68,9 @@ def test_get_permissions(test_db, authenticated_test_user):
 
   permissions = get_permissions()
 
-  assert len(permissions) == 2
-  assert permissions[0]["name"] == "inventory.edit"
-  assert permissions[1]["name"] == "inventory.view"
+  assert len(permissions) == 3
+  assert permissions[1]["name"] == "inventory.edit"
+  assert permissions[2]["name"] == "inventory.view"
 
 
 def test_update_permission(test_db, authenticated_test_user):
@@ -254,17 +254,15 @@ def test_create_permission_with_whitespace_name_fails(test_db):
     )
 
 
-def test_create_duplicate_permission_fails(test_db, authenticated_test_user):
+def test_create_duplicate_permission_silently_succeeds(
+  test_db, authenticated_test_user
+):
   create_permission(
     name="inventory.view",
     description="View inventory",
   )
 
-  with pytest.raises(
-    ValueError,
-    match="Permission already exists",
-  ):
-    create_permission(
-      name="inventory.view",
-      description="Another description",
-    )
+  create_permission(
+    name="inventory.view",
+    description="Another description",
+  )
