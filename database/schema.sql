@@ -133,3 +133,16 @@ CREATE TABLE audit_log (
     REFERENCES users(id)
     ON DELETE RESTRICT
 );
+
+INSERT OR IGNORE INTO roles (name, description)
+VALUES ('Admin', 'Full administrative access');
+
+INSERT OR IGNORE INTO permissions (name, description)
+VALUES ('*', 'All permissions');
+
+INSERT OR IGNORE INTO role_permissions (role_id, permission_id, allowed)
+SELECT roles.id, permissions.id, 1
+FROM roles
+CROSS JOIN permissions
+WHERE roles.name = 'Admin'
+  AND permissions.name = '*';
