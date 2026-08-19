@@ -17,7 +17,9 @@ from app.services.roles import (
 )
 
 
-def test_assign_permission_to_role(test_db, authenticated_test_user):
+def test_assign_permission_to_role_defaults_to_allowed(
+  test_db, authenticated_test_user
+):
   role_id = create_role(
     name="Admin",
   )
@@ -39,6 +41,35 @@ def test_assign_permission_to_role(test_db, authenticated_test_user):
   assert len(permissions) == 1
   assert permissions[0]["id"] == permission_id
   assert permissions[0]["name"] == "inventory.view"
+  assert permissions[0]["allowed"] == 1
+
+
+def test_assign_permission_to_role_can_deny_permission(
+  test_db, authenticated_test_user
+):
+  role_id = create_role(
+    name="Admin",
+  )
+
+  permission_id = create_permission(
+    name="inventory.view",
+  )
+
+  assert (
+    assign_permission_to_role(
+      role_id,
+      permission_id,
+      allowed=False,
+    )
+    is True
+  )
+
+  permissions = get_role_permissions(role_id)
+
+  assert len(permissions) == 1
+  assert permissions[0]["id"] == permission_id
+  assert permissions[0]["name"] == "inventory.view"
+  assert permissions[0]["allowed"] == 0
 
 
 def test_get_role_permissions_returns_empty_for_role_without_permissions(
@@ -73,6 +104,7 @@ def test_role_can_have_multiple_permissions(test_db, authenticated_test_user):
   assign_permission_to_role(
     role_id,
     second_permission_id,
+    allowed=False,
   )
 
   permissions = get_role_permissions(role_id)
@@ -83,6 +115,9 @@ def test_role_can_have_multiple_permissions(test_db, authenticated_test_user):
     first_permission_id,
     second_permission_id,
   ]
+
+  assert permissions[0]["allowed"] == 1
+  assert permissions[1]["allowed"] == 0
 
 
 def test_permission_can_be_assigned_to_multiple_roles(test_db, authenticated_test_user):
@@ -101,15 +136,23 @@ def test_permission_can_be_assigned_to_multiple_roles(test_db, authenticated_tes
   assign_permission_to_role(
     first_role_id,
     permission_id,
+    allowed=True,
   )
 
   assign_permission_to_role(
     second_role_id,
     permission_id,
+    allowed=False,
   )
 
-  assert get_role_permissions(first_role_id)[0]["id"] == permission_id
-  assert get_role_permissions(second_role_id)[0]["id"] == permission_id
+  first_permissions = get_role_permissions(first_role_id)
+  second_permissions = get_role_permissions(second_role_id)
+
+  assert first_permissions[0]["id"] == permission_id
+  assert first_permissions[0]["allowed"] == 1
+
+  assert second_permissions[0]["id"] == permission_id
+  assert second_permissions[0]["allowed"] == 0
 
 
 def test_duplicate_permission_assignment_is_rejected(test_db, authenticated_test_user):
@@ -311,7 +354,6 @@ def test_delete_role_cascades_role_permissions(test_db, authenticated_test_user)
   )
 
   assert delete_role(role_id) is True
-
   assert get_role_permissions(role_id) == []
 
 
@@ -330,5 +372,4 @@ def test_delete_permission_cascades_role_permissions(test_db, authenticated_test
   )
 
   assert delete_permission(permission_id) is True
-
   assert get_role_permissions(role_id) == []
