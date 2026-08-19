@@ -30,7 +30,7 @@ jobs:
           pip install -r requirements.dev.txt
 
       - name: Run tests
-        run: pytest
+        run: pytest -n auto
 
   build:
     if: startsWith(github.ref, 'refs/tags/v')
