@@ -125,10 +125,14 @@ def get_item(item_id):
   try:
     item = connection.execute(
       """
-      SELECT *
+      SELECT
+        inventory_items.*,
+        locations.name AS location_name
       FROM inventory_items
-      WHERE id = ?
-        AND archived_at IS NULL
+      LEFT JOIN locations
+        ON locations.id = inventory_items.location_id
+      WHERE inventory_items.id = ?
+        AND inventory_items.archived_at IS NULL
       """,
       (item_id,),
     ).fetchone()
@@ -153,10 +157,10 @@ def get_items(
     parameters = []
 
     if not include_archived:
-      conditions.append("archived_at IS NULL")
+      conditions.append("inventory_items.archived_at IS NULL")
 
     if search:
-      conditions.append("name LIKE ?")
+      conditions.append("inventory_items.name LIKE ?")
       parameters.append(f"%{search}%")
 
     if location_id is not None:
@@ -165,7 +169,7 @@ def get_items(
         location_id,
       )
 
-      conditions.append("location_id = ?")
+      conditions.append("inventory_items.location_id = ?")
       parameters.append(location_id)
 
     where_clause = ""
@@ -175,10 +179,14 @@ def get_items(
 
     items = connection.execute(
       f"""
-      SELECT *
+      SELECT
+        inventory_items.*,
+        locations.name AS location_name
       FROM inventory_items
+      LEFT JOIN locations
+        ON locations.id = inventory_items.location_id
       {where_clause}
-      ORDER BY name, id
+      ORDER BY inventory_items.name, inventory_items.id
       """,
       parameters,
     ).fetchall()

@@ -152,7 +152,6 @@ Inventory
   </div>
 </main>
 
-<!-- Add Item Modal -->
 <dialog id="add-item-modal"
   class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
   <div class="p-6">
@@ -184,22 +183,51 @@ Inventory
       </div>
 
       <div>
-        <label for="item-location" class="block text-sm font-medium text-zinc-300">
+        <label class="block text-sm font-medium text-zinc-300" for="add-item-location">
           Location
         </label>
 
-        <select id="item-location" name="location_id"
-          class="mt-2 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
-          <option value="">
-            No location
-          </option>
+        <div class="mt-2 flex gap-2">
+          <select id="add-item-location" name="location_id"
+            class="min-w-0 flex-1 rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
+            <option value="">
+              No location
+            </option>
 
-          {% for location in locations %}
-          <option value="{{ location.id }}">
-            {{ location.name }}
-          </option>
-          {% endfor %}
-        </select>
+            {% for location in locations %}
+            <option value="{{ location.id }}">
+              {{ location.name }}
+            </option>
+            {% endfor %}
+          </select>
+
+          <button type="button" onclick="enableQuickAddLocation('add')"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-700 text-xl text-zinc-100 hover:bg-zinc-600"
+            title="Add location">
+            +
+          </button>
+        </div>
+
+        <div id="add-location-quick" class="mt-2 hidden">
+          <div class="flex gap-2">
+            <input id="add-location-name" type="text" placeholder="New location name"
+              class="min-w-0 flex-1 rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
+
+            <button type="button" onclick="createQuickLocation('add')"
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-lg font-medium text-zinc-900 hover:bg-zinc-200"
+              title="Create location">
+              ✓
+            </button>
+
+            <button type="button" onclick="cancelQuickAddLocation('add')"
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-600 text-lg text-zinc-300 hover:bg-zinc-700"
+              title="Cancel">
+              &times;
+            </button>
+          </div>
+
+          <p id="add-location-error" class="mt-2 hidden text-sm text-red-400"></p>
+        </div>
       </div>
 
       <div class="flex justify-end gap-3">
@@ -216,7 +244,6 @@ Inventory
   </div>
 </dialog>
 
-<!-- Edit Item Modals -->
 {% for item in items %}
 <dialog id="edit-item-{{ item.id }}"
   class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
@@ -247,22 +274,51 @@ Inventory
       </div>
 
       <div>
-        <label for="edit-location-{{ item.id }}" class="block text-sm font-medium text-zinc-300">
+        <label class="block text-sm font-medium text-zinc-300" for="edit-item-location-{{ item.id }}">
           Location
         </label>
 
-        <select id="edit-location-{{ item.id }}" name="location_id"
-          class="mt-2 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
-          <option value="">
-            No location
-          </option>
+        <div class="mt-2 flex gap-2">
+          <select id="edit-item-location-{{ item.id }}" name="location_id"
+            class="min-w-0 flex-1 rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
+            <option value="">
+              No location
+            </option>
 
-          {% for location in locations %}
-          <option value="{{ location.id }}" {% if item.location_id==location.id %}selected{% endif %}>
-            {{ location.name }}
-          </option>
-          {% endfor %}
-        </select>
+            {% for location in locations %}
+            <option value="{{ location.id }}" {% if item.location_id==location.id %}selected{% endif %}>
+              {{ location.name }}
+            </option>
+            {% endfor %}
+          </select>
+
+          <button type="button" onclick="enableQuickAddLocation('edit-{{ item.id }}')"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-700 text-xl text-zinc-100 hover:bg-zinc-600"
+            title="Add location">
+            +
+          </button>
+        </div>
+
+        <div id="edit-{{ item.id }}-location-quick" class="mt-2 hidden">
+          <div class="flex gap-2">
+            <input id="edit-{{ item.id }}-location-name" type="text" placeholder="New location name"
+              class="min-w-0 flex-1 rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
+
+            <button type="button" onclick="createQuickLocation('edit-{{ item.id }}')"
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-lg font-medium text-zinc-900 hover:bg-zinc-200"
+              title="Create location">
+              ✓
+            </button>
+
+            <button type="button" onclick="cancelQuickAddLocation('edit-{{ item.id }}')"
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-600 text-lg text-zinc-300 hover:bg-zinc-700"
+              title="Cancel">
+              &times;
+            </button>
+          </div>
+
+          <p id="edit-{{ item.id }}-location-error" class="mt-2 hidden text-sm text-red-400"></p>
+        </div>
       </div>
 
       <div class="flex items-center justify-between pt-2">
@@ -287,7 +343,6 @@ Inventory
 </dialog>
 {% endfor %}
 
-<!-- Copy Toast -->
 <div id="copy-toast"
   class="pointer-events-none fixed left-1/2 top-6 z-50 -translate-x-1/2 -translate-y-4 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm text-zinc-100 opacity-0 shadow-xl transition-all duration-200">
   ID copied
@@ -310,6 +365,129 @@ Inventory
       toast.classList.remove("translate-y-0", "opacity-100");
       toast.classList.add("-translate-y-4", "opacity-0");
     }, 1500);
+  }
+
+  function enableQuickAddLocation(prefix) {
+    const select = document.getElementById(
+      prefix === "add"
+        ? "add-item-location"
+        : `edit-item-location-${prefix.replace("edit-", "")}`,
+    );
+
+    const quick = document.getElementById(
+      prefix === "add"
+        ? "add-location-quick"
+        : `${prefix}-location-quick`,
+    );
+
+    const input = document.getElementById(
+      prefix === "add"
+        ? "add-location-name"
+        : `${prefix}-location-name`,
+    );
+
+    select.parentElement.classList.add("hidden");
+    quick.classList.remove("hidden");
+    input.focus();
+  }
+
+  function cancelQuickAddLocation(prefix) {
+    const select = document.getElementById(
+      prefix === "add"
+        ? "add-item-location"
+        : `edit-item-location-${prefix.replace("edit-", "")}`,
+    );
+
+    const quick = document.getElementById(
+      prefix === "add"
+        ? "add-location-quick"
+        : `${prefix}-location-quick`,
+    );
+
+    const input = document.getElementById(
+      prefix === "add"
+        ? "add-location-name"
+        : `${prefix}-location-name`,
+    );
+
+    const error = document.getElementById(
+      prefix === "add"
+        ? "add-location-error"
+        : `${prefix}-location-error`,
+    );
+
+    quick.classList.add("hidden");
+    select.parentElement.classList.remove("hidden");
+
+    input.value = "";
+    error.textContent = "";
+    error.classList.add("hidden");
+  }
+
+  async function createQuickLocation(prefix) {
+    const select = document.getElementById(
+      prefix === "add"
+        ? "add-item-location"
+        : `edit-item-location-${prefix.replace("edit-", "")}`,
+    );
+
+    const quick = document.getElementById(
+      prefix === "add"
+        ? "add-location-quick"
+        : `${prefix}-location-quick`,
+    );
+
+    const input = document.getElementById(
+      prefix === "add"
+        ? "add-location-name"
+        : `${prefix}-location-name`,
+    );
+
+    const error = document.getElementById(
+      prefix === "add"
+        ? "add-location-error"
+        : `${prefix}-location-error`,
+    );
+
+    const name = input.value.trim();
+
+    error.textContent = "";
+    error.classList.add("hidden");
+
+    if (!name) {
+      error.textContent = "Location name cannot be empty";
+      error.classList.remove("hidden");
+      input.focus();
+      return;
+    }
+
+    const response = await fetch("{{ url_for('locations.create') }}", {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        name: name,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      error.textContent = data.error || "Unable to create location";
+      error.classList.remove("hidden");
+      input.focus();
+      return;
+    }
+
+    const option = new Option(data.name, data.id, true, true);
+    select.add(option);
+
+    quick.classList.add("hidden");
+    select.parentElement.classList.remove("hidden");
+
+    input.value = "";
   }
 </script>
 
