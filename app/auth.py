@@ -6,6 +6,10 @@ from flask import (
   url_for,
 )
 
+from app.context import (
+  reset_current_user,
+  set_current_user,
+)
 from app.db import get_db
 
 
@@ -36,6 +40,11 @@ def login_required(view):
       session.clear()
       return redirect(url_for("auth.login"))
 
-    return view(*args, **kwargs)
+    token = set_current_user(user["id"])
+
+    try:
+      return view(*args, **kwargs)
+    finally:
+      reset_current_user(token)
 
   return wrapped_view
