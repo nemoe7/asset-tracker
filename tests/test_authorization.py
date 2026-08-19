@@ -761,3 +761,792 @@ def test_wildcard_request_is_not_expanded(test_db, authenticated_test_user):
     )
     is False
   )
+
+
+def test_role_permission_deny_is_enforced(test_db, authenticated_test_user):
+  permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  role_id = create_role(
+    name="restricted",
+  )
+
+  assign_permission_to_role(
+    role_id,
+    permission_id,
+    allowed=False,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    role_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is False
+  )
+
+
+def test_role_exact_allow_overrides_role_namespace_deny(
+  test_db, authenticated_test_user
+):
+  namespace_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  exact_permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  namespace_role_id = create_role(
+    name="namespace",
+  )
+
+  exact_role_id = create_role(
+    name="exact",
+  )
+
+  assign_permission_to_role(
+    namespace_role_id,
+    namespace_permission_id,
+    allowed=False,
+  )
+
+  assign_permission_to_role(
+    exact_role_id,
+    exact_permission_id,
+    allowed=True,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    namespace_role_id,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    exact_role_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+
+def test_role_exact_deny_overrides_role_namespace_allow(
+  test_db, authenticated_test_user
+):
+  namespace_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  exact_permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  namespace_role_id = create_role(
+    name="namespace",
+  )
+
+  exact_role_id = create_role(
+    name="exact",
+  )
+
+  assign_permission_to_role(
+    namespace_role_id,
+    namespace_permission_id,
+    allowed=True,
+  )
+
+  assign_permission_to_role(
+    exact_role_id,
+    exact_permission_id,
+    allowed=False,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    namespace_role_id,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    exact_role_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is False
+  )
+
+
+def test_role_namespace_allow_overrides_role_global_deny(
+  test_db, authenticated_test_user
+):
+  global_permission_id = create_permission(
+    name="*",
+  )
+
+  namespace_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  global_role_id = create_role(
+    name="global",
+  )
+
+  namespace_role_id = create_role(
+    name="namespace",
+  )
+
+  assign_permission_to_role(
+    global_role_id,
+    global_permission_id,
+    allowed=False,
+  )
+
+  assign_permission_to_role(
+    namespace_role_id,
+    namespace_permission_id,
+    allowed=True,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    global_role_id,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    namespace_role_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "users.read",
+    )
+    is False
+  )
+
+
+def test_role_namespace_deny_overrides_role_global_allow(
+  test_db, authenticated_test_user
+):
+  global_permission_id = create_permission(
+    name="*",
+  )
+
+  namespace_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  global_role_id = create_role(
+    name="global",
+  )
+
+  namespace_role_id = create_role(
+    name="namespace",
+  )
+
+  assign_permission_to_role(
+    global_role_id,
+    global_permission_id,
+    allowed=True,
+  )
+
+  assign_permission_to_role(
+    namespace_role_id,
+    namespace_permission_id,
+    allowed=False,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    global_role_id,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    namespace_role_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is False
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "users.read",
+    )
+    is True
+  )
+
+
+def test_role_global_allow_applies_when_no_more_specific_match_exists(
+  test_db, authenticated_test_user
+):
+  permission_id = create_permission(
+    name="*",
+  )
+
+  role_id = create_role(
+    name="global",
+  )
+
+  assign_permission_to_role(
+    role_id,
+    permission_id,
+    allowed=True,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    role_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "users.delete",
+    )
+    is True
+  )
+
+
+def test_role_global_deny_applies_when_no_more_specific_match_exists(
+  test_db, authenticated_test_user
+):
+  permission_id = create_permission(
+    name="*",
+  )
+
+  role_id = create_role(
+    name="restricted",
+  )
+
+  assign_permission_to_role(
+    role_id,
+    permission_id,
+    allowed=False,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    role_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is False
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "users.delete",
+    )
+    is False
+  )
+
+
+def test_direct_exact_allow_overrides_role_namespace_deny(
+  test_db, authenticated_test_user
+):
+  exact_permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  namespace_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  role_id = create_role(
+    name="restricted",
+  )
+
+  assign_permission_to_role(
+    role_id,
+    namespace_permission_id,
+    allowed=False,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    role_id,
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    exact_permission_id,
+    allowed=True,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+
+def test_direct_namespace_allow_overrides_role_exact_deny(
+  test_db, authenticated_test_user
+):
+  namespace_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  exact_permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  role_id = create_role(
+    name="restricted",
+  )
+
+  assign_permission_to_role(
+    role_id,
+    exact_permission_id,
+    allowed=False,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    role_id,
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    namespace_permission_id,
+    allowed=True,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+
+def test_direct_global_allow_overrides_role_exact_deny(
+  test_db, authenticated_test_user
+):
+  global_permission_id = create_permission(
+    name="*",
+  )
+
+  exact_permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  role_id = create_role(
+    name="restricted",
+  )
+
+  assign_permission_to_role(
+    role_id,
+    exact_permission_id,
+    allowed=False,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    role_id,
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    global_permission_id,
+    allowed=True,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+
+def test_direct_global_deny_overrides_role_namespace_allow(
+  test_db, authenticated_test_user
+):
+  global_permission_id = create_permission(
+    name="*",
+  )
+
+  namespace_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  role_id = create_role(
+    name="inventory",
+  )
+
+  assign_permission_to_role(
+    role_id,
+    namespace_permission_id,
+    allowed=True,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    role_id,
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    global_permission_id,
+    allowed=False,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is False
+  )
+
+
+def test_direct_exact_is_more_specific_than_direct_namespace_and_global(
+  test_db, authenticated_test_user
+):
+  global_permission_id = create_permission(
+    name="*",
+  )
+
+  namespace_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  exact_permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    global_permission_id,
+    allowed=False,
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    namespace_permission_id,
+    allowed=False,
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    exact_permission_id,
+    allowed=True,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+
+def test_direct_namespace_is_more_specific_than_direct_global(
+  test_db, authenticated_test_user
+):
+  global_permission_id = create_permission(
+    name="*",
+  )
+
+  namespace_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    global_permission_id,
+    allowed=False,
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    namespace_permission_id,
+    allowed=True,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+
+def test_direct_permission_order_does_not_change_result(
+  test_db, authenticated_test_user
+):
+  global_permission_id = create_permission(
+    name="*",
+  )
+
+  namespace_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  exact_permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    exact_permission_id,
+    allowed=True,
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    global_permission_id,
+    allowed=False,
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    namespace_permission_id,
+    allowed=False,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+
+def test_role_permission_order_does_not_change_result(test_db, authenticated_test_user):
+  global_permission_id = create_permission(
+    name="*",
+  )
+
+  namespace_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  exact_permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  global_role_id = create_role(
+    name="global",
+  )
+
+  namespace_role_id = create_role(
+    name="namespace",
+  )
+
+  exact_role_id = create_role(
+    name="exact",
+  )
+
+  assign_permission_to_role(
+    global_role_id,
+    global_permission_id,
+    allowed=False,
+  )
+
+  assign_permission_to_role(
+    namespace_role_id,
+    namespace_permission_id,
+    allowed=False,
+  )
+
+  assign_permission_to_role(
+    exact_role_id,
+    exact_permission_id,
+    allowed=True,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    exact_role_id,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    global_role_id,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    namespace_role_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+
+def test_direct_permission_overrides_all_role_permission_levels(
+  test_db, authenticated_test_user
+):
+  global_permission_id = create_permission(
+    name="*",
+  )
+
+  namespace_permission_id = create_permission(
+    name="inventory.*",
+  )
+
+  exact_permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  global_role_id = create_role(
+    name="global",
+  )
+
+  namespace_role_id = create_role(
+    name="namespace",
+  )
+
+  exact_role_id = create_role(
+    name="exact",
+  )
+
+  assign_permission_to_role(
+    global_role_id,
+    global_permission_id,
+    allowed=False,
+  )
+
+  assign_permission_to_role(
+    namespace_role_id,
+    namespace_permission_id,
+    allowed=False,
+  )
+
+  assign_permission_to_role(
+    exact_role_id,
+    exact_permission_id,
+    allowed=False,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    global_role_id,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    namespace_role_id,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    exact_role_id,
+  )
+
+  assign_permission_to_user(
+    authenticated_test_user,
+    exact_permission_id,
+    allowed=True,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is True
+  )
+
+
+def test_multiple_roles_same_permission_deny_wins(test_db, authenticated_test_user):
+  permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  allow_role_id = create_role(
+    name="allow",
+  )
+
+  deny_role_id = create_role(
+    name="deny",
+  )
+
+  assign_permission_to_role(
+    allow_role_id,
+    permission_id,
+    allowed=True,
+  )
+
+  assign_permission_to_role(
+    deny_role_id,
+    permission_id,
+    allowed=False,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    allow_role_id,
+  )
+
+  assign_role_to_user(
+    authenticated_test_user,
+    deny_role_id,
+  )
+
+  assert (
+    has_permission(
+      authenticated_test_user,
+      "inventory.read",
+    )
+    is False
+  )

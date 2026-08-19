@@ -1,27 +1,87 @@
 from app.db import get_db
 
 
-def _get_permission_ids(connection, permission_name):
-  permission_names = [permission_name]
+def _get_permission_precedence(permission_name):
+  precedence = [permission_name]
 
   if "." in permission_name:
     namespace = permission_name.split(".", 1)[0]
-    permission_names.append(f"{namespace}.*")
+    precedence.append(f"{namespace}.*")
 
-  permission_names.append("*")
+  precedence.append("*")
 
-  placeholders = ", ".join("?" for _ in permission_names)
+  return precedence
+
+
+def _get_direct_decision(
+  connection,
+  user_id,
+  precedence,
+):
+  placeholders = ", ".join("?" for _ in precedence)
 
   rows = connection.execute(
     f"""
-    SELECT id, name
-    FROM permissions
-    WHERE name IN ({placeholders})
+    SELECT
+      permissions.name,
+      user_permissions.allowed
+    FROM user_permissions
+    INNER JOIN permissions
+      ON permissions.id = user_permissions.permission_id
+    WHERE user_permissions.user_id = ?
+      AND permissions.name IN ({placeholders})
     """,
-    permission_names,
+    [user_id, *precedence],
   ).fetchall()
 
-  return {row["name"]: row["id"] for row in rows}
+  decisions = {row["name"]: row["allowed"] == 1 for row in rows}
+
+  for permission_name in precedence:
+    if permission_name in decisions:
+      return decisions[permission_name]
+
+  return None
+
+
+def _get_role_decision(
+  connection,
+  user_id,
+  precedence,
+):
+  placeholders = ", ".join("?" for _ in precedence)
+
+  rows = connection.execute(
+    f"""
+    SELECT
+      permissions.name,
+      role_permissions.allowed
+    FROM user_roles
+    INNER JOIN role_permissions
+      ON role_permissions.role_id = user_roles.role_id
+    INNER JOIN permissions
+      ON permissions.id = role_permissions.permission_id
+    WHERE user_roles.user_id = ?
+      AND permissions.name IN ({placeholders})
+    """,
+    [user_id, *precedence],
+  ).fetchall()
+
+  decisions = {}
+
+  for row in rows:
+    permission_name = row["name"]
+    allowed = row["allowed"] == 1
+
+    if permission_name not in decisions:
+      decisions[permission_name] = allowed
+    elif not allowed:
+      decisions[permission_name] = False
+
+  for permission_name in precedence:
+    if permission_name in decisions:
+      return decisions[permission_name]
+
+  return None
 
 
 def has_permission(user_id, permission_name):
@@ -41,46 +101,28 @@ def has_permission(user_id, permission_name):
     if user is None:
       return False
 
-    permissions = _get_permission_ids(
-      connection,
+    precedence = _get_permission_precedence(
       permission_name,
     )
 
-    if not permissions:
-      return False
+    direct_decision = _get_direct_decision(
+      connection,
+      user_id,
+      precedence,
+    )
 
-    permission_ids = list(permissions.values())
-    placeholders = ", ".join("?" for _ in permission_ids)
+    if direct_decision is not None:
+      return direct_decision
 
-    direct = connection.execute(
-      f"""
-      SELECT permission_id, allowed
-      FROM user_permissions
-      WHERE user_id = ?
-        AND permission_id IN ({placeholders})
-      """,
-      [user_id, *permission_ids],
-    ).fetchall()
+    role_decision = _get_role_decision(
+      connection,
+      user_id,
+      precedence,
+    )
 
-    direct_by_permission = {row["permission_id"]: row["allowed"] for row in direct}
+    if role_decision is not None:
+      return role_decision
 
-    for permission_id in permission_ids:
-      if permission_id in direct_by_permission:
-        return direct_by_permission[permission_id] == 1
-
-    role_permission = connection.execute(
-      f"""
-      SELECT 1
-      FROM user_roles
-      INNER JOIN role_permissions
-        ON role_permissions.role_id = user_roles.role_id
-      WHERE user_roles.user_id = ?
-        AND role_permissions.permission_id IN ({placeholders})
-      LIMIT 1
-      """,
-      [user_id, *permission_ids],
-    ).fetchone()
-
-    return role_permission is not None
+    return False
   finally:
     connection.close()
