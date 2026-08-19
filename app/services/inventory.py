@@ -140,20 +140,55 @@ def get_item(item_id):
     connection.close()
 
 
-def get_items():
+def get_items(
+  search=None,
+  location_id=None,
+  include_archived=False,
+):
   connection = get_db()
 
   try:
+    conditions = []
+    parameters = []
+
+    if not include_archived:
+      conditions.append("archived_at IS NULL")
+
+    if search:
+      conditions.append("name LIKE ?")
+      parameters.append(f"%{search}%")
+
+    if location_id is not None:
+      _validate_location(
+        connection,
+        location_id,
+      )
+
+      conditions.append("location_id = ?")
+      parameters.append(location_id)
+
+    where_clause = ""
+
+    if conditions:
+      where_clause = f"WHERE {' AND '.join(conditions)}"
+
     items = connection.execute(
-      """
+      f"""
       SELECT *
       FROM inventory_items
-      WHERE archived_at IS NULL
-      ORDER BY name
-      """
+      {where_clause}
+      ORDER BY name, id
+      """,
+      parameters,
     ).fetchall()
 
-    return [_item_with_custom_fields(connection, item) for item in items]
+    return [
+      _item_with_custom_fields(
+        connection,
+        item,
+      )
+      for item in items
+    ]
   finally:
     connection.close()
 

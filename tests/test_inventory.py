@@ -406,3 +406,209 @@ def test_update_archived_item_fails(test_db, authenticated_test_user):
     )
     is False
   )
+
+
+def test_get_items_returns_active_items(
+  test_db,
+  authenticated_test_user,
+):
+  first_item_id = create_item("Laptop")
+  second_item_id = create_item("Monitor")
+
+  items = get_items()
+
+  item_ids = [item["id"] for item in items]
+
+  assert first_item_id in item_ids
+  assert second_item_id in item_ids
+
+
+def test_get_items_excludes_archived_items(
+  test_db,
+  authenticated_test_user,
+):
+  active_item_id = create_item("Laptop")
+  archived_item_id = create_item("Monitor")
+
+  assert archive_item(archived_item_id) is True
+
+  items = get_items()
+
+  item_ids = [item["id"] for item in items]
+
+  assert active_item_id in item_ids
+  assert archived_item_id not in item_ids
+
+
+def test_get_items_can_include_archived_items(
+  test_db,
+  authenticated_test_user,
+):
+  active_item_id = create_item("Laptop")
+  archived_item_id = create_item("Monitor")
+
+  assert archive_item(archived_item_id) is True
+
+  items = get_items(
+    include_archived=True,
+  )
+
+  item_ids = [item["id"] for item in items]
+
+  assert active_item_id in item_ids
+  assert archived_item_id in item_ids
+
+
+def test_get_items_searches_by_name(
+  test_db,
+  authenticated_test_user,
+):
+  laptop_id = create_item("Gaming Laptop")
+  monitor_id = create_item("4K Monitor")
+
+  items = get_items(
+    search="Laptop",
+  )
+
+  item_ids = [item["id"] for item in items]
+
+  assert laptop_id in item_ids
+  assert monitor_id not in item_ids
+
+
+def test_get_items_search_is_case_insensitive(
+  test_db,
+  authenticated_test_user,
+):
+  item_id = create_item("Gaming Laptop")
+
+  items = get_items(
+    search="laptop",
+  )
+
+  item_ids = [item["id"] for item in items]
+
+  assert item_id in item_ids
+
+
+def test_get_items_search_returns_empty_for_no_match(
+  test_db,
+  authenticated_test_user,
+):
+  create_item("Gaming Laptop")
+
+  assert (
+    get_items(
+      search="Phone",
+    )
+    == []
+  )
+
+
+def test_get_items_filters_by_location(
+  test_db,
+  authenticated_test_user,
+):
+  warehouse_id = create_location(
+    name="Warehouse",
+  )
+
+  office_id = create_location(
+    name="Office",
+  )
+
+  warehouse_item_id = create_item(
+    "Laptop",
+    location_id=warehouse_id,
+  )
+
+  office_item_id = create_item(
+    "Monitor",
+    location_id=office_id,
+  )
+
+  items = get_items(
+    location_id=warehouse_id,
+  )
+
+  item_ids = [item["id"] for item in items]
+
+  assert warehouse_item_id in item_ids
+  assert office_item_id not in item_ids
+
+
+def test_get_items_combines_search_and_location(
+  test_db,
+  authenticated_test_user,
+):
+  warehouse_id = create_location(
+    name="Warehouse",
+  )
+
+  office_id = create_location(
+    name="Office",
+  )
+
+  matching_item_id = create_item(
+    "Gaming Laptop",
+    location_id=warehouse_id,
+  )
+
+  wrong_location_id = create_item(
+    "Gaming Laptop",
+    location_id=office_id,
+  )
+
+  wrong_name_id = create_item(
+    "4K Monitor",
+    location_id=warehouse_id,
+  )
+
+  items = get_items(
+    search="Laptop",
+    location_id=warehouse_id,
+  )
+
+  item_ids = [item["id"] for item in items]
+
+  assert matching_item_id in item_ids
+  assert wrong_location_id not in item_ids
+  assert wrong_name_id not in item_ids
+
+
+def test_get_items_returns_items_in_name_order(
+  test_db,
+  authenticated_test_user,
+):
+  create_item("Monitor")
+  create_item("Keyboard")
+  create_item("Laptop")
+
+  items = get_items()
+
+  names = [item["name"] for item in items]
+
+  assert names == [
+    "Keyboard",
+    "Laptop",
+    "Monitor",
+  ]
+
+
+def test_get_items_uses_id_as_tiebreaker_for_same_name(
+  test_db,
+  authenticated_test_user,
+):
+  first_item_id = create_item("Laptop")
+  second_item_id = create_item("Laptop")
+
+  items = get_items()
+
+  laptop_ids = [item["id"] for item in items if item["name"] == "Laptop"]
+
+  assert laptop_ids == sorted(
+    [
+      first_item_id,
+      second_item_id,
+    ]
+  )
