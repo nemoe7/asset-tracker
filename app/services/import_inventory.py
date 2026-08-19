@@ -52,7 +52,7 @@ def _get_existing_item_ids(connection):
 
 def _parse_csv(content):
   if not isinstance(content, str):
-    raise ValueError("Import content must be a string")
+    raise TypeError("Import content must be a string")
 
   try:
     reader = csv.DictReader(
@@ -102,7 +102,7 @@ def _validate_custom_field_value(
     return
 
   if field_type == "integer":
-    numeric_value = value[1:] if value.startswith("-") else value
+    numeric_value = value.removeprefix("-")
 
     if not numeric_value.isdigit():
       raise ValueError(f"Invalid integer value for field: {field['name']}")
