@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from flask import Flask
 
 from app.db import get_db, init_db
@@ -26,6 +28,8 @@ def _database_initialized():
 def create_app():
   app = Flask(__name__)
   app.config.from_object("config")
+
+  app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 
   if not _database_initialized():
     init_db()

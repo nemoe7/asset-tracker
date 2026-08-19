@@ -6,9 +6,36 @@ Inventory
 
 {% block content %}
 <main class="p-6">
-  <h1 class="text-2xl font-bold">
-    Inventory
-  </h1>
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold">
+      Inventory
+    </h1>
+
+    <div class="relative">
+      <details class="group">
+        <summary
+          class="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full bg-zinc-700 text-sm font-semibold text-zinc-100 hover:bg-zinc-600"
+          title="{{ username }}">
+          {{ username[0]|upper }}
+        </summary>
+
+        <div class="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-zinc-700 bg-zinc-800 p-2 shadow-xl">
+          <div class="border-b border-zinc-700 px-3 py-2">
+            <p class="truncate text-sm font-medium text-zinc-100">
+              {{ username }}
+            </p>
+          </div>
+
+          <form method="post" action="{{ url_for('auth.logout') }}" class="mt-2">
+            <button type="submit"
+              class="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
+              Log out
+            </button>
+          </form>
+        </div>
+      </details>
+    </div>
+  </div>
 
   <div class="mt-6 md:hidden">
     Mobile presentation
