@@ -20,9 +20,7 @@ from app.services.roles import (
 def test_assign_permission_to_role_defaults_to_allowed(
   test_db, authenticated_test_user
 ):
-  role_id = create_role(
-    name="Admin",
-  )
+  role_id = 1
 
   permission_id = create_permission(
     name="inventory.view",
@@ -38,18 +36,16 @@ def test_assign_permission_to_role_defaults_to_allowed(
 
   permissions = get_role_permissions(role_id)
 
-  assert len(permissions) == 1
-  assert permissions[0]["id"] == permission_id
-  assert permissions[0]["name"] == "inventory.view"
-  assert permissions[0]["allowed"] == 1
+  assert len(permissions) == 2
+  assert permissions[1]["id"] == permission_id
+  assert permissions[1]["name"] == "inventory.view"
+  assert permissions[1]["allowed"] == 1
 
 
 def test_assign_permission_to_role_can_deny_permission(
   test_db, authenticated_test_user
 ):
-  role_id = create_role(
-    name="Admin",
-  )
+  role_id = 1
 
   permission_id = create_permission(
     name="inventory.view",
@@ -66,10 +62,10 @@ def test_assign_permission_to_role_can_deny_permission(
 
   permissions = get_role_permissions(role_id)
 
-  assert len(permissions) == 1
-  assert permissions[0]["id"] == permission_id
-  assert permissions[0]["name"] == "inventory.view"
-  assert permissions[0]["allowed"] == 0
+  assert len(permissions) == 2
+  assert permissions[1]["id"] == permission_id
+  assert permissions[1]["name"] == "inventory.view"
+  assert permissions[1]["allowed"] == 0
 
 
 def test_get_role_permissions_returns_empty_for_role_without_permissions(
@@ -84,9 +80,7 @@ def test_get_role_permissions_returns_empty_for_role_without_permissions(
 
 
 def test_role_can_have_multiple_permissions(test_db, authenticated_test_user):
-  role_id = create_role(
-    name="Admin",
-  )
+  role_id = 1
 
   first_permission_id = create_permission(
     name="inventory.view",
@@ -112,18 +106,17 @@ def test_role_can_have_multiple_permissions(test_db, authenticated_test_user):
   permission_ids = [permission["id"] for permission in permissions]
 
   assert permission_ids == [
+    1,
     first_permission_id,
     second_permission_id,
   ]
 
-  assert permissions[0]["allowed"] == 1
-  assert permissions[1]["allowed"] == 0
+  assert permissions[1]["allowed"] == 1
+  assert permissions[2]["allowed"] == 0
 
 
 def test_permission_can_be_assigned_to_multiple_roles(test_db, authenticated_test_user):
-  first_role_id = create_role(
-    name="Admin",
-  )
+  first_role_id = 1
 
   second_role_id = create_role(
     name="Manager",
@@ -148,17 +141,15 @@ def test_permission_can_be_assigned_to_multiple_roles(test_db, authenticated_tes
   first_permissions = get_role_permissions(first_role_id)
   second_permissions = get_role_permissions(second_role_id)
 
-  assert first_permissions[0]["id"] == permission_id
-  assert first_permissions[0]["allowed"] == 1
+  assert first_permissions[1]["id"] == permission_id
+  assert first_permissions[1]["allowed"] == 1
 
   assert second_permissions[0]["id"] == permission_id
   assert second_permissions[0]["allowed"] == 0
 
 
 def test_duplicate_permission_assignment_is_rejected(test_db, authenticated_test_user):
-  role_id = create_role(
-    name="Admin",
-  )
+  role_id = 1
 
   permission_id = create_permission(
     name="inventory.view",
@@ -193,9 +184,7 @@ def test_assign_permission_to_nonexistent_role_is_rejected(
 def test_assign_nonexistent_permission_to_role_is_rejected(
   test_db, authenticated_test_user
 ):
-  role_id = create_role(
-    name="Admin",
-  )
+  role_id = 1
 
   with pytest.raises(ValueError):
     assign_permission_to_role(
@@ -205,9 +194,7 @@ def test_assign_nonexistent_permission_to_role_is_rejected(
 
 
 def test_remove_permission_from_role(test_db, authenticated_test_user):
-  role_id = create_role(
-    name="Admin",
-  )
+  role_id = 1
 
   permission_id = create_permission(
     name="inventory.view",
@@ -226,15 +213,13 @@ def test_remove_permission_from_role(test_db, authenticated_test_user):
     is True
   )
 
-  assert get_role_permissions(role_id) == []
+  assert len(get_role_permissions(role_id)) == 1
 
 
 def test_remove_missing_permission_from_role_returns_false(
   test_db, authenticated_test_user
 ):
-  role_id = create_role(
-    name="Admin",
-  )
+  role_id = 1
 
   permission_id = create_permission(
     name="inventory.view",
@@ -254,9 +239,7 @@ def test_get_role_permissions_for_nonexistent_role_returns_empty(test_db):
 
 
 def test_assign_permission_creates_audit_log(test_db, authenticated_test_user):
-  role_id = create_role(
-    name="Admin",
-  )
+  role_id = 1
 
   permission_id = create_permission(
     name="inventory.view",
@@ -278,9 +261,7 @@ def test_assign_permission_creates_audit_log(test_db, authenticated_test_user):
 
 
 def test_remove_permission_creates_audit_log(test_db, authenticated_test_user):
-  role_id = create_role(
-    name="Admin",
-  )
+  role_id = 1
 
   permission_id = create_permission(
     name="inventory.view",
@@ -311,9 +292,7 @@ def test_failed_duplicate_assignment_creates_no_audit_log(
   test_db,
   authenticated_test_user,
 ):
-  role_id = create_role(
-    name="Admin",
-  )
+  role_id = 1
 
   permission_id = create_permission(
     name="inventory.view",
@@ -340,9 +319,7 @@ def test_failed_duplicate_assignment_creates_no_audit_log(
 
 
 def test_delete_role_cascades_role_permissions(test_db, authenticated_test_user):
-  role_id = create_role(
-    name="Admin",
-  )
+  role_id = 1
 
   permission_id = create_permission(
     name="inventory.view",
@@ -358,9 +335,7 @@ def test_delete_role_cascades_role_permissions(test_db, authenticated_test_user)
 
 
 def test_delete_permission_cascades_role_permissions(test_db, authenticated_test_user):
-  role_id = create_role(
-    name="Admin",
-  )
+  role_id = 1
 
   permission_id = create_permission(
     name="inventory.view",
@@ -372,4 +347,4 @@ def test_delete_permission_cascades_role_permissions(test_db, authenticated_test
   )
 
   assert delete_permission(permission_id) is True
-  assert get_role_permissions(role_id) == []
+  assert len(get_role_permissions(role_id)) == 1

@@ -12,20 +12,20 @@ from app.services.roles import (
 
 def test_create_role(test_db, authenticated_test_user):
   role_id = create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
   role = get_role(role_id)
 
   assert role["id"] == role_id
-  assert role["name"] == "Admin"
+  assert role["name"] == "Admin2"
   assert role["description"] == "Administrator"
 
 
 def test_create_role_creates_audit_log(test_db, authenticated_test_user):
   role_id = create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
@@ -41,7 +41,7 @@ def test_create_role_creates_audit_log(test_db, authenticated_test_user):
 
 def test_get_role(test_db, authenticated_test_user):
   role_id = create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
@@ -57,7 +57,7 @@ def test_get_nonexistent_role(test_db):
 
 def test_get_roles(test_db, authenticated_test_user):
   create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
@@ -68,14 +68,14 @@ def test_get_roles(test_db, authenticated_test_user):
 
   roles = get_roles()
 
-  assert len(roles) == 2
-  assert roles[0]["name"] == "Admin"
-  assert roles[1]["name"] == "Checker"
+  assert len(roles) == 3
+  assert roles[1]["name"] == "Admin2"
+  assert roles[2]["name"] == "Checker"
 
 
 def test_update_role(test_db, authenticated_test_user):
   role_id = create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
@@ -96,7 +96,7 @@ def test_update_role(test_db, authenticated_test_user):
 
 def test_update_role_name_only(test_db, authenticated_test_user):
   role_id = create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
@@ -116,7 +116,7 @@ def test_update_role_name_only(test_db, authenticated_test_user):
 
 def test_update_role_description_only(test_db, authenticated_test_user):
   role_id = create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
@@ -130,13 +130,13 @@ def test_update_role_description_only(test_db, authenticated_test_user):
 
   role = get_role(role_id)
 
-  assert role["name"] == "Admin"
+  assert role["name"] == "Admin2"
   assert role["description"] == "Full administrator"
 
 
 def test_update_role_creates_audit_log(test_db, authenticated_test_user):
   role_id = create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
@@ -160,14 +160,14 @@ def test_update_role_without_changes_creates_no_audit_log(
   test_db, authenticated_test_user
 ):
   role_id = create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
   assert (
     update_role(
       role_id,
-      name="Admin",
+      name="Admin2",
       description="Administrator",
     )
     is True
@@ -186,7 +186,7 @@ def test_update_nonexistent_role(test_db):
   assert (
     update_role(
       999,
-      name="Admin",
+      name="Admin2",
     )
     is False
   )
@@ -194,7 +194,7 @@ def test_update_nonexistent_role(test_db):
 
 def test_update_role_with_no_fields_fails(test_db, authenticated_test_user):
   role_id = create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
@@ -207,7 +207,7 @@ def test_update_role_with_no_fields_fails(test_db, authenticated_test_user):
 
 def test_delete_role(test_db, authenticated_test_user):
   role_id = create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
@@ -217,7 +217,7 @@ def test_delete_role(test_db, authenticated_test_user):
 
 def test_delete_role_creates_audit_log(test_db, authenticated_test_user):
   role_id = create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
@@ -256,7 +256,7 @@ def test_create_role_with_whitespace_name_fails(test_db):
 
 def test_create_duplicate_role_fails(test_db, authenticated_test_user):
   create_role(
-    name="Admin",
+    name="Admin2",
     description="Administrator",
   )
 
@@ -265,6 +265,6 @@ def test_create_duplicate_role_fails(test_db, authenticated_test_user):
     match="Role already exists",
   ):
     create_role(
-      name="Admin",
+      name="Admin2",
       description="Another description",
     )
