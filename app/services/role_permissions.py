@@ -9,6 +9,7 @@ class RolePermissionAlreadyExistsError(Exception):
 def assign_permission_to_role(
   role_id,
   permission_id,
+  allowed=True,
 ):
   connection = get_db()
 
@@ -57,13 +58,15 @@ def assign_permission_to_role(
       """
       INSERT INTO role_permissions (
         role_id,
-        permission_id
+        permission_id,
+        allowed
       )
-      VALUES (?, ?)
+      VALUES (?, ?, ?)
       """,
       (
         role_id,
         permission_id,
+        int(allowed),
       ),
     )
 
@@ -90,7 +93,9 @@ def get_role_permissions(role_id):
   try:
     return connection.execute(
       """
-      SELECT permissions.*
+      SELECT
+        permissions.*,
+        role_permissions.allowed
       FROM permissions
       INNER JOIN role_permissions
         ON role_permissions.permission_id = permissions.id
