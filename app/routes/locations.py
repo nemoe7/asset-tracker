@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, request, url_for
+from flask import Blueprint, jsonify, redirect, request, url_for
 
 from app.auth import login_required
 from app.services.locations import (
@@ -8,11 +8,7 @@ from app.services.locations import (
   update_location,
 )
 
-locations = Blueprint(
-  "locations",
-  __name__,
-  url_prefix="/locations",
-)
+locations = Blueprint("locations", __name__, url_prefix="/locations")
 
 
 @locations.route("", methods=["POST"])
@@ -22,12 +18,23 @@ def create():
   description = request.form.get("description", "").strip() or None
 
   try:
-    create_location(
+    location_id = create_location(
       name=name,
       description=description,
     )
-  except ValueError:
+  except ValueError as error:
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
+
     return redirect(url_for("main.index"))
+
+  if request.headers.get("Accept") == "application/json":
+    return jsonify(
+      {
+        "id": location_id,
+        "name": name,
+      }
+    )
 
   return redirect(url_for("main.index"))
 
