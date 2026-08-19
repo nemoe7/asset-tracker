@@ -33,6 +33,13 @@ Inventory
             </p>
           </div>
 
+          {% if can_manage_users %}
+          <a href="{{ url_for('admin.users') }}"
+            class="block rounded-lg px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
+            Manage Users
+          </a>
+          {% endif %}
+
           <form method="post" action="{{ url_for('auth.logout') }}" class="mt-2">
             <button type="submit"
               class="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">

@@ -12,6 +12,7 @@ from flask import (
 
 from app.auth import login_required
 from app.db import get_db
+from app.services.authorization import has_permission
 from app.services.inventory import get_item, get_items
 from app.services.locations import get_locations
 
@@ -56,6 +57,11 @@ def index():
 
   locations = get_locations()
 
+  can_manage_users = has_permission(
+    user_id,
+    "users.manage",
+  )
+
   return render_template(
     "index.jinja",
     items=items,
@@ -64,6 +70,7 @@ def index():
     page=1,
     total_pages=1,
     username=user["username"],
+    can_manage_users=can_manage_users,
   )
 
 
