@@ -20,7 +20,10 @@
 </head>
 
 <body class="min-h-screen bg-zinc-900 text-zinc-100">
-  {% block content %}{% endblock %}
+
+  <div class="px-6 py-6 lg:px-32 xl:px-48 2xl:px-64">
+    {% block content %}{% endblock %}
+  </div>
 
   <script>
     if ("serviceWorker" in navigator) {
@@ -29,6 +32,7 @@
   </script>
 
   {% block scripts %}{% endblock %}
+
 </body>
 
 </html>
