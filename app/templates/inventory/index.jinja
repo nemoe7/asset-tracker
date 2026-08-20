@@ -1,154 +1,152 @@
 {% extends "base.jinja" %}
 
-{% block title %}Inventory{% endblock %}
+{% block title %}
+Inventory
+{% endblock %}
 
 {% block content %}
-<main class="p-6">
 
+<main>
   <div class="flex items-center justify-between">
     <div class="flex items-center gap-3">
       <h1 class="text-2xl font-bold">
         Inventory
       </h1>
 
-      <button type="button" onclick="openQrScanner()"
-        class="rounded-lg bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-100 hover:bg-zinc-600 md:hidden">
-        Scan QR
-      </button>
+      <div class="md:hidden">
+        <button type="button" onclick="openQrScanner()"
+          class="rounded-lg bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-100 hover:bg-zinc-600">
+          Scan QR
+        </button>
+      </div>
     </div>
 
-    <div class="relative">
-      <details class="group">
-        <summary
-          class="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full bg-zinc-700 text-sm font-semibold text-zinc-100 hover:bg-zinc-600"
-          title="{{ username }}">
-          {{ username[0]|upper }}
-        </summary>
+    <div class="flex w-24 justify-end">
+      <div class="relative">
+        <details class="group">
+          <summary
+            class="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full bg-zinc-700 text-sm font-semibold text-zinc-100 hover:bg-zinc-600"
+            title="{{ username }}">
+            {{ username[0]|upper }}
+          </summary>
 
-        <div class="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-zinc-700 bg-zinc-800 p-2 shadow-xl">
-          <div class="border-b border-zinc-700 px-3 py-2">
-            <p class="truncate text-sm font-medium text-zinc-100">
-              {{ username }}
-            </p>
-          </div>
+          <div class="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-zinc-700 bg-zinc-800 p-2 shadow-xl">
+            <div class="border-b border-zinc-700 px-3 py-2">
+              <p class="truncate text-sm font-medium text-zinc-100">
+                {{ username }}
+              </p>
+            </div>
 
-          {% if can_manage_users %}
-          <a href="{{ url_for('admin.users') }}"
-            class="block rounded-lg px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
-            Manage Users
-          </a>
-          {% endif %}
-
-          <form method="post" action="{{ url_for('auth.logout') }}" class="mt-2">
-            <button type="submit"
-              class="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
-              Log out
-            </button>
-          </form>
-        </div>
-      </details>
-    </div>
-  </div>
-
-  <div class="mt-6">
-    <div class="rounded-xl border border-zinc-700 bg-zinc-800">
-
-      <div class="border-b border-zinc-700 p-4">
-        <div class="flex gap-3">
-          <form method="get" class="flex flex-1 gap-3">
-            <input type="search" name="search" value="{{ search }}" placeholder="Search inventory..."
-              class="w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 placeholder-zinc-500 outline-none focus:border-zinc-400">
-
-            <button type="submit"
-              class="rounded-lg bg-zinc-100 px-4 py-2 font-medium text-zinc-900 hover:bg-zinc-200 md:px-5">
-              Search
-            </button>
-          </form>
-
-          <button type="button" onclick="document.getElementById('add-item-modal').showModal()"
-            class="hidden rounded-lg bg-zinc-700 px-5 py-2 font-medium text-zinc-100 hover:bg-zinc-600 md:block">
-            Add Item
-          </button>
-        </div>
-      </div>
-
-      <!-- Desktop table -->
-      <div class="hidden overflow-x-auto md:block">
-        <table class="w-full table-auto text-left text-sm">
-          <thead class="border-b border-zinc-700 text-zinc-400">
-            <tr>
-              <th class="whitespace-nowrap px-4 py-3 font-medium">
-                ID
-              </th>
-
-              <th class="w-full px-4 py-3 font-medium">
-                Name
-              </th>
-
-              <th class="max-w-64 px-4 py-3 font-medium">
-                Location
-              </th>
-
-              <th class="whitespace-nowrap px-4 py-3 font-medium">
-                Updated
-              </th>
-            </tr>
-          </thead>
-
-          <tbody class="divide-y divide-zinc-700">
-            {% for item in items %}
-            {% include "inventory/item_table.jinja" %}
-            {% else %}
-            <tr>
-              <td colspan="4" class="px-4 py-10 text-center text-zinc-500">
-                No inventory items found.
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Mobile cards -->
-      <div class="divide-y divide-zinc-700 md:hidden">
-        {% for item in items %}
-        {% include "inventory/item_card.jinja" %}
-        {% else %}
-        <div class="px-4 py-10 text-center text-zinc-500">
-          No inventory items found.
-        </div>
-        {% endfor %}
-      </div>
-
-      <div class="flex items-center justify-between border-t border-zinc-700 p-4">
-        <span class="text-sm text-zinc-400">
-          Page {{ page }} of {{ total_pages }}
-        </span>
-
-        <div class="flex gap-2">
-          {% if page > 1 %}
-          <a href="?page={{ page - 1 }}&search={{ search }}"
-            class="rounded-lg border border-zinc-600 px-4 py-2 text-sm hover:bg-zinc-700">
-            Previous
-          </a>
-          {% endif %}
-
-          {% if page < total_pages %} <a href="?page={{ page + 1 }}&search={{ search }}"
-            class="rounded-lg border border-zinc-600 px-4 py-2 text-sm hover:bg-zinc-700">
-            Next
+            {% if can_manage_users %}
+            <a href="{{ url_for('admin.users') }}"
+              class="block rounded-lg px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
+              Manage Users
             </a>
             {% endif %}
-        </div>
-      </div>
 
+            <form method="post" action="{{ url_for('auth.logout') }}" class="mt-2">
+              <button type="submit"
+                class="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
+                Log out
+              </button>
+            </form>
+          </div>
+        </details>
+      </div>
     </div>
   </div>
 
+  <div class="mt-6 rounded-xl border border-zinc-700 bg-zinc-800">
+    <div class="border-b border-zinc-700 p-4">
+      <div class="flex gap-3">
+        <form method="get" class="flex min-w-0 flex-1 gap-3">
+          <input type="search" name="search" value="{{ search }}" placeholder="Search inventory..."
+            class="min-w-0 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 placeholder-zinc-500 outline-none focus:border-zinc-400">
+
+          <button type="submit"
+            class="shrink-0 rounded-lg bg-zinc-100 px-5 py-2 font-medium text-zinc-900 hover:bg-zinc-200">
+            Search
+          </button>
+        </form>
+
+        <button type="button" onclick="document.getElementById('add-item-modal').showModal()"
+          class="shrink-0 rounded-lg bg-zinc-700 px-5 py-2 font-medium text-zinc-100 hover:bg-zinc-600">
+          Add Item
+        </button>
+      </div>
+    </div>
+
+    <div class="hidden md:block">
+      <table class="w-full table-fixed text-left text-sm">
+        <thead class="border-b border-zinc-700 text-zinc-400">
+          <tr>
+            <th class="px-4 py-3 font-medium">
+              Name
+            </th>
+
+            <th class="w-64 px-4 py-3 font-medium">
+              Location
+            </th>
+
+            <th class="w-40 whitespace-nowrap px-4 py-3 font-medium">
+              Updated
+            </th>
+
+            <th class="w-24 whitespace-nowrap px-4 py-3 text-center font-medium">
+              Actions
+            </th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-zinc-700">
+          {% for item in items %}
+          {% include "inventory/item_table.jinja" %}
+          {% else %}
+          <tr>
+            <td colspan="4" class="px-4 py-10 text-center text-zinc-500">
+              No inventory items found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divide-y divide-zinc-700 md:hidden">
+      {% for item in items %}
+      {% include "inventory/item_card.jinja" %}
+      {% else %}
+      <div class="px-4 py-10 text-center text-zinc-500">
+        No inventory items found.
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="flex items-center justify-between border-t border-zinc-700 p-4">
+      <span class="text-sm text-zinc-400">
+        Page {{ page }} of {{ total_pages }}
+      </span>
+
+      <div class="flex gap-2">
+        {% if page > 1 %}
+        <a href="?page={{ page - 1 }}&search={{ search }}"
+          class="rounded-lg border border-zinc-600 px-4 py-2 text-sm hover:bg-zinc-700">
+          Previous
+        </a>
+        {% endif %}
+
+        {% if page < total_pages %} <a href="?page={{ page + 1 }}&search={{ search }}"
+          class="rounded-lg border border-zinc-600 px-4 py-2 text-sm hover:bg-zinc-700">
+          Next
+          </a>
+          {% endif %}
+      </div>
+    </div>
+  </div>
 </main>
 
-{# Add Item modal #}
 <dialog id="add-item-modal"
-  class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+  class="mx-auto my-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
   <div class="p-6">
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold">
@@ -178,7 +176,7 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-zinc-300" for="add-item-location">
+        <label for="add-item-location" class="block text-sm font-medium text-zinc-300">
           Location
         </label>
 
@@ -239,10 +237,9 @@
   </div>
 </dialog>
 
-{# Edit Item modals #}
 {% for item in items %}
 <dialog id="edit-item-{{ item.id }}"
-  class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+  class="mx-auto my-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
   <div class="p-6">
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold">
@@ -270,7 +267,7 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-zinc-300" for="edit-item-location-{{ item.id }}">
+        <label for="edit-item-location-{{ item.id }}" class="block text-sm font-medium text-zinc-300">
           Location
         </label>
 
@@ -317,13 +314,13 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-between pt-2">
+      <div class="flex items-center justify-between gap-3 pt-2">
         <button type="submit" formaction="{{ url_for('inventory.archive', item_id=item.id) }}"
-          class="rounded-lg px-4 py-2 text-sm text-red-400 hover:bg-red-950/50 hover:text-red-300">
+          class="shrink-0 rounded-lg px-4 py-2 text-sm text-red-400 hover:bg-red-950/50 hover:text-red-300">
           Archive
         </button>
 
-        <div class="flex gap-3">
+        <div class="flex shrink-0 gap-3">
           <button type="button" onclick="document.getElementById('edit-item-{{ item.id }}').close()"
             class="rounded-lg border border-zinc-600 px-4 py-2 text-zinc-300 hover:bg-zinc-700">
             Cancel
@@ -339,9 +336,8 @@
 </dialog>
 {% endfor %}
 
-{# QR scanner #}
 <dialog id="qr-scanner-modal"
-  class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+  class="mx-auto my-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
   <div class="p-6">
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold">
@@ -433,6 +429,7 @@
           }
 
           const itemId = decodedText.trim();
+
           const itemModal =
             document.getElementById(`edit-item-${itemId}`);
 
@@ -619,6 +616,7 @@
       error.textContent = "Location name cannot be empty";
       error.classList.remove("hidden");
       input.focus();
+
       return;
     }
 
@@ -629,7 +627,8 @@
           method: "POST",
           headers: {
             "Accept": "application/json",
-            "Content-Type": "application/x-www-form-urlencoded"
+            "Content-Type":
+              "application/x-www-form-urlencoded"
           },
           body: new URLSearchParams({
             name: name
@@ -646,6 +645,7 @@
 
         error.classList.remove("hidden");
         input.focus();
+
         return;
       }
 
@@ -660,6 +660,7 @@
 
       quick.classList.add("hidden");
       select.parentElement.classList.remove("hidden");
+
       input.value = "";
     } catch (requestError) {
       console.error(requestError);
