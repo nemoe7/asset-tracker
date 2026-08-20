@@ -21,22 +21,22 @@ Inventory
       </div>
     </div>
 
-    <div class="flex w-24 justify-end">
-      <div class="relative">
-        <details class="group">
-          <summary
-            class="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full bg-zinc-700 text-sm font-semibold text-zinc-100 hover:bg-zinc-600"
-            title="{{ username }}">
-            {{ username[0]|upper }}
-          </summary>
+    <div class="relative">
+      <details class="group">
+        <summary
+          class="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full bg-zinc-700 text-sm font-semibold text-zinc-100 hover:bg-zinc-600"
+          title="{{ username }}">
+          {{ username[0]|upper }}
+        </summary>
 
-          <div class="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-zinc-700 bg-zinc-800 p-2 shadow-xl">
-            <div class="border-b border-zinc-700 px-3 py-2">
-              <p class="truncate text-sm font-medium text-zinc-100">
-                {{ username }}
-              </p>
-            </div>
+        <div class="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-zinc-700 bg-zinc-800 shadow-xl">
+          <div class="border-b border-zinc-700 px-5 py-3">
+            <p class="truncate text-sm font-medium text-zinc-100">
+              {{ username }}
+            </p>
+          </div>
 
+          <div class="p-2">
             {% if can_manage_users %}
             <a href="{{ url_for('admin.users') }}"
               class="block rounded-lg px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
@@ -44,15 +44,15 @@ Inventory
             </a>
             {% endif %}
 
-            <form method="post" action="{{ url_for('auth.logout') }}" class="mt-2">
+            <form method="post" action="{{ url_for('auth.logout') }}" class="mt-1">
               <button type="submit"
-                class="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
+                class="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-400 hover:bg-red-950/50 hover:text-red-300">
                 Log out
               </button>
             </form>
           </div>
-        </details>
-      </div>
+        </div>
+      </details>
     </div>
   </div>
 
@@ -616,7 +616,6 @@ Inventory
       error.textContent = "Location name cannot be empty";
       error.classList.remove("hidden");
       input.focus();
-
       return;
     }
 
@@ -645,7 +644,6 @@ Inventory
 
         error.classList.remove("hidden");
         input.focus();
-
         return;
       }
 
@@ -660,7 +658,6 @@ Inventory
 
       quick.classList.add("hidden");
       select.parentElement.classList.remove("hidden");
-
       input.value = "";
     } catch (requestError) {
       console.error(requestError);
