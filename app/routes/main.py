@@ -63,7 +63,7 @@ def index():
   )
 
   return render_template(
-    "index.jinja",
+    "inventory/index.jinja",
     items=items,
     locations=locations,
     search=search,
