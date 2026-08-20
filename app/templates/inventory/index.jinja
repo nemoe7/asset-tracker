@@ -360,10 +360,8 @@ Inventory
 </dialog>
 
 <div id="copy-toast"
-  class="pointer-events-none fixed left-1/2 top-6 z-50 -translate-x-1/2 -translate-y-4 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm text-zinc-100 opacity-0 shadow-xl transition-all duration-200">
-  ID copied
+  class="pointer-events-none fixed z-50 max-w-[min(16rem,calc(100vw-2rem))] -translate-y-1/2 truncate rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 opacity-0 shadow-xl transition-opacity duration-200">
 </div>
-
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
 <script>
@@ -495,34 +493,39 @@ Inventory
       stopQrScanner();
     });
 
-  function copyItemId(id) {
+  function copyItemId(id, button) {
     navigator.clipboard.writeText(id);
 
     const toast = document.getElementById("copy-toast");
 
+    toast.textContent = `Copied: ${id}`;
+
+    const rect = button.getBoundingClientRect();
+
+    toast.style.left = `${rect.left - 8}px`;
+    toast.style.top = `${rect.top + rect.height / 2}px`;
+    toast.style.transform =
+      "translate(-100%, -50%) translateX(16px)";
+
     clearTimeout(copyToastTimeout);
 
-    toast.classList.remove(
-      "-translate-y-4",
-      "opacity-0"
-    );
+    toast.classList.remove("opacity-0");
+    toast.classList.add("opacity-100");
 
-    toast.classList.add(
-      "translate-y-0",
-      "opacity-100"
-    );
+    requestAnimationFrame(() => {
+      toast.style.transform =
+        "translate(-100%, -50%) translateX(0)";
+    });
 
     copyToastTimeout = setTimeout(() => {
-      toast.classList.remove(
-        "translate-y-0",
-        "opacity-100"
-      );
+      toast.classList.remove("opacity-100");
+      toast.classList.add("opacity-0");
 
-      toast.classList.add(
-        "-translate-y-4",
-        "opacity-0"
-      );
-    }, 1500);
+      setTimeout(() => {
+        toast.style.transform =
+          "translate(-100%, -50%) translateX(16px)";
+      }, 200);
+    }, 2300);
   }
 
   function enableQuickAddLocation(prefix) {
