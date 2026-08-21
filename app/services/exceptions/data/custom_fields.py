@@ -29,5 +29,5 @@ class CustomFieldInUseError(InvalidInputError):
   default_message = "Custom field is in use"
 
 
-class CustomFieldArchivedError(InvalidInputError):
+class CustomFieldIsArchivedError(InvalidInputError):
   default_message = "Custom field is archived"

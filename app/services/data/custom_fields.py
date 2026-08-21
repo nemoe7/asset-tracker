@@ -3,7 +3,7 @@ import json
 from ..exceptions.data.common import InvalidInputError
 from ..exceptions.data.custom_fields import *
 from .audit import create_audit_log
-from .db import get_db
+from .db import db_connection, db_transaction
 
 _VALID_FIELD_TYPES = {
   "text",
@@ -66,9 +66,7 @@ def create_custom_field(
   _validate_required(required)
   _validate_enum_values(field_type, enum_values)
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT id
@@ -111,23 +109,13 @@ def create_custom_field(
       action="created",
       entity_type="custom_field",
       entity_id=field_id,
-      connection=connection,
     )
 
-    connection.commit()
-
     return field_id
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def get_custom_field(field_id):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     field = connection.execute(
       """
       SELECT
@@ -151,14 +139,10 @@ def get_custom_field(field_id):
     field["enum_values"] = _deserialize_enum_values(field)
 
     return field
-  finally:
-    connection.close()
 
 
 def get_custom_fields(include_archived=False):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     query = """
       SELECT
         id,
@@ -186,8 +170,6 @@ def get_custom_fields(include_archived=False):
       result.append(field)
 
     return result
-  finally:
-    connection.close()
 
 
 def update_custom_field(
@@ -219,9 +201,7 @@ def update_custom_field(
   if required is not _UNSET:
     _validate_required(required)
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT
@@ -296,6 +276,9 @@ def update_custom_field(
       if value is not None:
         raise CustomFieldInUseError()
 
+      if existing["archived_at"] is not None:
+        raise CustomFieldIsArchivedError()
+
       updates.append("field_type = ?")
       values.append(field_type)
 
@@ -354,23 +337,13 @@ def update_custom_field(
       entity_type="custom_field",
       entity_id=field_id,
       details=details,
-      connection=connection,
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def archive_custom_field(field_id):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT id, archived_at
@@ -399,23 +372,13 @@ def archive_custom_field(field_id):
       action="archived",
       entity_type="custom_field",
       entity_id=field_id,
-      connection=connection,
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def restore_custom_field(field_id):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT
@@ -461,14 +424,6 @@ def restore_custom_field(field_id):
       action="unarchived",
       entity_type="custom_field",
       entity_id=field_id,
-      connection=connection,
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()

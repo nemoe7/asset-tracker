@@ -1,10 +1,7 @@
 from ..exceptions.data.common import InvalidInputError
-from ..exceptions.data.roles import (
-  InvalidRoleNameError,
-  RoleAlreadyExistsError,
-)
+from ..exceptions.data.roles import *
 from .audit import create_audit_log
-from .db import get_db
+from .db import db_connection, db_transaction
 
 
 def _validate_name(name):
@@ -15,9 +12,7 @@ def _validate_name(name):
 def create_role(name, description=None):
   _validate_name(name)
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT id
@@ -47,23 +42,14 @@ def create_role(name, description=None):
       action="created",
       entity_type="role",
       entity_id=role_id,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return role_id
-  except:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def get_role(role_id):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT
@@ -75,14 +61,10 @@ def get_role(role_id):
       """,
       (role_id,),
     ).fetchone()
-  finally:
-    connection.close()
 
 
 def get_roles():
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT
@@ -93,8 +75,6 @@ def get_roles():
       ORDER BY name
       """
     ).fetchall()
-  finally:
-    connection.close()
 
 
 def update_role(
@@ -108,9 +88,7 @@ def update_role(
   if name is not None:
     _validate_name(name)
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT *
@@ -121,7 +99,7 @@ def update_role(
     ).fetchone()
 
     if existing is None:
-      return False
+      raise RoleNotFoundError()
 
     updates = []
     values = []
@@ -177,23 +155,14 @@ def update_role(
       entity_type="role",
       entity_id=role_id,
       details=details,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def delete_role(role_id):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     result = connection.execute(
       """
       DELETE FROM roles
@@ -203,21 +172,13 @@ def delete_role(role_id):
     )
 
     if result.rowcount == 0:
-      connection.commit()
-      return False
+      raise RoleNotFoundError()
 
     create_audit_log(
       action="deleted",
       entity_type="role",
       entity_id=role_id,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()

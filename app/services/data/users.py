@@ -6,7 +6,7 @@ from werkzeug.security import (
 from ..exceptions.data.common import InvalidInputError
 from ..exceptions.data.users import *
 from .audit import create_audit_log
-from .db import get_db
+from .db import db_connection, db_transaction
 
 
 def _validate_username(username):
@@ -49,9 +49,7 @@ def create_user(username, password, name=None):
   if name is None:
     name = username
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT id, archived_at
@@ -91,23 +89,14 @@ def create_user(username, password, name=None):
       action="created",
       entity_type="user",
       entity_id=user_id,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return user_id
-  except:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def get_user(user_id):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT
@@ -122,14 +111,10 @@ def get_user(user_id):
       """,
       (user_id,),
     ).fetchone()
-  finally:
-    connection.close()
 
 
 def get_user_by_username(username, include_archived=False):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     query = """
       SELECT
         id,
@@ -153,14 +138,10 @@ def get_user_by_username(username, include_archived=False):
       query,
       parameters,
     ).fetchone()
-  finally:
-    connection.close()
 
 
 def get_users():
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT
@@ -174,8 +155,6 @@ def get_users():
       ORDER BY username
       """
     ).fetchall()
-  finally:
-    connection.close()
 
 
 def update_user(user_id, username=None, name=None, password=None):
@@ -196,9 +175,7 @@ def update_user(user_id, username=None, name=None, password=None):
   if password is not None:
     _validate_password(password)
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     updates = []
     values = []
     details = {}
@@ -264,23 +241,14 @@ def update_user(user_id, username=None, name=None, password=None):
       entity_type="user",
       entity_id=user_id,
       details=details,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def archive_user(user_id):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     user = connection.execute(
       """
       SELECT archived_at
@@ -310,23 +278,14 @@ def archive_user(user_id):
       action="archived",
       entity_type="user",
       entity_id=user_id,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def restore_user(user_id):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     user = connection.execute(
       """
       SELECT archived_at
@@ -356,23 +315,14 @@ def restore_user(user_id):
       action="restored",
       entity_type="user",
       entity_id=user_id,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def verify_password(user_id, password):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     user = connection.execute(
       """
       SELECT password_hash
@@ -390,5 +340,3 @@ def verify_password(user_id, password):
       user["password_hash"],
       password,
     )
-  finally:
-    connection.close()

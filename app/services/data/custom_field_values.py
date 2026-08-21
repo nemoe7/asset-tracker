@@ -1,13 +1,15 @@
 import json
 from datetime import date
 
+from app.services.data.users import get_user
+
 from ..exceptions.data.custom_field_values import *
 from ..exceptions.data.custom_fields import (
-  CustomFieldArchivedError,
+  CustomFieldIsArchivedError,
   CustomFieldNotFoundError,
 )
 from ..exceptions.data.inventory import ItemNotFoundError
-from .db import get_db
+from .db import db_connection, db_transaction
 
 
 def _validate_value(field, value, connection):
@@ -58,15 +60,7 @@ def _validate_value(field, value, connection):
     if isinstance(value, bool) or not isinstance(value, int):
       raise InvalidCustomFieldValueError("Value must be a user ID")
 
-    user = connection.execute(
-      """
-      SELECT 1
-      FROM users
-      WHERE id = ?
-        AND archived_at IS NULL
-      """,
-      (value,),
-    ).fetchone()
+    user = get_user(value)
 
     if user is None:
       raise InvalidCustomFieldValueError(f"User with ID {value} does not exist")
@@ -83,9 +77,7 @@ def _serialize_value(field_type, value):
 
 
 def set_custom_field_value(item_id, field_id, value):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     item = connection.execute(
       """
       SELECT 1
@@ -116,7 +108,7 @@ def set_custom_field_value(item_id, field_id, value):
       raise CustomFieldNotFoundError()
 
     if field["archived_at"] is not None:
-      raise CustomFieldArchivedError()
+      raise CustomFieldIsArchivedError()
 
     _validate_value(
       field,
@@ -133,8 +125,6 @@ def set_custom_field_value(item_id, field_id, value):
         """,
         (item_id, field_id),
       )
-
-      connection.commit()
 
       return True
 
@@ -161,20 +151,11 @@ def set_custom_field_value(item_id, field_id, value):
       ),
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def get_custom_field_value(item_id, field_id):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT
@@ -187,14 +168,10 @@ def get_custom_field_value(item_id, field_id):
       """,
       (item_id, field_id),
     ).fetchone()
-  finally:
-    connection.close()
 
 
 def get_custom_field_values(item_id):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT
@@ -207,14 +184,10 @@ def get_custom_field_values(item_id):
       """,
       (item_id,),
     ).fetchall()
-  finally:
-    connection.close()
 
 
 def delete_custom_field_value(item_id, field_id):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     field = connection.execute(
       """
       SELECT
@@ -255,11 +228,4 @@ def delete_custom_field_value(item_id, field_id):
       (item_id, field_id),
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()

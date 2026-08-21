@@ -5,7 +5,7 @@ from ..exceptions.data.common import InvalidInputError
 from ..exceptions.data.inventory import *
 from ..exceptions.data.locations import LocationNotFoundError
 from .audit import create_audit_log
-from .db import get_db
+from .db import db_connection, db_transaction
 from .locations import get_location
 
 _UNSET = object()
@@ -16,12 +16,12 @@ def _validate_item_name(name):
     raise InvalidItemNameError()
 
 
-def _validate_location(connection, location_id):
+def _validate_location(location_id):
   if location_id is None:
     return
-  if get_location(location_id, connection=connection) is None:
+
+  if get_location(location_id) is None:
     raise LocationNotFoundError()
-  return
 
 
 def _get_custom_fields(connection, item_id):
@@ -73,24 +73,22 @@ def _item_with_custom_fields(connection, item):
 def create_item(name, location_id=None):
   _validate_item_name(name)
 
-  connection = get_db()
-
-  try:
-    _validate_location(connection, location_id)
+  with db_transaction() as connection:
+    _validate_location(location_id)
 
     item_id = str(uuid.uuid4())
 
     connection.execute(
       """
-      INSERT INTO inventory_items (
-        id,
-        name,
-        location_id,
-        created_at,
-        updated_at
-      )
-      VALUES (?, ?, ?, datetime('now'), datetime('now'))
-      """,
+        INSERT INTO inventory_items (
+          id,
+          name,
+          location_id,
+          created_at,
+          updated_at
+        )
+        VALUES (?, ?, ?, datetime('now'), datetime('now'))
+        """,
       (
         item_id,
         name,
@@ -102,23 +100,14 @@ def create_item(name, location_id=None):
       action="created",
       entity_type="inventory_item",
       entity_id=item_id,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return item_id
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def get_item(item_id):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     item = connection.execute(
       """
       SELECT
@@ -137,8 +126,6 @@ def get_item(item_id):
       connection,
       item,
     )
-  finally:
-    connection.close()
 
 
 def get_items(
@@ -146,9 +133,7 @@ def get_items(
   location_id=None,
   include_archived=False,
 ):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     conditions = []
     parameters = []
 
@@ -160,10 +145,7 @@ def get_items(
       parameters.append(f"%{search}%")
 
     if location_id is not None:
-      _validate_location(
-        connection,
-        location_id,
-      )
+      _validate_location(location_id)
 
       conditions.append("inventory_items.location_id = ?")
       parameters.append(location_id)
@@ -194,8 +176,6 @@ def get_items(
       )
       for item in items
     ]
-  finally:
-    connection.close()
 
 
 def update_item(
@@ -206,9 +186,7 @@ def update_item(
   if name is _UNSET and location_id is _UNSET:
     raise InvalidInputError("No fields to update")
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT *
@@ -241,10 +219,7 @@ def update_item(
         }
 
     if location_id is not _UNSET:
-      _validate_location(
-        connection,
-        location_id,
-      )
+      _validate_location(location_id)
 
       if existing["location_id"] != location_id:
         updates.append("location_id = ?")
@@ -276,23 +251,14 @@ def update_item(
       entity_type="inventory_item",
       entity_id=item_id,
       details=details,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def archive_item(item_id):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT archived_at
@@ -322,23 +288,14 @@ def archive_item(item_id):
       action="archived",
       entity_type="inventory_item",
       entity_id=item_id,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def restore_item(item_id):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT archived_at
@@ -368,14 +325,7 @@ def restore_item(item_id):
       action="restored",
       entity_type="inventory_item",
       entity_id=item_id,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()

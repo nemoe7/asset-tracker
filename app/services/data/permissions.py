@@ -1,7 +1,7 @@
 from ..exceptions.data.common import InvalidInputError
 from ..exceptions.data.permissions import *
 from .audit import create_audit_log
-from .db import get_db
+from .db import db_connection, db_transaction
 
 _UNSET = object()
 
@@ -14,9 +14,7 @@ def _validate_name(name):
 def create_permission(name, description=None):
   _validate_name(name)
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT id
@@ -46,23 +44,14 @@ def create_permission(name, description=None):
       action="created",
       entity_type="permission",
       entity_id=permission_id,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return permission_id
-  except:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def get_permission(permission_id):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT
@@ -74,15 +63,11 @@ def get_permission(permission_id):
       """,
       (permission_id,),
     ).fetchone()
-  finally:
-    connection.close()
 
 
 def get_permission_by_name(name):
   _validate_name(name)
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT
@@ -94,14 +79,10 @@ def get_permission_by_name(name):
       """,
       (name,),
     ).fetchone()
-  finally:
-    connection.close()
 
 
 def get_permissions():
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT
@@ -112,8 +93,6 @@ def get_permissions():
       ORDER BY name
       """
     ).fetchall()
-  finally:
-    connection.close()
 
 
 def update_permission(
@@ -127,9 +106,7 @@ def update_permission(
   if name is not _UNSET:
     _validate_name(name)
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT *
@@ -196,23 +173,14 @@ def update_permission(
       entity_type="permission",
       entity_id=permission_id,
       details=details,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def delete_permission(permission_id):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT id
@@ -237,14 +205,7 @@ def delete_permission(permission_id):
       action="deleted",
       entity_type="permission",
       entity_id=permission_id,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()

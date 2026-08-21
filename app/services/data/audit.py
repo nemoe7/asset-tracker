@@ -1,7 +1,7 @@
 import json
 
 from ..auth.context import get_current_user
-from .db import get_db
+from .db import db_transaction, get_db
 
 
 def create_audit_log(
@@ -9,19 +9,13 @@ def create_audit_log(
   entity_type,
   entity_id,
   details=None,
-  connection=None,
 ):
   user_id = get_current_user()
 
   if user_id is None:
     raise RuntimeError("No current user")
 
-  owns_connection = connection is None
-
-  if owns_connection:
-    connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     result = connection.execute(
       """
       INSERT INTO audit_log (
@@ -43,13 +37,7 @@ def create_audit_log(
       ),
     )
 
-    if owns_connection:
-      connection.commit()
-
     return result.lastrowid
-  finally:
-    if owns_connection:
-      connection.close()
 
 
 def _parse_audit_log(row):
