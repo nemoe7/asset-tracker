@@ -5,7 +5,7 @@ from flask import (
   session,
 )
 
-from .db import get_db
+from ..data.db import get_db
 
 
 def _get_permission_precedence(permission_name):

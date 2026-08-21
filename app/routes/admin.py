@@ -7,7 +7,7 @@ from flask import (
   url_for,
 )
 
-from ..services.data.authorization import permission_required
+from ..services.auth.authorization import permission_required
 from ..services.data.users import (
   archive_user,
   create_user,
