@@ -389,8 +389,7 @@ def archive_custom_field(field_id):
     connection.execute(
       """
       UPDATE custom_fields
-      SET archived_at = CURRENT_TIMESTAMP,
-      updated_at = CURRENT_TIMESTAMP
+      SET archived_at = CURRENT_TIMESTAMP
       WHERE id = ?
       """,
       (field_id,),
@@ -452,8 +451,7 @@ def restore_custom_field(field_id):
     connection.execute(
       """
       UPDATE custom_fields
-      SET archived_at = NULL,
-      updated_at = CURRENT_TIMESTAMP
+      SET archived_at = NULL
       WHERE id = ?
       """,
       (field_id,),
