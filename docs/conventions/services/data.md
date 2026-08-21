@@ -527,7 +527,35 @@ Audit records shall identify the appropriate actor according to the application'
 
 No-op operations shall not create audit records.
 
+When a persisted value is created, changed, or removed, the audit record shall describe the state transition.
+
+For value changes, audit details shall include both the previous value and the new value.
+
+For creation:
+
+```text
+old_value: null
+new_value: <created value>
+````
+
+For updates:
+
+```text
+old_value: <previous value>
+new_value: <new value>
+```
+
+For removal:
+
+```text
+old_value: <previous value>
+new_value: null
+```
+
+Replacing a value with the same value is a no-op and shall not create an audit record.
+
 Audit records shall not be directly editable through ordinary data-service operations.
+
 
 ---
 

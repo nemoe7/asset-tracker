@@ -1,5 +1,6 @@
 import pytest
 
+from app.services.data.audit import get_audit_logs
 from app.services.data.custom_field_values import (
   delete_custom_field_value,
   get_custom_field_value,
@@ -50,6 +51,36 @@ def test_set_custom_field_value(gen_test_admin):
   assert value["value"] == "SN-123"
 
 
+def test_set_custom_field_value_creates_audit_log(gen_test_admin):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+  item_id = create_item(
+    name="Test Item",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "SN-123",
+  )
+
+  logs = get_audit_logs(
+    entity_type="custom_field_value",
+    entity_id=f"{item_id}:{field_id}",
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["action"] == "created"
+  assert logs[0]["details"] == {
+    "value": {
+      "old": None,
+      "new": "SN-123",
+    },
+  }
+
+
 def test_set_custom_field_value_updates_existing_value(gen_test_admin):
   field_id = create_custom_field(
     name="Serial Number",
@@ -76,6 +107,74 @@ def test_set_custom_field_value_updates_existing_value(gen_test_admin):
   )
 
   assert value["value"] == "SN-456"
+
+
+def test_set_custom_field_value_updates_existing_value_with_audit_log(
+  gen_test_admin,
+):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+  item_id = create_item(
+    name="Test Item",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "SN-123",
+  )
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "SN-456",
+  )
+
+  logs = get_audit_logs(
+    entity_type="custom_field_value",
+    entity_id=f"{item_id}:{field_id}",
+  )
+
+  assert len(logs) == 2
+  assert logs[1]["action"] == "updated"
+  assert logs[1]["details"] == {
+    "value": {
+      "old": "SN-123",
+      "new": "SN-456",
+    },
+  }
+
+
+def test_set_custom_field_value_same_value_is_no_op(
+  gen_test_admin,
+):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+  item_id = create_item(
+    name="Test Item",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "SN-123",
+  )
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "SN-123",
+  )
+
+  logs = get_audit_logs(
+    entity_type="custom_field_value",
+    entity_id=f"{item_id}:{field_id}",
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["action"] == "created"
 
 
 def test_set_custom_field_value_can_clear_optional_value(gen_test_admin):
@@ -105,6 +204,43 @@ def test_set_custom_field_value_can_clear_optional_value(gen_test_admin):
     )
     is None
   )
+
+
+def test_set_custom_field_value_can_clear_optional_value_with_audit_log(
+  gen_test_admin,
+):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+  item_id = create_item(
+    name="Test Item",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "SN-123",
+  )
+  set_custom_field_value(
+    item_id,
+    field_id,
+    None,
+  )
+
+  logs = get_audit_logs(
+    entity_type="custom_field_value",
+    entity_id=f"{item_id}:{field_id}",
+  )
+
+  assert len(logs) == 2
+  assert logs[1]["action"] == "deleted"
+  assert logs[1]["details"] == {
+    "value": {
+      "old": "SN-123",
+      "new": None,
+    },
+  }
 
 
 def test_required_custom_field_can_initially_be_unset(gen_test_admin):
@@ -286,7 +422,9 @@ def test_set_integer_custom_field_value(gen_test_admin):
   assert value["value"] == "42"
 
 
-def test_set_integer_custom_field_value_rejects_invalid_value(gen_test_admin):
+def test_set_integer_custom_field_value_rejects_invalid_value(
+  gen_test_admin,
+):
   field_id = create_custom_field(
     name="Quantity",
     field_type="integer",
@@ -343,7 +481,9 @@ def test_set_decimal_custom_field_value(gen_test_admin):
   assert value["value"] == "12.5"
 
 
-def test_set_decimal_custom_field_value_rejects_invalid_value(gen_test_admin):
+def test_set_decimal_custom_field_value_rejects_invalid_value(
+  gen_test_admin,
+):
   field_id = create_custom_field(
     name="Weight",
     field_type="decimal",
@@ -383,7 +523,9 @@ def test_set_boolean_custom_field_value(gen_test_admin):
   assert value["value"] == "1"
 
 
-def test_set_boolean_custom_field_value_rejects_invalid_value(gen_test_admin):
+def test_set_boolean_custom_field_value_rejects_invalid_value(
+  gen_test_admin,
+):
   field_id = create_custom_field(
     name="Active",
     field_type="boolean",
@@ -423,7 +565,9 @@ def test_set_date_custom_field_value(gen_test_admin):
   assert value["value"] == "2026-08-20"
 
 
-def test_set_date_custom_field_value_rejects_invalid_value(gen_test_admin):
+def test_set_date_custom_field_value_rejects_invalid_value(
+  gen_test_admin,
+):
   field_id = create_custom_field(
     name="Purchase Date",
     field_type="date",
@@ -468,7 +612,9 @@ def test_set_enum_custom_field_value(gen_test_admin):
   assert value["value"] == "Used"
 
 
-def test_set_enum_custom_field_value_rejects_invalid_value(gen_test_admin):
+def test_set_enum_custom_field_value_rejects_invalid_value(
+  gen_test_admin,
+):
   field_id = create_custom_field(
     name="Condition",
     field_type="enum",
@@ -490,7 +636,9 @@ def test_set_enum_custom_field_value_rejects_invalid_value(gen_test_admin):
     )
 
 
-def test_set_enum_custom_field_value_rejects_non_string(gen_test_admin):
+def test_set_enum_custom_field_value_rejects_non_string(
+  gen_test_admin,
+):
   field_id = create_custom_field(
     name="Condition",
     field_type="enum",
@@ -541,7 +689,9 @@ def test_set_user_custom_field_value(
   assert value["value"] == str(user_id)
 
 
-def test_set_user_custom_field_value_rejects_missing_user(gen_test_admin):
+def test_set_user_custom_field_value_rejects_missing_user(
+  gen_test_admin,
+):
   field_id = create_custom_field(
     name="Assigned To",
     field_type="user",
@@ -558,7 +708,9 @@ def test_set_user_custom_field_value_rejects_missing_user(gen_test_admin):
     )
 
 
-def test_set_user_custom_field_value_rejects_non_integer(gen_test_admin):
+def test_set_user_custom_field_value_rejects_non_integer(
+  gen_test_admin,
+):
   field_id = create_custom_field(
     name="Assigned To",
     field_type="user",
@@ -604,11 +756,9 @@ def test_get_custom_field_values(gen_test_admin):
   )
 
   assert len(values) == 2
-
   assert values[0]["item_id"] == item_id
   assert values[0]["field_id"] == first_field_id
   assert values[0]["value"] == "SN-123"
-
   assert values[1]["item_id"] == item_id
   assert values[1]["field_id"] == second_field_id
   assert values[1]["value"] == "42"
@@ -627,7 +777,9 @@ def test_get_custom_field_values_returns_empty_list(gen_test_admin):
   )
 
 
-def test_get_custom_field_value_returns_none_when_missing(gen_test_admin):
+def test_get_custom_field_value_returns_none_when_missing(
+  gen_test_admin,
+):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
@@ -677,6 +829,40 @@ def test_delete_custom_field_value(gen_test_admin):
   )
 
 
+def test_delete_custom_field_value_creates_audit_log(gen_test_admin):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+  item_id = create_item(
+    name="Test Item",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "SN-123",
+  )
+  delete_custom_field_value(
+    item_id,
+    field_id,
+  )
+
+  logs = get_audit_logs(
+    entity_type="custom_field_value",
+    entity_id=f"{item_id}:{field_id}",
+  )
+
+  assert len(logs) == 2
+  assert logs[1]["action"] == "deleted"
+  assert logs[1]["details"] == {
+    "value": {
+      "old": "SN-123",
+      "new": None,
+    },
+  }
+
+
 def test_delete_custom_field_value_rejects_missing_value(
   gen_test_admin,
 ):
@@ -712,9 +898,7 @@ def test_custom_field_values_are_preserved_when_inventory_item_is_archived(
     "SN-123",
   )
 
-  archive_item(
-    item_id,
-  )
+  archive_item(item_id)
 
   value = get_custom_field_value(
     item_id,
@@ -722,3 +906,4 @@ def test_custom_field_values_are_preserved_when_inventory_item_is_archived(
   )
 
   assert value["value"] == "SN-123"
+
