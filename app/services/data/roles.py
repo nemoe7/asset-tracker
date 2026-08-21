@@ -3,6 +3,8 @@ from ..exceptions.data.roles import *
 from .audit import create_audit_log
 from .db import db_connection, db_transaction
 
+_UNSET = object()
+
 
 def _validate_name(name):
   if not isinstance(name, str) or not name.strip():
@@ -42,7 +44,6 @@ def create_role(name, description=None):
       action="created",
       entity_type="role",
       entity_id=role_id,
-
     )
 
     return role_id
@@ -79,13 +80,13 @@ def get_roles():
 
 def update_role(
   role_id,
-  name=None,
-  description=None,
+  name=_UNSET,
+  description=_UNSET,
 ):
-  if name is None and description is None:
+  if name is _UNSET and description is _UNSET:
     raise InvalidInputError("No fields to update")
 
-  if name is not None:
+  if name is not _UNSET:
     _validate_name(name)
 
   with db_transaction() as connection:
@@ -105,7 +106,7 @@ def update_role(
     values = []
     details = {}
 
-    if name is not None and existing["name"] != name:
+    if name is not _UNSET and existing["name"] != name:
       duplicate = connection.execute(
         """
         SELECT id
@@ -127,7 +128,7 @@ def update_role(
         "new": name,
       }
 
-    if description is not None and existing["description"] != description:
+    if description is not _UNSET and existing["description"] != description:
       updates.append("description = ?")
       values.append(description)
 
@@ -155,7 +156,6 @@ def update_role(
       entity_type="role",
       entity_id=role_id,
       details=details,
-
     )
 
     return True
@@ -178,7 +178,6 @@ def delete_role(role_id):
       action="deleted",
       entity_type="role",
       entity_id=role_id,
-
     )
 
     return True
