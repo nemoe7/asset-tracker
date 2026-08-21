@@ -52,42 +52,22 @@ Schema changes shall be made through the project's schema/migration mechanism.
 
 ## 4. Database Connections
 
-Data services may operate using either:
+Data services shall use the application's database connection context.
 
-1. A connection owned by the service.
-2. An explicitly supplied connection belonging to an existing transaction.
+A connection context shall provide the current database connection to data services and nested service calls.
 
-A service that creates its own connection owns that connection and is responsible for closing it.
+When no connection context exists, the operation may establish and own a connection.
 
-A service receiving an externally supplied connection:
+When a connection context exists:
 
-- Must use that connection.
-- Must not close it.
-- Must not commit it.
-- Must not independently roll it back unless the service contract explicitly requires doing so.
+- Data services shall use the contextual connection.
+- Data services shall not create a separate connection.
+- Data services shall not close the contextual connection.
+- Data services shall not commit or roll back the contextual connection unless they own the transaction.
 
-This allows multiple service operations to participate in one transaction.
+The connection context owns the connection lifecycle and transaction when it establishes the connection.
 
-Example:
-
-```python
-with db_connection() as connection:
-  update_item(
-    item_id,
-    name="New Name",
-    connection=connection,
-  )
-
-  update_location(
-    location_id,
-    name="New Location",
-    connection=connection,
-  )
-
-  connection.commit()
-````
-
-The exact transaction/context helper may change, but the ownership rule remains the same.
+This allows multiple service operations and nested service calls to participate in one transaction without explicitly passing a connection through every service call.
 
 ---
 
@@ -135,16 +115,7 @@ A data service may call another data service when doing so represents a legitima
 * Validating that a related record exists.
 * Obtaining data required to perform the operation.
 
-Nested data-service calls shall inherit the caller's database connection.
-
-Example:
-
-```python
-location = get_location(
-  location_id,
-  connection=connection,
-)
-```
+Nested data-service calls shall automatically use the caller's database connection context.
 
 A nested service call shall not unnecessarily create a second connection or transaction.
 
@@ -337,27 +308,27 @@ means:
 
 ---
 
-## 17. No-Op Updates
+## 17. No-Op Mutations
 
-An update that produces no actual changes shall succeed without modifying the record.
+A mutation that produces no actual state change shall succeed without modifying the record.
 
-A no-op update shall:
+A no-op mutation shall:
 
 * Return the operation's normal success result.
 * Not change `updated_at`.
 * Not create an audit record.
 * Not perform an unnecessary database mutation.
 
-Example:
+This applies to idempotent operations such as archive and restore.
+
+For example:
 
 ```python
-update_location(
-  location_id,
-  name=current_name,
-  description=current_description,
-)
-# → successful no-op
+archive_custom_field(already_archived_id)
+# → False
 ```
+
+indicates that no state change occurred.
 
 ---
 
@@ -508,6 +479,12 @@ Archived records shall remain available for authorized historical access.
 
 An entity supporting archival shall not also expose normal permanent deletion.
 
+Archiving shall be idempotent.
+
+If an entity is already archived, attempting to archive it again shall not be treated as an error and shall not modify the record or create an audit record.
+
+Restoration shall follow the same rule: restoring an entity that is already active shall not be treated as an error and shall not modify the record or create an audit record.
+
 ---
 
 ## 27. Permanent Deletion
@@ -541,6 +518,12 @@ Archived records shall generally be read-only.
 Operations that modify an archived entity shall fail with the entity's appropriate archived-state exception unless the operation is specifically intended to restore or otherwise manage the archived state.
 
 An archived record must normally be restored before ordinary modification.
+
+Archive and restore operations are exceptions to the archived-state restriction.
+
+An archived record may be restored through its restore operation. Repeating the restore operation when the record is already active is an idempotent no-op.
+
+Ordinary updates, unrelated state changes, and other mutations shall require the record to be active unless explicitly defined otherwise by the entity's service contract.
 
 ---
 
