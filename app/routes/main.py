@@ -10,11 +10,11 @@ from flask import (
   url_for,
 )
 
-from app.auth import login_required
-from app.db import get_db
-from app.services.authorization import has_permission
-from app.services.inventory import get_item, get_items
-from app.services.locations import get_locations
+from ..services.data.authorization import has_permission
+from ..services.data.db import get_db
+from ..services.data.inventory import get_item, get_items
+from ..services.data.locations import get_locations
+from .auth import login_required
 
 main = Blueprint("main", __name__)
 

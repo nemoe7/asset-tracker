@@ -1,0 +1,157 @@
+Table users {
+  id integer [pk]
+  username text [not null, unique]
+  name text [not null]
+  password_hash text [not null]
+  created_at text [not null]
+  updated_at text [not null]
+  archived_at text
+}
+
+Table roles {
+  id integer [pk]
+  name text [not null, unique]
+  description text
+}
+
+Table permissions {
+  id integer [pk]
+  name text [not null, unique]
+  description text
+}
+
+Table locations {
+  id integer [pk]
+  name text [not null, unique]
+  description text
+  created_at text [not null]
+  updated_at text [not null]
+}
+
+Table inventory_items {
+  id text [pk]
+  name text [not null]
+  location_id integer
+  created_at text [not null]
+  updated_at text [not null]
+  archived_at text
+}
+
+Table custom_fields {
+  id integer [pk]
+  name text [not null, unique]
+  field_type text [not null]
+  description text
+  required integer [not null, default: 0]
+  enum_values text
+  archived_at text
+}
+
+Table user_roles {
+  user_id integer [not null]
+  role_id integer [not null]
+
+  indexes {
+    (user_id, role_id) [pk]
+  }
+}
+
+Table role_permissions {
+  role_id integer [not null]
+  permission_id integer [not null]
+  allowed integer [not null]
+
+  indexes {
+    (role_id, permission_id) [pk]
+  }
+}
+
+Table user_permissions {
+  user_id integer [not null]
+  permission_id integer [not null]
+  allowed integer [not null]
+
+  indexes {
+    (user_id, permission_id) [pk]
+  }
+}
+
+Table inventory_item_fields {
+  item_id text [not null]
+  field_id integer [not null]
+  value text
+
+  indexes {
+    (item_id, field_id) [pk]
+  }
+}
+
+Table checks {
+  id integer [pk]
+  item_id text [not null]
+  user_id integer [not null]
+  checked_at text [not null]
+}
+
+Table audit_log {
+  id integer [pk]
+  user_id integer [not null]
+  action text [not null]
+  entity_type text [not null]
+  entity_id text [not null]
+  details text
+  timestamp text [not null]
+}
+
+Table export_templates {
+  id integer [pk]
+  user_id integer
+  name text [not null]
+  configuration text [not null]
+  created_at text [not null]
+  updated_at text [not null]
+}
+
+Table backup_config {
+  id integer [pk]
+  enabled integer [not null, default: 0]
+  schedule text [not null]
+  backup_location text [not null]
+  updated_at text [not null]
+
+  Note: 'Singleton table: id must always equal 1'
+}
+
+Table backup_history {
+  id integer [pk]
+  user_id integer
+  scheduled_at text
+  completed_at text [not null]
+  path text [not null]
+}
+
+
+// Relationships
+
+Ref: inventory_items.location_id >? locations.id
+
+Ref: user_roles.user_id > users.id
+Ref: user_roles.role_id > roles.id
+
+Ref: role_permissions.role_id > roles.id
+Ref: role_permissions.permission_id > permissions.id
+
+Ref: user_permissions.user_id > users.id
+Ref: user_permissions.permission_id > permissions.id
+
+Ref: inventory_item_fields.item_id > inventory_items.id
+Ref: inventory_item_fields.field_id > custom_fields.id
+
+Ref: checks.item_id > inventory_items.id
+Ref: checks.user_id > users.id
+
+Ref: audit_log.user_id > users.id
+
+Ref: export_templates.user_id >? users.id
+
+Ref: backup_history.user_id >? users.id

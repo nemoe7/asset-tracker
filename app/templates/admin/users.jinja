@@ -138,6 +138,15 @@ Manage Users
       </div>
 
       <div>
+        <label for="user-display_name" class="block text-sm font-medium text-zinc-300">
+          Display Name
+        </label>
+
+        <input id="user-display_name" name="display_name" type="text" value="{{ display_name or '' }}" required
+          class="mt-2 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
+      </div>
+
+      <div>
         <label for="user-password" class="block text-sm font-medium text-zinc-300">
           Password
         </label>

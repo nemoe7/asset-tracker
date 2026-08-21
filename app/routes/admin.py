@@ -7,9 +7,8 @@ from flask import (
   url_for,
 )
 
-from app.auth import login_required
-from app.services.authorization import permission_required
-from app.services.users import (
+from ..services.data.authorization import permission_required
+from ..services.data.users import (
   archive_user,
   create_user,
   get_user_by_username,
@@ -17,6 +16,12 @@ from app.services.users import (
   restore_user,
   update_user,
 )
+from ..services.exceptions.data.users import (
+  InvalidPasswordError,
+  InvalidUsernameError,
+  UsernameAlreadyExistsError,
+)
+from .auth import login_required
 
 admin = Blueprint(
   "admin",
@@ -40,29 +45,29 @@ def users():
 @permission_required("users.manage")
 def create_user_route():
   username = request.form["username"].strip()
+  display_name = request.form["display_name"].strip()
   password = request.form["password"]
 
   try:
     create_user(
       username=username,
+      name=display_name,
       password=password,
     )
-  except ValueError as error:
-    archived_user = None
+  except UsernameAlreadyExistsError as error:
+    archived_user = get_user_by_username(
+      username,
+      include_archived=True,
+    )
 
-    if str(error) == "Username belongs to an archived user":
-      archived_user = get_user_by_username(
-        username,
-        include_archived=True,
+    if archived_user is None:
+      return render_template(
+        "admin/users.jinja",
+        users=get_users(),
+        error="Unable to restore archived user.",
+        username=username,
+        display_name=display_name,
       )
-
-      if archived_user is None:
-        return render_template(
-          "admin/users.jinja",
-          users=get_users(),
-          error="Unable to restore archived user.",
-          username=username,
-        )
 
     return render_template(
       "admin/users.jinja",
@@ -70,6 +75,15 @@ def create_user_route():
       error=str(error),
       username=username,
       archived_user=archived_user,
+      display_name=display_name,
+    )
+  except (InvalidUsernameError, InvalidPasswordError) as error:
+    return render_template(
+      "admin/users.jinja",
+      users=get_users(),
+      error=str(error),
+      username=username,
+      display_name=display_name,
     )
 
   return redirect(url_for("admin.users"))

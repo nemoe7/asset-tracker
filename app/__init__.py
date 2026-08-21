@@ -1,17 +1,22 @@
+import sqlite3
 from datetime import timedelta
 
 from flask import Flask
 
-from app.db import get_db, init_db
-from app.routes import register_routes
-from app.services.setup import is_first_run
-from app.templatetags import format_datetime
+from .routes import register_routes
+from .services.data.db import (
+  get_db,
+  init_db,
+)
+from .services.data.setup import is_first_run
+from .templatetags import format_datetime
 
 
 def _database_initialized():
-  connection = get_db()
-
+  connection = None
   try:
+    connection = get_db()
+
     result = connection.execute(
       """
       SELECT 1
@@ -22,8 +27,12 @@ def _database_initialized():
     ).fetchone()
 
     return result is not None
+  except sqlite3.OperationalError as oe:
+    if oe.sqlite_errorcode == sqlite3.SQLITE_CANTOPEN:
+      return False
   finally:
-    connection.close()
+    if connection is not None:
+      connection.close()
 
 
 def create_app():
@@ -33,9 +42,9 @@ def create_app():
   app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 
   app.jinja_env.filters["datetime"] = format_datetime
-
   if not _database_initialized():
-    init_db()
+    app.logger.warning("Database not initialized.")
+    init_db(app.logger)
 
   app.config["FIRST_RUN"] = is_first_run()
 

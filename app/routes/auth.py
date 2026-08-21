@@ -1,3 +1,5 @@
+import sqlite3
+
 from flask import (
   Blueprint,
   current_app,
@@ -12,9 +14,15 @@ from werkzeug.security import (
   generate_password_hash,
 )
 
-from app.auth import login_required
-from app.db import get_db
-from app.services.setup import is_first_run
+from ..auth import login_required
+from ..services.data.db import get_db
+from ..services.data.setup import is_first_run
+from ..services.data.users import _validate_password, _validate_username
+from ..services.exceptions.data.users import (
+  InvalidPasswordError,
+  InvalidUsernameError,
+  UsernameAlreadyExistsError,
+)
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -33,13 +41,17 @@ def setup_post():
     return redirect(url_for("main.index"))
 
   username = request.form["username"].strip()
+  display_name = request.form["display-name"].strip()
   password = request.form["password"]
   confirm_password = request.form["confirm_password"]
 
-  if not username:
+  try:
+    _validate_username(username)
+  except InvalidUsernameError as error:
     return render_template(
       "setup.jinja",
-      error="Username is required.",
+      error=str(error),
+      display_name=display_name,
       username=username,
     )
 
@@ -48,59 +60,89 @@ def setup_post():
       "setup.jinja",
       error="Passwords do not match.",
       username=username,
+      display_name=display_name,
+    )
+
+  try:
+    _validate_password(password)
+  except InvalidPasswordError as error:
+    return render_template(
+      "setup.jinja",
+      error=str(error),
+      username=username,
+      display_name=display_name,
     )
 
   connection = get_db()
 
   try:
-    cursor = connection.execute(
-      """
-      INSERT INTO users (
-        username,
-        password_hash,
-        created_at,
-        updated_at
+    try:
+      cursor = connection.execute(
+        """
+        INSERT INTO users (
+          username,
+          name,
+          password_hash,
+          created_at,
+          updated_at
+        )
+        VALUES (?, ?, ?, datetime('now'), datetime('now'))
+        """,
+        (
+          username,
+          display_name,
+          generate_password_hash(password),
+        ),
       )
-      VALUES (?, ?, datetime('now'), datetime('now'))
-      """,
-      (
-        username,
-        generate_password_hash(password),
-      ),
-    )
 
-    user_id = cursor.lastrowid
+      user_id = cursor.lastrowid
 
-    admin_role = connection.execute(
-      """
-      SELECT id
-      FROM roles
-      WHERE name = 'Admin'
-      """
-    ).fetchone()
+      admin_role = connection.execute(
+        """
+        SELECT id
+        FROM roles
+        WHERE name = 'Admin'
+        """
+      ).fetchone()
 
-    if admin_role is None:
-      raise RuntimeError("Admin role is missing from the database.")
+      if admin_role is None:
+        raise RuntimeError("Admin role is missing from the database.")
 
-    connection.execute(
-      """
-      INSERT INTO user_roles (
-        user_id,
-        role_id
+      connection.execute(
+        """
+        INSERT INTO user_roles (
+          user_id,
+          role_id
+        )
+        VALUES (?, ?)
+        """,
+        (
+          user_id,
+          admin_role["id"],
+        ),
       )
-      VALUES (?, ?)
-      """,
-      (
-        user_id,
-        admin_role["id"],
-      ),
+
+      connection.commit()
+
+    except sqlite3.IntegrityError as error:
+      connection.rollback()
+
+      if "users.username" in str(error):
+        raise UsernameAlreadyExistsError() from error
+
+      raise
+
+    except Exception:
+      connection.rollback()
+      raise
+
+  except UsernameAlreadyExistsError as error:
+    return render_template(
+      "setup.jinja",
+      error=str(error),
+      username=username,
+      display_name=display_name,
     )
-
-    connection.commit()
-
-  except Exception:
-    connection.rollback()
-    raise
 
   finally:
     connection.close()
