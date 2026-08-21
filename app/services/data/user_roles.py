@@ -5,7 +5,10 @@ from .audit import create_audit_log
 from .db import db_connection, db_transaction
 
 
-def set_user_role(user_id, role_id):
+def set_user_role(
+  user_id,
+  role_id,
+):
   with db_transaction() as connection:
     user = connection.execute(
       """
@@ -17,7 +20,7 @@ def set_user_role(user_id, role_id):
     ).fetchone()
 
     if user is None:
-      raise UserNotFoundError()
+      raise UserNotFoundError(user_id)
 
     role = connection.execute(
       """
@@ -29,9 +32,9 @@ def set_user_role(user_id, role_id):
     ).fetchone()
 
     if role is None:
-      raise RoleNotFoundError()
+      raise RoleNotFoundError(role_id)
 
-    connection.execute(
+    cursor = connection.execute(
       """
       INSERT INTO user_roles (
         user_id,
@@ -44,12 +47,17 @@ def set_user_role(user_id, role_id):
       (user_id, role_id),
     )
 
+    if cursor.rowcount == 0:
+      return True
+
     create_audit_log(
       action="updated",
       entity_type="user_role",
       entity_id=f"{user_id}:{role_id}",
-      details={"user_id": user_id, "role_id": role_id},
-
+      details={
+        "user_id": user_id,
+        "role_id": role_id,
+      },
     )
 
     return True
@@ -129,7 +137,6 @@ def delete_user_role(user_id, role_id):
       entity_type="user_role",
       entity_id=f"{user_id}:{role_id}",
       details={"user_id": user_id, "role_id": role_id},
-
     )
 
     return True

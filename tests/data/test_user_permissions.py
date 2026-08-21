@@ -1,5 +1,6 @@
 import pytest
 
+from app.services.data.audit import get_audit_logs
 from app.services.data.permissions import create_permission
 from app.services.data.user_permissions import (
   delete_user_permission,
@@ -269,3 +270,59 @@ def test_delete_user_permission_rejects_missing_permission_mapping(
       user_id,
       permission_id,
     )
+
+
+def test_set_user_permission_no_op_does_not_create_audit_log(
+  gen_test_user,
+):
+  user_id = gen_test_user("test_user")
+
+  permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  set_user_permission(
+    user_id,
+    permission_id,
+    True,
+  )
+
+  audit_logs_before = get_audit_logs()
+
+  set_user_permission(
+    user_id,
+    permission_id,
+    True,
+  )
+
+  audit_logs_after = get_audit_logs()
+
+  assert len(audit_logs_after) == len(audit_logs_before)
+
+
+def test_set_user_permission_change_creates_audit_log(
+  gen_test_user,
+):
+  user_id = gen_test_user("test_user")
+
+  permission_id = create_permission(
+    name="inventory.read",
+  )
+
+  set_user_permission(
+    user_id,
+    permission_id,
+    True,
+  )
+
+  audit_logs_before = get_audit_logs()
+
+  set_user_permission(
+    user_id,
+    permission_id,
+    False,
+  )
+
+  audit_logs_after = get_audit_logs()
+
+  assert len(audit_logs_after) == len(audit_logs_before) + 1
