@@ -1,18 +1,18 @@
 import json
 from datetime import date
 
-from app.services.data.users import get_user
-
 from ..exceptions.data.custom_field_values import *
 from ..exceptions.data.custom_fields import (
   CustomFieldIsArchivedError,
   CustomFieldNotFoundError,
 )
 from ..exceptions.data.inventory import ItemNotFoundError
+from .audit import create_audit_log
 from .db import db_connection, db_transaction
+from .users import get_user
 
 
-def _validate_value(field, value, connection):
+def _validate_value(field, value):
   field_type = field["field_type"]
 
   if value is None:
@@ -113,10 +113,24 @@ def set_custom_field_value(item_id, field_id, value):
     _validate_value(
       field,
       value,
-      connection,
     )
 
+    existing = connection.execute(
+      """
+      SELECT value
+      FROM inventory_item_fields
+      WHERE item_id = ?
+        AND field_id = ?
+      """,
+      (item_id, field_id),
+    ).fetchone()
+
     if value is None:
+      if existing is None:
+        return True
+
+      old_value = existing["value"]
+
       connection.execute(
         """
         DELETE FROM inventory_item_fields
@@ -126,12 +140,58 @@ def set_custom_field_value(item_id, field_id, value):
         (item_id, field_id),
       )
 
+      create_audit_log(
+        action="deleted",
+        entity_type="custom_field_value",
+        entity_id=f"{item_id}:{field_id}",
+        details={
+          "value": {
+            "old": old_value,
+            "new": None,
+          },
+        },
+      )
+
       return True
 
     serialized_value = _serialize_value(
       field["field_type"],
       value,
     )
+
+    if existing is not None:
+      old_value = existing["value"]
+
+      if old_value == serialized_value:
+        return True
+
+      connection.execute(
+        """
+        UPDATE inventory_item_fields
+        SET value = ?
+        WHERE item_id = ?
+          AND field_id = ?
+        """,
+        (
+          serialized_value,
+          item_id,
+          field_id,
+        ),
+      )
+
+      create_audit_log(
+        action="updated",
+        entity_type="custom_field_value",
+        entity_id=f"{item_id}:{field_id}",
+        details={
+          "value": {
+            "old": old_value,
+            "new": serialized_value,
+          },
+        },
+      )
+
+      return True
 
     connection.execute(
       """
@@ -141,14 +201,24 @@ def set_custom_field_value(item_id, field_id, value):
         value
       )
       VALUES (?, ?, ?)
-      ON CONFLICT(item_id, field_id)
-      DO UPDATE SET value = excluded.value
       """,
       (
         item_id,
         field_id,
         serialized_value,
       ),
+    )
+
+    create_audit_log(
+      action="created",
+      entity_type="custom_field_value",
+      entity_id=f"{item_id}:{field_id}",
+      details={
+        "value": {
+          "old": None,
+          "new": serialized_value,
+        },
+      },
     )
 
     return True
@@ -205,7 +275,7 @@ def delete_custom_field_value(item_id, field_id):
 
     value = connection.execute(
       """
-      SELECT 1
+      SELECT value
       FROM inventory_item_fields
       WHERE item_id = ?
         AND field_id = ?
@@ -219,6 +289,8 @@ def delete_custom_field_value(item_id, field_id):
     if field["required"]:
       raise RequiredCustomFieldError()
 
+    old_value = value["value"]
+
     connection.execute(
       """
       DELETE FROM inventory_item_fields
@@ -226,6 +298,18 @@ def delete_custom_field_value(item_id, field_id):
         AND field_id = ?
       """,
       (item_id, field_id),
+    )
+
+    create_audit_log(
+      action="deleted",
+      entity_type="custom_field_value",
+      entity_id=f"{item_id}:{field_id}",
+      details={
+        "value": {
+          "old": old_value,
+          "new": None,
+        },
+      },
     )
 
     return True
