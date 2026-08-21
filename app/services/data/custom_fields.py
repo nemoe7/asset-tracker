@@ -221,6 +221,9 @@ def update_custom_field(
     if existing is None:
       raise CustomFieldNotFoundError()
 
+    if existing["archived_at"] is not None:
+      raise CustomFieldIsArchivedError()
+
     existing_enum_values = (
       json.loads(existing["enum_values"])
       if existing["enum_values"] is not None
@@ -357,7 +360,7 @@ def archive_custom_field(field_id):
       raise CustomFieldNotFoundError()
 
     if existing["archived_at"] is not None:
-      return False
+      raise CustomFieldIsArchivedError()
 
     connection.execute(
       """
@@ -395,7 +398,7 @@ def restore_custom_field(field_id):
       raise CustomFieldNotFoundError()
 
     if existing["archived_at"] is None:
-      return False
+      raise CustomFieldIsNotArchivedError()
 
     duplicate = connection.execute(
       """

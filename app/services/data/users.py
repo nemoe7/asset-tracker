@@ -31,6 +31,11 @@ def _validate_username(username):
     raise InvalidUsernameError("Username must contain at least one letter or number")
 
 
+def _validate_name(name):
+  if not isinstance(name, str) or not name.strip():
+    raise InvalidNameError("Name cannot be empty")
+
+
 def _validate_password(password):
   if not isinstance(password, str) or not password:
     raise InvalidPasswordError("Password cannot be empty")
@@ -48,6 +53,8 @@ def create_user(username, password, name=None):
 
   if name is None:
     name = username
+
+  _validate_name(name)
 
   with db_transaction() as connection:
     existing = connection.execute(
@@ -89,7 +96,6 @@ def create_user(username, password, name=None):
       action="created",
       entity_type="user",
       entity_id=user_id,
-
     )
 
     return user_id
@@ -172,6 +178,9 @@ def update_user(user_id, username=None, name=None, password=None):
   if username is not None:
     _validate_username(username)
 
+  if name is not None:
+    _validate_name(name)
+
   if password is not None:
     _validate_password(password)
 
@@ -241,7 +250,6 @@ def update_user(user_id, username=None, name=None, password=None):
       entity_type="user",
       entity_id=user_id,
       details=details,
-
     )
 
     return True
@@ -278,7 +286,6 @@ def archive_user(user_id):
       action="archived",
       entity_type="user",
       entity_id=user_id,
-
     )
 
     return True
@@ -315,7 +322,6 @@ def restore_user(user_id):
       action="restored",
       entity_type="user",
       entity_id=user_id,
-
     )
 
     return True
