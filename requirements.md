@@ -2,8 +2,8 @@
 
 **Client:** The Birth-Giver
 **Developer:** nemoe7
-**Version:** 0.1
-**Last Updated:** 2026-08-17
+**Version:** 0.3
+**Last Updated:** 2026-08-21
 
 ## 1. Introduction
 
@@ -176,25 +176,19 @@ The system shall authenticate users and enforce their assigned permissions.
 
 ### Permission Matching
 
-Permissions shall support wildcard matching.
+Permissions shall support wildcard matching and precedence rules.
 
-- An exact permission grants access only to the matching operation.
-- A permission ending in `.*` grants access to all operations within that permission namespace.
-- The permission `*` grants access to all permissions.
-- Wildcard matching applies only to permissions assigned to a user or inherited from a role.
-- Permission checks shall request a concrete permission and shall not treat a wildcard request as a request for all permissions.
-
-Examples:
-
-| Granted Permission | Requested Permission | Result |
-| --- | --- | --- |
-| `inventory.read` | `inventory.read` | Allowed |
-| `inventory.*` | `inventory.read` | Allowed |
-| `inventory.*` | `inventory.update` | Allowed |
-| `*` | `inventory.read` | Allowed |
-| `*` | `users.create` | Allowed |
-| `inventory.read` | `inventory.update` | Denied |
-| `inventory.*` | `users.create` | Denied |
+- **FR-003.1:** The system shall support exact permission grants.
+- **FR-003.2:** The system shall support namespace wildcard grants using the `namespace.*` format.
+- **FR-003.3:** A namespace wildcard grant shall grant access to all concrete permissions within that namespace.
+- **FR-003.4:** The system shall support the global wildcard grant `*`.
+- **FR-003.5:** A global wildcard grant shall grant access to all concrete permissions.
+- **FR-003.6:** Wildcard grants shall automatically apply to newly created concrete permissions that match the wildcard.
+- **FR-003.7:** Direct user permission decisions shall take precedence over permissions inherited from roles.
+- **FR-003.8:** When multiple permissions from the same source match a requested permission, the most specific matching permission shall take precedence.
+- **FR-003.9:** When conflicting role permissions have equal specificity, a deny decision shall take precedence.
+- **FR-003.10:** Permission changes shall take effect on subsequent authorization checks without requiring the affected user to authenticate again.
+- **FR-003.11:** Permission checks shall request concrete permissions using the `namespace.operation` format.
 
 ## 3.2 User Management and Permissions
 
@@ -683,3 +677,4 @@ The project will be considered complete when:
 | --- | --- | --- |
 | 0.1 | 2026-08-15 | Initial requirements |
 | 0.2 | 2026-08-17 | Defined permission matching. |
+| 0.3 | 2026-08-21 | Expanded authorization requirements. |

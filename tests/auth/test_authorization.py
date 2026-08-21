@@ -1,4 +1,4 @@
-from app.services.data.authorization import has_permission
+from app.services.auth.authorization import has_permission
 from app.services.data.custom_fields import create_custom_field
 from app.services.data.permissions import (
   create_permission,

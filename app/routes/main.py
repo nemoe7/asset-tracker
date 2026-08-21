@@ -10,7 +10,7 @@ from flask import (
   url_for,
 )
 
-from ..services.data.authorization import has_permission
+from ..services.auth.authorization import has_permission
 from ..services.data.db import get_db
 from ..services.data.inventory import get_item, get_items
 from ..services.data.locations import get_locations
