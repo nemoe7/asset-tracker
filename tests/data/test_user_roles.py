@@ -1,5 +1,6 @@
 import pytest
 
+from app.services.data.audit import get_audit_logs
 from app.services.data.roles import create_role
 from app.services.data.user_roles import (
   delete_user_role,
@@ -115,3 +116,28 @@ def test_delete_user_role_rejects_missing_mapping(gen_test_admin):
 
   with pytest.raises(UserRoleNotFoundError):
     delete_user_role(user_id, role_id)
+
+
+def test_set_user_role_no_op_does_not_create_audit_log(
+  gen_test_admin,
+):
+  user_id = gen_test_admin
+  role_id = create_role(
+    name="Test Role",
+  )
+
+  set_user_role(
+    user_id,
+    role_id,
+  )
+
+  audit_logs_before = get_audit_logs()
+
+  set_user_role(
+    user_id,
+    role_id,
+  )
+
+  audit_logs_after = get_audit_logs()
+
+  assert len(audit_logs_after) == len(audit_logs_before)

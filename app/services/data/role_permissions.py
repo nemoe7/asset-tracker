@@ -5,7 +5,11 @@ from .audit import create_audit_log
 from .db import db_connection, db_transaction
 
 
-def set_role_permission(role_id, permission_id, allowed):
+def set_role_permission(
+  role_id,
+  permission_id,
+  allowed,
+):
   if not isinstance(allowed, bool):
     raise InvalidRolePermissionAllowedError()
 
@@ -20,7 +24,7 @@ def set_role_permission(role_id, permission_id, allowed):
     ).fetchone()
 
     if role is None:
-      raise RoleNotFoundError()
+      raise RoleNotFoundError(role_id)
 
     permission = connection.execute(
       """
@@ -32,7 +36,20 @@ def set_role_permission(role_id, permission_id, allowed):
     ).fetchone()
 
     if permission is None:
-      raise PermissionNotFoundError()
+      raise PermissionNotFoundError(permission_id)
+
+    existing = connection.execute(
+      """
+      SELECT allowed
+      FROM role_permissions
+      WHERE role_id = ?
+        AND permission_id = ?
+      """,
+      (role_id, permission_id),
+    ).fetchone()
+
+    if existing is not None and bool(existing["allowed"]) == allowed:
+      return True
 
     connection.execute(
       """
@@ -43,9 +60,10 @@ def set_role_permission(role_id, permission_id, allowed):
       )
       VALUES (?, ?, ?)
       ON CONFLICT(role_id, permission_id)
-      DO UPDATE SET allowed = excluded.allowed
+      DO UPDATE SET
+        allowed = excluded.allowed
       """,
-      (role_id, permission_id, int(allowed)),
+      (role_id, permission_id, allowed),
     )
 
     create_audit_log(
@@ -57,7 +75,6 @@ def set_role_permission(role_id, permission_id, allowed):
         "permission_id": permission_id,
         "allowed": allowed,
       },
-
     )
 
     return True
@@ -142,7 +159,6 @@ def delete_role_permission(role_id, permission_id):
         "role_id": role_id,
         "permission_id": permission_id,
       },
-
     )
 
     return True

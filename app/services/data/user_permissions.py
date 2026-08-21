@@ -5,7 +5,11 @@ from .audit import create_audit_log
 from .db import db_connection, db_transaction
 
 
-def set_user_permission(user_id, permission_id, allowed):
+def set_user_permission(
+  user_id,
+  permission_id,
+  allowed,
+):
   if not isinstance(allowed, bool):
     raise InvalidUserPermissionAllowedError()
 
@@ -20,7 +24,7 @@ def set_user_permission(user_id, permission_id, allowed):
     ).fetchone()
 
     if user is None:
-      raise UserNotFoundError()
+      raise UserNotFoundError(user_id)
 
     permission = connection.execute(
       """
@@ -32,7 +36,20 @@ def set_user_permission(user_id, permission_id, allowed):
     ).fetchone()
 
     if permission is None:
-      raise PermissionNotFoundError()
+      raise PermissionNotFoundError(permission_id)
+
+    existing = connection.execute(
+      """
+      SELECT allowed
+      FROM user_permissions
+      WHERE user_id = ?
+        AND permission_id = ?
+      """,
+      (user_id, permission_id),
+    ).fetchone()
+
+    if existing is not None and bool(existing["allowed"]) == allowed:
+      return True
 
     connection.execute(
       """
@@ -43,9 +60,10 @@ def set_user_permission(user_id, permission_id, allowed):
       )
       VALUES (?, ?, ?)
       ON CONFLICT(user_id, permission_id)
-      DO UPDATE SET allowed = excluded.allowed
+      DO UPDATE SET
+        allowed = excluded.allowed
       """,
-      (user_id, permission_id, int(allowed)),
+      (user_id, permission_id, allowed),
     )
 
     create_audit_log(
@@ -57,7 +75,6 @@ def set_user_permission(user_id, permission_id, allowed):
         "permission_id": permission_id,
         "allowed": allowed,
       },
-
     )
 
     return True
@@ -142,7 +159,6 @@ def delete_user_permission(user_id, permission_id):
         "user_id": user_id,
         "permission_id": permission_id,
       },
-
     )
 
     return True
