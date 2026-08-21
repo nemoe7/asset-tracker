@@ -31,3 +31,7 @@ class CustomFieldInUseError(InvalidInputError):
 
 class CustomFieldIsArchivedError(InvalidInputError):
   default_message = "Custom field is archived"
+
+
+class CustomFieldIsNotArchivedError(InvalidInputError):
+  default_message = "Custom field is not archived"
