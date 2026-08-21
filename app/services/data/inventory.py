@@ -108,7 +108,7 @@ def create_item(name, location_id=None):
     connection.commit()
 
     return item_id
-  except:
+  except Exception:
     connection.rollback()
     raise
   finally:
@@ -282,7 +282,7 @@ def update_item(
     connection.commit()
 
     return True
-  except:
+  except Exception:
     connection.rollback()
     raise
   finally:
@@ -328,7 +328,7 @@ def archive_item(item_id):
     connection.commit()
 
     return True
-  except:
+  except Exception:
     connection.rollback()
     raise
   finally:
@@ -374,7 +374,7 @@ def restore_item(item_id):
     connection.commit()
 
     return True
-  except:
+  except Exception:
     connection.rollback()
     raise
   finally:
