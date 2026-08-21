@@ -34,6 +34,16 @@ Initial Setup
         </div>
 
         <div>
+          <label for="display_name" class="block text-sm font-medium text-zinc-300">
+            Display Name
+          </label>
+
+          <input id="display_name" name="display_name" type="text" required autocomplete="display_name"
+            value="{{ display_name or '' }}"
+            class="mt-2 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-2 text-zinc-100 placeholder-zinc-500 outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400">
+        </div>
+
+        <div>
           <label for="password" class="block text-sm font-medium text-zinc-300">
             Password
           </label>

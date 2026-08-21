@@ -1,6 +1,7 @@
 CREATE TABLE users (
   id INTEGER PRIMARY KEY,
   username TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
   password_hash TEXT NOT NULL,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
@@ -46,9 +47,22 @@ CREATE TABLE inventory_items (
 
 CREATE TABLE custom_fields (
   id INTEGER PRIMARY KEY,
-  name TEXT NOT NULL,
-  field_type TEXT NOT NULL,
-  description TEXT
+  name TEXT NOT NULL UNIQUE,
+  field_type TEXT NOT NULL
+    CHECK (field_type IN (
+      'text',
+      'integer',
+      'decimal',
+      'boolean',
+      'date',
+      'enum',
+      'user'
+    )),
+  description TEXT,
+  required INTEGER NOT NULL DEFAULT 0
+    CHECK (required IN (0, 1)),
+  enum_values TEXT,
+  archived_at TEXT
 );
 
 
@@ -68,7 +82,8 @@ CREATE TABLE user_roles (
 CREATE TABLE role_permissions (
   role_id INTEGER NOT NULL,
   permission_id INTEGER NOT NULL,
-  allowed INTEGER NOT NULL,
+  allowed INTEGER NOT NULL
+    CHECK (allowed IN (0, 1)),
   PRIMARY KEY (role_id, permission_id),
   FOREIGN KEY (role_id)
     REFERENCES roles(id)
@@ -82,7 +97,8 @@ CREATE TABLE role_permissions (
 CREATE TABLE user_permissions (
   user_id INTEGER NOT NULL,
   permission_id INTEGER NOT NULL,
-  allowed INTEGER NOT NULL,
+  allowed INTEGER NOT NULL
+    CHECK (allowed IN (0, 1)),
   PRIMARY KEY (user_id, permission_id),
   FOREIGN KEY (user_id)
     REFERENCES users(id)
@@ -134,11 +150,49 @@ CREATE TABLE audit_log (
     ON DELETE RESTRICT
 );
 
+
+CREATE TABLE export_templates (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER,
+  name TEXT NOT NULL,
+  configuration TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON DELETE SET NULL
+);
+
+
+CREATE TABLE backup_config (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  enabled INTEGER NOT NULL DEFAULT 0
+    CHECK (enabled IN (0, 1)),
+  schedule TEXT NOT NULL,
+  backup_location TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+
+CREATE TABLE backup_history (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER,
+  scheduled_at TEXT,
+  completed_at TEXT NOT NULL,
+  path TEXT NOT NULL,
+  FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON DELETE SET NULL
+);
+
+
 INSERT OR IGNORE INTO roles (name, description)
 VALUES ('Admin', 'Full administrative access');
 
+
 INSERT OR IGNORE INTO permissions (name, description)
 VALUES ('*', 'All permissions');
+
 
 INSERT OR IGNORE INTO role_permissions (role_id, permission_id, allowed)
 SELECT roles.id, permissions.id, 1
@@ -146,3 +200,19 @@ FROM roles
 CROSS JOIN permissions
 WHERE roles.name = 'Admin'
   AND permissions.name = '*';
+
+
+INSERT OR IGNORE INTO backup_config (
+  id,
+  enabled,
+  schedule,
+  backup_location,
+  updated_at
+)
+VALUES (
+  1,
+  0,
+  '0 3 * * 0',
+  '/backups',
+  CURRENT_TIMESTAMP
+);

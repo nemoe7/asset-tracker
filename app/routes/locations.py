@@ -1,12 +1,18 @@
-from flask import Blueprint, jsonify, redirect, request, url_for
+from flask import (
+  Blueprint,
+  jsonify,
+  redirect,
+  request,
+  url_for,
+)
 
-from app.auth import login_required
-from app.services.locations import (
+from ..services.data.locations import (
   LocationDeletionConfirmationRequired,
   create_location,
   delete_location,
   update_location,
 )
+from .auth import login_required
 
 locations = Blueprint("locations", __name__, url_prefix="/locations")
 

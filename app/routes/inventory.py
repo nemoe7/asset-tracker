@@ -1,11 +1,16 @@
-from flask import Blueprint, redirect, request, url_for
+from flask import (
+  Blueprint,
+  redirect,
+  request,
+  url_for,
+)
 
-from app.auth import login_required
-from app.services.inventory import (
+from ..services.data.inventory import (
   archive_item,
   create_item,
   update_item,
 )
+from .auth import login_required
 
 inventory = Blueprint(
   "inventory",

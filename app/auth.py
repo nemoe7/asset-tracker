@@ -6,11 +6,12 @@ from flask import (
   url_for,
 )
 
-from app.context import (
+from app.services.data.db import get_db
+
+from .services.auth.context import (
   reset_current_user,
   set_current_user,
 )
-from app.db import get_db
 
 
 def login_required(view):
