@@ -390,8 +390,7 @@ The current application uses SQLite UTC timestamps.
 The following conventions apply:
 
 * `created_at` is immutable.
-* `updated_at` changes when persisted data actually changes.
-* Where an entity has an `updated_at` column, it shall change when persisted data actually changes.
+* Where an entity has an `updated_at` column, it changes when persisted data actually changes.
 * No-op operations shall not change `updated_at`.
 * Where an entity has an `updated_at` column, archival and restoration count as state changes and therefore update `updated_at`.
 ---
@@ -476,13 +475,9 @@ Archiving shall preserve the record and its historical information.
 
 Archived records shall remain available for authorized historical access.
 
-An entity supporting archival shall not also expose normal permanent deletion.
+Archiving an already archived entity shall raise the entity's specific archived-state exception.
 
-Archiving shall be idempotent.
-
-If an entity is already archived, attempting to archive it again shall not be treated as an error and shall not modify the record or create an audit record.
-
-Restoration shall follow the same rule: restoring an entity that is already active shall not be treated as an error and shall not modify the record or create an audit record.
+Restoring an active entity shall raise the entity's specific not-archived-state exception.
 
 ---
 
@@ -518,11 +513,7 @@ Operations that modify an archived entity shall fail with the entity's appropria
 
 An archived record must normally be restored before ordinary modification.
 
-Archive and restore operations are exceptions to the archived-state restriction.
-
-An archived record may be restored through its restore operation. Repeating the restore operation when the record is already active is an idempotent no-op.
-
-Ordinary updates, unrelated state changes, and other mutations shall require the record to be active unless explicitly defined otherwise by the entity's service contract.
+Archiving an already archived record and restoring an already active record shall fail with their respective entity-specific state exceptions.
 
 ---
 

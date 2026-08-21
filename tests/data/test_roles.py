@@ -188,13 +188,11 @@ def test_update_role_without_changes_creates_no_audit_log(
 
 
 def test_update_nonexistent_role(gen_test_admin):
-  assert (
+  with pytest.raises(RoleNotFoundError):
     update_role(
       999,
       name="Admin2",
     )
-    is False
-  )
 
 
 def test_update_role_with_no_fields_fails(gen_test_admin):
@@ -237,7 +235,8 @@ def test_delete_role_creates_audit_log(gen_test_admin):
 
 
 def test_delete_nonexistent_role(gen_test_admin):
-  assert delete_role(999) is False
+  with pytest.raises(RoleNotFoundError):
+    delete_role(999)
 
 
 def test_create_role_with_empty_name_fails(gen_test_admin):

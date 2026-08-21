@@ -2,16 +2,14 @@ from ..exceptions.data.permissions import PermissionNotFoundError
 from ..exceptions.data.user_permissions import *
 from ..exceptions.data.users import UserNotFoundError
 from .audit import create_audit_log
-from .db import get_db
+from .db import db_connection, db_transaction
 
 
 def set_user_permission(user_id, permission_id, allowed):
   if not isinstance(allowed, bool):
     raise InvalidUserPermissionAllowedError()
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     user = connection.execute(
       """
       SELECT id
@@ -59,23 +57,14 @@ def set_user_permission(user_id, permission_id, allowed):
         "permission_id": permission_id,
         "allowed": allowed,
       },
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def get_user_permission(user_id, permission_id):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT
@@ -88,14 +77,10 @@ def get_user_permission(user_id, permission_id):
       """,
       (user_id, permission_id),
     ).fetchone()
-  finally:
-    connection.close()
 
 
 def get_user_permissions(user_id):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     user = connection.execute(
       """
       SELECT id
@@ -123,14 +108,10 @@ def get_user_permissions(user_id):
       """,
       (user_id,),
     ).fetchall()
-  finally:
-    connection.close()
 
 
 def delete_user_permission(user_id, permission_id):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT 1
@@ -161,14 +142,7 @@ def delete_user_permission(user_id, permission_id):
         "user_id": user_id,
         "permission_id": permission_id,
       },
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()

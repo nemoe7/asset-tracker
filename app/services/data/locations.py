@@ -1,7 +1,7 @@
 from ..exceptions.data.common import InvalidInputError
 from ..exceptions.data.locations import *
 from .audit import create_audit_log
-from .db import get_db
+from .db import db_connection, db_transaction
 
 _UNSET = object()
 
@@ -14,9 +14,7 @@ def _validate_location_name(name):
 def create_location(name, description=None):
   _validate_location_name(name)
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT id
@@ -51,26 +49,14 @@ def create_location(name, description=None):
       action="created",
       entity_type="location",
       entity_id=location_id,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return location_id
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
-def get_location(location_id, connection=None):
-  owns_connection = connection is None
-
-  if owns_connection:
-    connection = get_db()
-
-  try:
+def get_location(location_id):
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT *
@@ -79,15 +65,10 @@ def get_location(location_id, connection=None):
       """,
       (location_id,),
     ).fetchone()
-  finally:
-    if owns_connection:
-      connection.close()
 
 
 def get_locations():
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT *
@@ -95,8 +76,6 @@ def get_locations():
       ORDER BY id
       """
     ).fetchall()
-  finally:
-    connection.close()
 
 
 def update_location(
@@ -107,9 +86,7 @@ def update_location(
   if name is _UNSET and description is _UNSET:
     raise InvalidInputError("No fields to update")
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT *
@@ -183,17 +160,10 @@ def update_location(
       entity_type="location",
       entity_id=location_id,
       details=details,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def delete_location(location_id, confirm=False):
@@ -202,9 +172,7 @@ def delete_location(location_id, confirm=False):
       "Deleting a location requires confirmation"
     )
 
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT id
@@ -229,14 +197,7 @@ def delete_location(location_id, confirm=False):
       action="deleted",
       entity_type="location",
       entity_id=location_id,
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()

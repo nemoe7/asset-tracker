@@ -2,13 +2,11 @@ from ..exceptions.data.roles import RoleNotFoundError
 from ..exceptions.data.user_roles import *
 from ..exceptions.data.users import UserNotFoundError
 from .audit import create_audit_log
-from .db import get_db
+from .db import db_connection, db_transaction
 
 
 def set_user_role(user_id, role_id):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     user = connection.execute(
       """
       SELECT id
@@ -51,23 +49,14 @@ def set_user_role(user_id, role_id):
       entity_type="user_role",
       entity_id=f"{user_id}:{role_id}",
       details={"user_id": user_id, "role_id": role_id},
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()
 
 
 def get_user_role(user_id, role_id):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     return connection.execute(
       """
       SELECT
@@ -79,14 +68,10 @@ def get_user_role(user_id, role_id):
       """,
       (user_id, role_id),
     ).fetchone()
-  finally:
-    connection.close()
 
 
 def get_user_roles(user_id):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     user = connection.execute(
       """
       SELECT id
@@ -113,14 +98,10 @@ def get_user_roles(user_id):
       """,
       (user_id,),
     ).fetchall()
-  finally:
-    connection.close()
 
 
 def delete_user_role(user_id, role_id):
-  connection = get_db()
-
-  try:
+  with db_transaction() as connection:
     existing = connection.execute(
       """
       SELECT 1
@@ -148,14 +129,7 @@ def delete_user_role(user_id, role_id):
       entity_type="user_role",
       entity_id=f"{user_id}:{role_id}",
       details={"user_id": user_id, "role_id": role_id},
-      connection=connection,
+
     )
 
-    connection.commit()
-
     return True
-  except Exception:
-    connection.rollback()
-    raise
-  finally:
-    connection.close()

@@ -18,6 +18,7 @@ def test_create_audit_log(gen_test_admin):
 
   log = get_audit_log(audit_id)
 
+  assert log is not None
   assert log["id"] == audit_id
   assert log["user_id"] == gen_test_admin
   assert log["action"] == "created"
@@ -41,6 +42,7 @@ def test_create_audit_log_with_details(gen_test_admin):
 
   log = get_audit_log(audit_id)
 
+  assert log is not None
   assert log["details"] == {
     "name": {
       "old": "Old",
@@ -62,6 +64,8 @@ def test_create_audit_log_returns_id(gen_test_admin):
     entity_id=2,
   )
 
+  assert first_id is not None
+  assert second_id is not None
   assert second_id > first_id
 
 
@@ -81,6 +85,9 @@ def test_get_audit_logs(gen_test_admin):
     entity_type="test",
     entity_id=1,
   )
+
+  assert first_id is not None
+  assert second_id is not None
 
   logs = get_audit_logs()
 
@@ -183,6 +190,7 @@ def test_get_audit_logs_returns_logs_in_id_order(gen_test_admin):
     entity_type="test",
   )
 
+  assert len(logs) == 3
   assert [log["id"] for log in logs] == [
     first_id,
     second_id,

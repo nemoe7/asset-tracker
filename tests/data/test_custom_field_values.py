@@ -16,7 +16,7 @@ from app.services.data.inventory import (
 )
 from app.services.exceptions.data.custom_field_values import *
 from app.services.exceptions.data.custom_fields import (
-  CustomFieldArchivedError,
+  CustomFieldIsArchivedError,
   CustomFieldNotFoundError,
 )
 from app.services.exceptions.data.inventory import ItemNotFoundError
@@ -215,7 +215,7 @@ def test_set_custom_field_value_rejects_archived_field(gen_test_admin):
 
   archive_custom_field(field_id)
 
-  with pytest.raises(CustomFieldArchivedError):
+  with pytest.raises(CustomFieldIsArchivedError):
     set_custom_field_value(
       item_id,
       field_id,
