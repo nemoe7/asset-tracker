@@ -391,10 +391,9 @@ The following conventions apply:
 
 * `created_at` is immutable.
 * `updated_at` changes when persisted data actually changes.
-* No-op updates do not change `updated_at`.
-* Archival and restoration count as state changes and therefore update `updated_at`.
-* Timestamps shall not be manually supplied by ordinary service callers.
-
+* Where an entity has an `updated_at` column, it shall change when persisted data actually changes.
+* No-op operations shall not change `updated_at`.
+* Where an entity has an `updated_at` column, archival and restoration count as state changes and therefore update `updated_at`.
 ---
 
 ## 22. Validation
