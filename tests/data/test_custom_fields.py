@@ -537,16 +537,6 @@ def test_archive_custom_field(gen_test_admin):
   assert field["archived_at"] is not None
 
 
-def test_archive_custom_field_is_idempotent(gen_test_admin):
-  field_id = create_custom_field(
-    name="Serial Number",
-    field_type="text",
-  )
-
-  assert archive_custom_field(field_id) is True
-  assert archive_custom_field(field_id) is False
-
-
 def test_archive_custom_field_missing_field(gen_test_admin):
   with pytest.raises(CustomFieldNotFoundError):
     archive_custom_field(999)
@@ -567,15 +557,39 @@ def test_unarchive_custom_field(gen_test_admin):
   assert field["archived_at"] is None
 
 
-def test_unarchive_custom_field_is_idempotent(gen_test_admin):
+def test_unarchive_custom_field_missing_field(gen_test_admin):
+  with pytest.raises(CustomFieldNotFoundError):
+    restore_custom_field(999)
+
+
+def test_archive_custom_field_rejects_archived_field(gen_test_admin):
   field_id = create_custom_field(
     name="Serial Number",
     field_type="text",
   )
 
-  assert restore_custom_field(field_id) is False
+  archive_custom_field(field_id)
+
+  with pytest.raises(CustomFieldIsArchivedError):
+    archive_custom_field(field_id)
 
 
-def test_unarchive_custom_field_missing_field(gen_test_admin):
-  with pytest.raises(CustomFieldNotFoundError):
-    restore_custom_field(999)
+def test_restore_custom_field_rejects_active_field(gen_test_admin):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  with pytest.raises(CustomFieldIsNotArchivedError):
+    restore_custom_field(field_id)
+
+
+def test_restore_custom_field_succeeds_for_archived_field(gen_test_admin):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  archive_custom_field(field_id)
+
+  assert restore_custom_field(field_id) is True
