@@ -15,7 +15,7 @@ _VALID_FIELD_TYPES = {
   "user",
 }
 
-UNSET = object()
+_UNSET = object()
 
 
 def _validate_name(name):
@@ -192,14 +192,14 @@ def get_custom_fields(include_archived=False):
 
 def update_custom_field(
   field_id,
-  name=UNSET,
-  field_type=UNSET,
-  description=UNSET,
-  required=UNSET,
-  enum_values=UNSET,
+  name=_UNSET,
+  field_type=_UNSET,
+  description=_UNSET,
+  required=_UNSET,
+  enum_values=_UNSET,
 ):
   if all(
-    value is UNSET
+    value is _UNSET
     for value in (
       name,
       field_type,
@@ -210,13 +210,13 @@ def update_custom_field(
   ):
     raise InvalidInputError("No fields to update")
 
-  if name is not UNSET:
+  if name is not _UNSET:
     _validate_name(name)
 
-  if field_type is not UNSET:
+  if field_type is not _UNSET:
     _validate_field_type(field_type)
 
-  if required is not UNSET:
+  if required is not _UNSET:
     _validate_required(required)
 
   connection = get_db()
@@ -247,9 +247,9 @@ def update_custom_field(
       else None
     )
 
-    new_field_type = field_type if field_type is not UNSET else existing["field_type"]
+    new_field_type = field_type if field_type is not _UNSET else existing["field_type"]
 
-    new_enum_values = enum_values if enum_values is not UNSET else existing_enum_values
+    new_enum_values = enum_values if enum_values is not _UNSET else existing_enum_values
 
     _validate_enum_values(
       new_field_type,
@@ -260,7 +260,7 @@ def update_custom_field(
     values = []
     details = {}
 
-    if name is not UNSET and existing["name"] != name:
+    if name is not _UNSET and existing["name"] != name:
       duplicate = connection.execute(
         """
         SELECT id
@@ -282,7 +282,7 @@ def update_custom_field(
         "new": name,
       }
 
-    if field_type is not UNSET and existing["field_type"] != field_type:
+    if field_type is not _UNSET and existing["field_type"] != field_type:
       value = connection.execute(
         """
         SELECT 1
@@ -304,7 +304,7 @@ def update_custom_field(
         "new": field_type,
       }
 
-    if description is not UNSET and existing["description"] != description:
+    if description is not _UNSET and existing["description"] != description:
       updates.append("description = ?")
       values.append(description)
 
@@ -313,7 +313,7 @@ def update_custom_field(
         "new": description,
       }
 
-    if required is not UNSET and bool(existing["required"]) != required:
+    if required is not _UNSET and bool(existing["required"]) != required:
       updates.append("required = ?")
       values.append(int(required))
 
@@ -322,7 +322,7 @@ def update_custom_field(
         "new": required,
       }
 
-    if enum_values is not UNSET and existing_enum_values != enum_values:
+    if enum_values is not _UNSET and existing_enum_values != enum_values:
       serialized_enum_values = (
         json.dumps(enum_values) if enum_values is not None else None
       )
@@ -389,7 +389,8 @@ def archive_custom_field(field_id):
     connection.execute(
       """
       UPDATE custom_fields
-      SET archived_at = CURRENT_TIMESTAMP
+      SET archived_at = CURRENT_TIMESTAMP,
+      updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
       """,
       (field_id,),
@@ -412,7 +413,7 @@ def archive_custom_field(field_id):
     connection.close()
 
 
-def unarchive_custom_field(field_id):
+def restore_custom_field(field_id):
   connection = get_db()
 
   try:
@@ -451,7 +452,8 @@ def unarchive_custom_field(field_id):
     connection.execute(
       """
       UPDATE custom_fields
-      SET archived_at = NULL
+      SET archived_at = NULL,
+      updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
       """,
       (field_id,),

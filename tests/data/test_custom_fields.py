@@ -6,7 +6,7 @@ from app.services.data.custom_fields import (
   create_custom_field,
   get_custom_field,
   get_custom_fields,
-  unarchive_custom_field,
+  restore_custom_field,
   update_custom_field,
 )
 from app.services.data.inventory import create_item
@@ -560,7 +560,7 @@ def test_unarchive_custom_field(gen_test_admin):
 
   archive_custom_field(field_id)
 
-  assert unarchive_custom_field(field_id) is True
+  assert restore_custom_field(field_id) is True
 
   field = get_custom_field(field_id)
 
@@ -573,9 +573,9 @@ def test_unarchive_custom_field_is_idempotent(gen_test_admin):
     field_type="text",
   )
 
-  assert unarchive_custom_field(field_id) is False
+  assert restore_custom_field(field_id) is False
 
 
 def test_unarchive_custom_field_missing_field(gen_test_admin):
   with pytest.raises(CustomFieldNotFoundError):
-    unarchive_custom_field(999)
+    restore_custom_field(999)
