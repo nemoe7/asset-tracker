@@ -2,103 +2,77 @@ services:
   app:
     build:
       context: .
-
-    container_name: inventory-management-dev
-
+    container_name: ${ZROK2_SHARE_NAME}-dev
+    restart: unless-stopped
+    depends_on:
+      zrok:
+        condition: service_started
     env_file:
       - .env
-
     ports:
       - "${PORT}:5000"
-
     volumes:
       - .:/home/appuser
       - ./data:/home/appuser/data
-
     working_dir: /home/appuser
+    command: python run.py
 
-    command:
-      - python
-      - run.py
-
-  # Set ownership on the named volume so the zrok2 user (UID 2171) can use it.
-  zrok-init:
-    image: busybox
-    command: chown -Rc 2171:2171 /mnt/
-    user: root
-    volumes:
-      - zrok_env:/mnt
-
-  # Enable the zrok environment if not already enabled.
-  zrok-enable:
+  zrok:
     image: docker.io/openziti/zrok2
-    depends_on:
-      zrok-init:
-        condition: service_completed_successfully
-    entrypoint: zrok2-enable
+    container_name: ${ZROK2_SHARE_NAME}-zrok
+    restart: unless-stopped
+    stop_grace_period: 30s
+    user: root
     environment:
       HOME: /mnt
       ZROK2_ENABLE_TOKEN: ${ZROK2_ENABLE_TOKEN}
+      ZROK2_SHARE_NAME: ${ZROK2_SHARE_NAME}
       DL_USE_JSON: false
-    volumes:
-      - zrok_env:/mnt
-
-  # Run the zrok agent.
-  zrok-agent:
-    image: docker.io/openziti/zrok2
-    restart: unless-stopped
-    stop_grace_period: 30s
     ports:
       - "8888:8888"
-
-    depends_on:
-      zrok-enable:
-        condition: service_completed_successfully
-
-    environment:
-      HOME: /mnt
-      DL_USE_JSON: false
-
     entrypoint:
       - /bin/bash
       - -c
       - |
+        if [ ! -f /mnt/.zrok2/environment.json ]; then
+          zrok2-enable
+          zrok2 delete name "$${ZROK2_SHARE_NAME}"
+          zrok2 create name "$${ZROK2_SHARE_NAME}"
+        fi
+
+        chown -R 2171:2171 /mnt
+
         rm -f /mnt/.zrok2/agent.socket
 
-        cleanup() {
-          echo "SIGTERM received, removing inventory-management share..."
+        shares="$$(zrok2 list shares --json 2>/dev/null || true)"
 
-          share_id="$$(zrok2 agent status 2>/dev/null |
-            awk -F '│' '/inventory-management/ {
-              gsub(/[[:space:]]/, "", $$2)
-              print $$2
-              exit
-            }')"
+        if [ -n "$$shares" ] && [ "$$shares" != "{}" ]; then
+          echo "$$shares" |
+            jq -r '.shares[].shareToken' |
+            while read -r token; do
+              [ -z "$$token" ] || zrok2 delete share "$$token" || true
+            done
+        fi
 
-          if [ -n "$$share_id" ]; then
-            echo "Deleting zrok share $$share_id"
-            zrok2 delete share "$$share_id" || true
-          else
-            echo "inventory-management share not found"
-          fi
-
-          kill -TERM "$$agent_pid" 2>/dev/null || true
-          wait "$$agent_pid" 2>/dev/null || true
-        }
-
-        trap cleanup TERM INT
+        chown -R 2171:2171 /mnt
 
         zrok2 agent start \
           --console-address 0.0.0.0 \
-          --console-start-port "${ZROK2_AGENT_CONSOLE_PORT:-8888}" \
-          --console-end-port "${ZROK2_AGENT_CONSOLE_PORT:-8888}" &
+          --console-start-port 8888 \
+          --console-end-port 8888 &
         agent_pid=$$!
 
+        sleep 2
+
+        if ! zrok2 list shares --json 2>/dev/null |
+          jq -e '.shares | length > 0' >/dev/null 2>&1; then
+          zrok2 share public http://app:5000 \
+            --subordinate \
+            -b proxy \
+            --name-selection "public:$${ZROK2_SHARE_NAME}" &
+        fi
+
         wait "$$agent_pid"
-
-    expose:
-      - "${ZROK2_AGENT_CONSOLE_PORT:-8888}"
-
     volumes:
       - zrok_env:/mnt
 
