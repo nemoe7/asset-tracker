@@ -1,7 +1,6 @@
 import logging
 import re
 import secrets
-import sys
 import threading
 
 _thread_local = threading.local()
@@ -91,14 +90,16 @@ class ShortLevelFormatter(logging.Formatter):
     return super().format(record)
 
 
-def configure_logging():
+def configure_logging(show_logger_name=False):
   werkzeug_logger = logging.getLogger("werkzeug")
 
   handler = RepeatHandler()
 
+  fmt = f"[%(asctime)s.%(msecs)03d] [%(thread_hex)s] %(levelname)-5s {'%(name)s: ' if show_logger_name else ''}%(message)s"
+
   handler.setFormatter(
     ShortLevelFormatter(
-      "[%(asctime)s.%(msecs)03d] [%(thread_hex)s] %(levelname)-5s %(name)s: %(message)s",
+      fmt,
       "%Y-%m-%d %H:%M:%S",
     )
   )
