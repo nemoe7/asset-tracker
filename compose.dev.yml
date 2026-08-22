@@ -17,7 +17,7 @@ services:
         - |
           import urllib.request
           urllib.request.urlopen("http://localhost:5000/health")
-      interval: 2s
+      interval: 10s
       timeout: 5s
       retries: 3
       start_period: 10s
