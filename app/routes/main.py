@@ -106,3 +106,8 @@ def service_worker():
     "sw.js",
     mimetype="application/javascript",
   )
+
+
+@main.route("/health")
+def health():
+  return "", 200
