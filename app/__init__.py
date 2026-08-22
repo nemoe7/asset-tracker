@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 from datetime import timedelta
 
@@ -12,8 +13,20 @@ from .services.data.setup import is_first_run
 from .templatetags import format_datetime
 
 
+class HealthCheckFilter(logging.Filter):
+  def filter(self, record):
+    return '"GET /health ' not in record.getMessage()
+
+
+def _configure_werkzeug_logging():
+  werkzeug_logger = logging.getLogger("werkzeug")
+
+  werkzeug_logger.addFilter(HealthCheckFilter())
+
+
 def _database_initialized():
   connection = None
+
   try:
     connection = get_db()
 
@@ -27,9 +40,11 @@ def _database_initialized():
     ).fetchone()
 
     return result is not None
+
   except sqlite3.OperationalError as oe:
     if oe.sqlite_errorcode == sqlite3.SQLITE_CANTOPEN:
       return False
+
   finally:
     if connection is not None:
       connection.close()
@@ -37,11 +52,14 @@ def _database_initialized():
 
 def create_app():
   app = Flask(__name__)
-  app.config.from_object("config")
 
+  _configure_werkzeug_logging()
+
+  app.config.from_object("config")
   app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 
   app.jinja_env.filters["datetime"] = format_datetime
+
   if not _database_initialized():
     app.logger.warning("Database not initialized.")
     init_db(app.logger)
