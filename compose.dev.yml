@@ -6,11 +6,21 @@ services:
     restart: unless-stopped
     depends_on:
       zrok:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - .env
-    ports:
-      - "${PORT}:5000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - |
+          import urllib.request
+          urllib.request.urlopen("http://localhost:5000/health")
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     volumes:
       - .:/home/appuser
       - ./data:/home/appuser/data
@@ -30,6 +40,19 @@ services:
       DL_USE_JSON: false
     ports:
       - "8888:8888"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - |
+          zrok2 list shares --json 2>/dev/null |
+            jq -e --arg name "$${ZROK2_SHARE_NAME}" '
+              .shares |
+              any(.[]; .frontendEndpoints[]? | contains($$name + ".shares.zrok.io"))
+            ' >/dev/null
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
     entrypoint:
       - /bin/bash
       - -c
@@ -57,7 +80,6 @@ services:
         chown -R 2171:2171 /mnt
         rm -f /mnt/.zrok2/agent.socket
 
-        # Remove shares left behind by a previous crash/forced kill.
         cleanup
 
         zrok2 agent start \
@@ -84,7 +106,6 @@ services:
 
         wait "$$agent_pid"
 
-        # Cleanup if the agent exits without receiving SIGTERM.
         cleanup
 
     volumes:
