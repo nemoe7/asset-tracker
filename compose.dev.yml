@@ -34,33 +34,43 @@ services:
       - /bin/bash
       - -c
       - |
+        cleanup() {
+
+          shares="$$(zrok2 list shares --json 2>/dev/null || true)"
+
+          if [ -n "$$shares" ] && [ "$$shares" != "{}" ]; then
+            echo "$$shares" |
+              jq -r '.shares[].shareToken' |
+              while read -r token; do
+                [ -z "$$token" ] || zrok2 delete share "$$token" || true
+              done
+          fi
+        }
+
         if [ ! -f /mnt/.zrok2/environment.json ]; then
           zrok2-enable
-          zrok2 delete name "$${ZROK2_SHARE_NAME}"
+          chown -R 2171:2171 /mnt
+          zrok2 delete name "$${ZROK2_SHARE_NAME}" || true
           zrok2 create name "$${ZROK2_SHARE_NAME}"
         fi
 
         chown -R 2171:2171 /mnt
-
         rm -f /mnt/.zrok2/agent.socket
 
-        shares="$$(zrok2 list shares --json 2>/dev/null || true)"
-
-        if [ -n "$$shares" ] && [ "$$shares" != "{}" ]; then
-          echo "$$shares" |
-            jq -r '.shares[].shareToken' |
-            while read -r token; do
-              [ -z "$$token" ] || zrok2 delete share "$$token" || true
-            done
-        fi
-
-        chown -R 2171:2171 /mnt
+        # Remove shares left behind by a previous crash/forced kill.
+        cleanup
 
         zrok2 agent start \
           --console-address 0.0.0.0 \
           --console-start-port 8888 \
           --console-end-port 8888 &
         agent_pid=$$!
+
+        trap '
+          cleanup
+          kill -TERM "$$agent_pid" 2>/dev/null || true
+          wait "$$agent_pid" 2>/dev/null || true
+        ' TERM INT
 
         sleep 2
 
@@ -73,6 +83,10 @@ services:
         fi
 
         wait "$$agent_pid"
+
+        # Cleanup if the agent exits without receiving SIGTERM.
+        cleanup
+
     volumes:
       - zrok_env:/mnt
 
