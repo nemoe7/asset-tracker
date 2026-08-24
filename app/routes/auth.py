@@ -14,7 +14,7 @@ from werkzeug.security import (
   generate_password_hash,
 )
 
-from ..auth import login_required
+from ..services.auth.authentication import login_required
 from ..services.data.db import get_db
 from ..services.data.setup import is_first_run
 from ..services.data.users import _validate_password, _validate_username
