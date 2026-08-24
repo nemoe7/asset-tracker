@@ -8,7 +8,7 @@ from flask import (
 
 from app.services.data.db import get_db
 
-from .services.auth.context import (
+from .context import (
   reset_current_user,
   set_current_user,
 )
