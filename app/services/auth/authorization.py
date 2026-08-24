@@ -5,15 +5,20 @@ from flask import (
   session,
 )
 
-from ..data.db import get_db
+from ..data.permissions import get_permission_by_name
+from ..data.role_permissions import get_role_permissions
+from ..data.user_permissions import get_user_permissions
+from ..data.user_roles import get_user_roles
+from ..data.users import get_user
+from ..exceptions.auth.orization import PermissionDeniedError
 
 
 def _get_permission_precedence(permission_name):
+  parts = permission_name.split(".")
   precedence = [permission_name]
 
-  if "." in permission_name:
-    namespace = permission_name.split(".", 1)[0]
-    precedence.append(f"{namespace}.*")
+  for index in range(len(parts) - 1, 0, -1):
+    precedence.append(".".join(parts[:index]) + ".*")
 
   precedence.append("*")
 
@@ -21,118 +26,90 @@ def _get_permission_precedence(permission_name):
 
 
 def _get_direct_decision(
-  connection,
   user_id,
   precedence,
 ):
-  placeholders = ", ".join("?" for _ in precedence)
+  permissions = get_user_permissions(user_id)
 
-  rows = connection.execute(
-    f"""
-    SELECT
-      permissions.name,
-      user_permissions.allowed
-    FROM user_permissions
-    INNER JOIN permissions
-      ON permissions.id = user_permissions.permission_id
-    WHERE user_permissions.user_id = ?
-      AND permissions.name IN ({placeholders})
-    """,
-    [user_id, *precedence],
-  ).fetchall()
-
-  decisions = {row["name"]: row["allowed"] == 1 for row in rows}
+  decisions = {
+    permission["permission"]: bool(permission["allowed"]) for permission in permissions
+  }
 
   for permission_name in precedence:
     if permission_name in decisions:
-      return decisions[permission_name]
+      return bool(decisions[permission_name])
 
   return None
 
 
 def _get_role_decision(
-  connection,
   user_id,
   precedence,
 ):
-  placeholders = ", ".join("?" for _ in precedence)
-
-  rows = connection.execute(
-    f"""
-    SELECT
-      permissions.name,
-      role_permissions.allowed
-    FROM user_roles
-    INNER JOIN role_permissions
-      ON role_permissions.role_id = user_roles.role_id
-    INNER JOIN permissions
-      ON permissions.id = role_permissions.permission_id
-    WHERE user_roles.user_id = ?
-      AND permissions.name IN ({placeholders})
-    """,
-    [user_id, *precedence],
-  ).fetchall()
+  roles = get_user_roles(user_id)
 
   decisions = {}
 
-  for row in rows:
-    permission_name = row["name"]
-    allowed = row["allowed"] == 1
+  for role in roles:
+    permissions = get_role_permissions(role["role_id"])
 
-    if permission_name not in decisions:
-      decisions[permission_name] = allowed
-    elif not allowed:
-      decisions[permission_name] = False
+    for permission in permissions:
+      permission_name = permission["permission"]
+
+      if permission_name not in precedence:
+        continue
+
+      allowed = bool(permission["allowed"])
+
+      if permission_name not in decisions:
+        decisions[permission_name] = allowed
+      elif not allowed:
+        decisions[permission_name] = False
 
   for permission_name in precedence:
     if permission_name in decisions:
-      return decisions[permission_name]
+      return bool(decisions[permission_name])
 
   return None
 
 
-def has_permission(user_id, permission_name):
-  connection = get_db()
+def check_permission(user_id, permission_name):
+  permission = get_permission_by_name(permission_name)
 
-  try:
-    user = connection.execute(
-      """
-      SELECT id
-      FROM users
-      WHERE id = ?
-        AND archived_at IS NULL
-      """,
-      (user_id,),
-    ).fetchone()
+  if permission is None:
+    return permission_name.endswith(".read")
 
-    if user is None:
-      return False
+  user = get_user(user_id)
 
-    precedence = _get_permission_precedence(
-      permission_name,
-    )
-
-    direct_decision = _get_direct_decision(
-      connection,
-      user_id,
-      precedence,
-    )
-
-    if direct_decision is not None:
-      return direct_decision
-
-    role_decision = _get_role_decision(
-      connection,
-      user_id,
-      precedence,
-    )
-
-    if role_decision is not None:
-      return role_decision
-
+  if user is None or user["archived_at"] is not None:
     return False
-  finally:
-    connection.close()
+
+  precedence = _get_permission_precedence(
+    permission_name,
+  )
+
+  direct_decision = _get_direct_decision(
+    user_id,
+    precedence,
+  )
+
+  if direct_decision is not None:
+    return direct_decision
+
+  role_decision = _get_role_decision(
+    user_id,
+    precedence,
+  )
+
+  if role_decision is not None:
+    return role_decision
+
+  return permission_name.endswith(".read")
+
+
+def require_permission(user_id, permission_name):
+  if not check_permission(user_id, permission_name):
+    raise PermissionDeniedError()
 
 
 def permission_required(permission_name):
@@ -144,8 +121,10 @@ def permission_required(permission_name):
       if user_id is None:
         abort(403)
 
-      if not has_permission(user_id, permission_name):
-        abort(403)
+      require_permission(
+        user_id,
+        permission_name,
+      )
 
       return view(*args, **kwargs)
 
