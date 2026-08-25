@@ -8,6 +8,7 @@ from werkzeug.security import generate_password_hash
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
+from app import create_app
 from app.services.auth.context import reset_current_user, set_current_user
 from app.services.data.db import init_db
 from app.services.data.users import create_user, get_user_by_username
@@ -87,3 +88,78 @@ def gen_test_password():
     return password
 
   return _create
+
+
+@pytest.fixture
+def gen_empty_db(tmp_path, monkeypatch):
+  db_path = tmp_path / "test.db"
+
+  monkeypatch.setattr(config, "DB_PATH", db_path)
+
+  init_db()
+
+  yield db_path
+
+
+@pytest.fixture
+def test_app(gen_empty_db):
+  app = create_app()
+  app.config.update(
+    TESTING=True,
+  )
+
+  yield app
+
+
+@pytest.fixture
+def test_client(test_app):
+  return test_app.test_client()
+
+
+@pytest.fixture
+def test_admin(gen_empty_db, gen_test_password):
+  connection = sqlite3.connect(gen_empty_db)
+
+  cursor = connection.execute(
+    """
+    INSERT INTO users (
+      username,
+      name,
+      password_hash,
+      created_at,
+      updated_at
+    )
+    VALUES (?, ?, ?, datetime('now'), datetime('now'))
+    """,
+    (
+      "test_admin",
+      "Test Admin",
+      generate_password_hash(gen_test_password("test_admin")),
+    ),
+  )
+
+  user_id = cursor.lastrowid
+
+  admin_role = connection.execute(
+    """
+    SELECT id
+    FROM roles
+    WHERE name = 'Admin'
+    """
+  ).fetchone()
+
+  connection.execute(
+    """
+    INSERT INTO user_roles (
+      user_id,
+      role_id
+    )
+    VALUES (?, ?)
+    """,
+    (user_id, admin_role[0]),
+  )
+
+  connection.commit()
+  connection.close()
+
+  return user_id
