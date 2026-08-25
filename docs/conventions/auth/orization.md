@@ -36,10 +36,10 @@ has_permission(user_id, permission_name) -> bool
 
 The function shall:
 
-* Receive an explicit user ID.
-* Receive one concrete permission to check.
-* Return `True` when the permission is granted.
-* Return `False` when the permission is denied.
+- Receive an explicit user ID.
+- Receive one concrete permission to check.
+- Return `True` when the permission is granted.
+- Return `False` when the permission is denied.
 
 The authorization layer shall not require Flask to perform a permission check.
 
@@ -85,9 +85,9 @@ Permissions assigned to users or roles represent grants.
 
 A grant may be either:
 
-* An exact permission.
-* A namespace wildcard.
-* The global wildcard.
+- An exact permission.
+- A namespace wildcard.
+- The global wildcard.
 
 Examples:
 
@@ -486,8 +486,8 @@ Handling a stale session belongs to the authentication/Flask layer.
 
 An archived user shall not receive any permissions through either:
 
-* Direct user permissions.
-* Role permissions.
+- Direct user permissions.
+- Role permissions.
 
 Therefore:
 
@@ -559,10 +559,10 @@ Flask:
 
 The authorization layer shall not decide whether a denied request should result in:
 
-* `403 Forbidden`.
-* A redirect.
-* A login page.
-* An error page.
+- `403 Forbidden`.
+- A redirect.
+- A login page.
+- An error page.
 
 ---
 
@@ -616,12 +616,12 @@ has_permission(...)
 
 shall not modify:
 
-* Users.
-* Roles.
-* Permissions.
-* Sessions.
-* Inventory.
-* Audit records.
+- Users.
+- Roles.
+- Permissions.
+- Sessions.
+- Inventory.
+- Audit records.
 
 Authorization checks shall have no application-level side effects.
 
@@ -633,12 +633,12 @@ Authorization may directly query the persistent data required to calculate effec
 
 This includes authorization-specific data such as:
 
-* Users.
-* Roles.
-* Permissions.
-* User-role relationships.
-* Role-permission relationships.
-* User permission overrides.
+- Users.
+- Roles.
+- Permissions.
+- User-role relationships.
+- Role-permission relationships.
+- User permission overrides.
 
 Authorization should not directly query unrelated domain data unless the authorization model explicitly requires it.
 
@@ -683,10 +683,10 @@ However, the authorization layer shall only determine whether the requested perm
 
 It shall not itself determine:
 
-* Which fields are displayed in a particular UI.
-* How a form is rendered.
-* How an asset is serialized for a particular device.
-* Which HTTP response is returned.
+- Which fields are displayed in a particular UI.
+- How a form is rendered.
+- How an asset is serialized for a particular device.
+- Which HTTP response is returned.
 
 Those responsibilities belong to the appropriate application/domain layer.
 
@@ -728,21 +728,21 @@ Authorization tests shall verify the effective permission rules independently of
 
 Tests shall cover, where applicable:
 
-* Exact permission grants.
-* Exact permission denial.
-* Namespace wildcard grants.
-* Global wildcard grants.
-* Dynamic wildcard matching.
-* Newly introduced permissions matching existing wildcards.
-* Permission specificity.
-* User-over-role precedence.
-* More-specific-over-less-specific precedence.
-* Conflicting role permissions.
-* Archived users.
-* Invalid users.
-* Undefined requested permissions.
-* Multiple roles.
-* Permission changes taking effect immediately.
-* No side effects from permission checks.
+- Exact permission grants.
+- Exact permission denial.
+- Namespace wildcard grants.
+- Global wildcard grants.
+- Dynamic wildcard matching.
+- Newly introduced permissions matching existing wildcards.
+- Permission specificity.
+- User-over-role precedence.
+- More-specific-over-less-specific precedence.
+- Conflicting role permissions.
+- Archived users.
+- Invalid users.
+- Undefined requested permissions.
+- Multiple roles.
+- Permission changes taking effect immediately.
+- No side effects from permission checks.
 
 Flask route/decorator tests shall separately verify that authorization results are translated into the correct HTTP behavior.
