@@ -3,7 +3,7 @@
 **Client:** The Birth-Giver
 **Developer:** nemoe7
 **Version:** 0.3
-**Last Updated:** 2026-08-21
+**Last Updated:** 2026-08-25
 
 ## 1. Introduction
 
@@ -167,74 +167,74 @@ The availability of a function shall depend on the user's permissions, not solel
 
 The system shall authenticate users and enforce their assigned permissions.
 
-- **FR-001:** The system shall allow users to log in using their assigned credentials.
-- **FR-002:** The system shall provide a mechanism for users to log out.
-- **FR-003:** The system shall restrict functionality according to the user's assigned roles and permissions.
-- **FR-004:** The system shall restrict access to asset information according to the user's permissions.
-- **FR-005:** The system shall enforce the same permission rules on supported desktop and mobile interfaces.
-- **FR-006:** The system shall prevent unauthenticated users from accessing protected functionality.
+- **AUT-001:** The system shall allow users to log in using their assigned credentials.
+- **AUT-002:** The system shall provide a mechanism for users to log out.
+- **AUT-003:** The system shall restrict functionality according to the user's assigned roles and permissions.
+- **AUT-004:** The system shall restrict access to asset information according to the user's permissions.
+- **AUT-005:** The system shall enforce the same permission rules on supported desktop and mobile interfaces.
+- **AUT-006:** The system shall prevent unauthenticated users from accessing protected functionality.
 
 ### Permission Matching
 
 Permissions shall support wildcard matching and precedence rules.
 
-- **FR-003.1:** The system shall support exact permission grants.
-- **FR-003.2:** The system shall support namespace wildcard grants using the `namespace.*` format.
-- **FR-003.3:** A namespace wildcard grant shall grant access to all concrete permissions within that namespace.
-- **FR-003.4:** The system shall support the global wildcard grant `*`.
-- **FR-003.5:** A global wildcard grant shall grant access to all concrete permissions.
-- **FR-003.6:** Wildcard grants shall automatically apply to newly created concrete permissions that match the wildcard.
-- **FR-003.7:** Direct user permission decisions shall take precedence over permissions inherited from roles.
-- **FR-003.8:** When multiple permissions from the same source match a requested permission, the most specific matching permission shall take precedence.
-- **FR-003.9:** When conflicting role permissions have equal specificity, a deny decision shall take precedence.
-- **FR-003.10:** Permission changes shall take effect on subsequent authorization checks without requiring the affected user to authenticate again.
-- **FR-003.11:** Permission checks shall request concrete permissions using the `namespace.operation` format.
+- **AUT-007:** The system shall support exact permission grants.
+- **AUT-008:** The system shall support namespace wildcard grants using the `namespace.*` format.
+- **AUT-009:** A namespace wildcard grant shall grant access to all concrete permissions within that namespace.
+- **AUT-010:** The system shall support the global wildcard grant `*`.
+- **AUT-011:** A global wildcard grant shall grant access to all concrete permissions.
+- **AUT-012:** Wildcard grants shall automatically apply to newly created concrete permissions that match the wildcard.
+- **AUT-013:** Direct user permission decisions shall take precedence over permissions inherited from roles.
+- **AUT-014:** When multiple permissions from the same source match a requested permission, the most specific matching permission shall take precedence.
+- **AUT-015:** When conflicting role permissions have equal specificity, a deny decision shall take precedence.
+- **AUT-016:** Permission changes shall take effect on subsequent authorization checks without requiring the affected user to authenticate again.
+- **AUT-017:** Permission checks shall request concrete permissions using the `namespace.operation` format.
 
 ## 3.2 User Management and Permissions
 
 Office Admins shall be able to manage users and configure permissions.
 
-- **FR-007:** Office Admins shall be able to create user accounts.
-- **FR-008:** Office Admins shall be able to modify user accounts.
-- **FR-009:** Office Admins shall be able to deactivate user accounts.
-- **FR-010:** Office Admins shall be able to create and manage roles.
-- **FR-011:** Office Admins shall be able to assign roles to users.
-- **FR-012:** Office Admins shall be able to configure permissions for roles.
-- **FR-013:** Office Admins shall be able to configure per-user permission overrides.
-- **FR-014:** Per-user permissions shall be able to override the permissions inherited from the user's roles.
-- **FR-015:** Office Admins shall be able to configure which asset fields Checkers can view.
-- **FR-016:** Office Admins shall be able to configure which asset fields Checkers can edit.
-- **FR-017:** Checkers shall not be able to modify their own permissions.
-- **FR-018:** Office Admins shall be able to configure which users or roles can view audit and activity logs.
-- **FR-019:** The system shall record relevant user, role, and permission changes in the audit log.
+- **USR-001:** Office Admins shall be able to create user accounts.
+- **USR-002:** Office Admins shall be able to modify user accounts.
+- **USR-003:** Office Admins shall be able to deactivate user accounts.
+- **USR-004:** Office Admins shall be able to create and manage roles.
+- **USR-005:** Office Admins shall be able to assign roles to users.
+- **USR-006:** Office Admins shall be able to configure permissions for roles.
+- **USR-007:** Office Admins shall be able to configure per-user permission overrides.
+- **USR-008:** Per-user permissions shall be able to override the permissions inherited from the user's roles.
+- **USR-009:** Office Admins shall be able to configure which asset fields Checkers can view.
+- **USR-010:** Office Admins shall be able to configure which asset fields Checkers can edit.
+- **USR-011:** Checkers shall not be able to modify their own permissions.
+- **USR-012:** Office Admins shall be able to configure which users or roles can view audit and activity logs.
+- **USR-013:** The system shall record relevant user, role, and permission changes in the audit log.
 
 ## 3.3 Asset Management
 
 The system shall maintain records for office assets.
 
-- **FR-020:** Authorized users shall be able to create an asset record.
-- **FR-021:** Authorized users shall be able to view asset records.
-- **FR-022:** Authorized users shall be able to edit asset records according to their permissions.
-- **FR-023:** Authorized users with the appropriate permissions shall be able to archive asset records.
-- **FR-024:** The system shall automatically generate a unique Asset ID for each new asset.
-- **FR-025:** The Asset ID shall be a UUID.
-- **FR-026:** The system shall validate required asset information before saving an asset.
-- **FR-027:** The system shall prevent duplicate Asset IDs.
-- **FR-028:** Archived assets shall remain available to authorized users for historical reference.
-- **FR-029:** Archived assets shall be distinguishable from active assets.
-- **FR-030:** The system shall not permanently delete an asset through normal inventory management functions.
-- **FR-031:** Authorized users shall be able to restore an archived asset to an active state.
-- **FR-032:** The system shall retain relevant asset information required for inventory and insurance purposes.
+- **AST-001:** Authorized users shall be able to create an asset record.
+- **AST-002:** Authorized users shall be able to view asset records.
+- **AST-003:** Authorized users shall be able to edit asset records according to their permissions.
+- **AST-004:** Authorized users with the appropriate permissions shall be able to archive asset records.
+- **AST-005:** The system shall automatically generate a unique Asset ID for each new asset.
+- **AST-006:** The Asset ID shall be a UUID.
+- **AST-007:** The system shall validate required asset information before saving an asset.
+- **AST-008:** The system shall prevent duplicate Asset IDs.
+- **AST-009:** Archived assets shall remain available to authorized users for historical reference.
+- **AST-010:** Archived assets shall be distinguishable from active assets.
+- **AST-011:** The system shall not permanently delete an asset through normal inventory management functions.
+- **AST-012:** Authorized users shall be able to restore an archived asset to an active state.
+- **AST-013:** The system shall retain relevant asset information required for inventory and insurance purposes.
 
 ## 3.4 Configurable Asset Fields
 
 The system shall provide a minimum set of built-in asset fields and allow Office Admins to define additional custom fields.
 
-- **FR-033:** The system shall provide the minimum built-in asset fields defined in Section 5.1.
-- **FR-034:** Office Admins shall be able to create custom asset fields.
-- **FR-035:** Office Admins shall be able to specify a name for each custom field.
-- **FR-036:** Office Admins shall be able to specify the data type of each custom field.
-- **FR-037:** The system shall support appropriate field types for the project's requirements, including at minimum:
+- **FLD-001:** The system shall provide the minimum built-in asset fields defined in Section 5.1.
+- **FLD-002:** Office Admins shall be able to create custom asset fields.
+- **FLD-003:** Office Admins shall be able to specify a name for each custom field.
+- **FLD-004:** Office Admins shall be able to specify the data type of each custom field.
+- **FLD-005:** The system shall support appropriate field types for the project's requirements, including at minimum:
   - Text
   - Integer
   - Decimal
@@ -242,113 +242,113 @@ The system shall provide a minimum set of built-in asset fields and allow Office
   - Date
   - Enum
   - User
-- **FR-038:** Office Admins shall be able to define the available values for an Enum field.
-- **FR-039:** A User field shall reference a user account within the system.
-- **FR-040:** Office Admins shall be able to specify whether a custom field is required.
-- **FR-041:** Office Admins shall be able to modify custom field configuration subject to data integrity constraints.
-- **FR-042:** Office Admins shall be able to deactivate a custom field.
-- **FR-043:** Deactivating a custom field shall not automatically remove existing values associated with that field.
-- **FR-044:** Custom field values shall be validated according to their configured data type.
-- **FR-045:** Custom fields shall be available for viewing and editing according to user permissions.
-- **FR-046:** Custom fields shall be available for searching, filtering, and exporting where applicable.
-- **FR-047:** Changes to custom field definitions shall be recorded in the audit log.
+- **FLD-006:** Office Admins shall be able to define the available values for an Enum field.
+- **FLD-007:** A User field shall reference a user account within the system.
+- **FLD-008:** Office Admins shall be able to specify whether a custom field is required.
+- **FLD-009:** Office Admins shall be able to modify custom field configuration subject to data integrity constraints.
+- **FLD-010:** Office Admins shall be able to deactivate a custom field.
+- **FLD-011:** Deactivating a custom field shall not automatically remove existing values associated with that field.
+- **FLD-012:** Custom field values shall be validated according to their configured data type.
+- **FLD-013:** Custom fields shall be available for viewing and editing according to user permissions.
+- **FLD-014:** Custom fields shall be available for searching, filtering, and exporting where applicable.
+- **FLD-015:** Changes to custom field definitions shall be recorded in the audit log.
 
 ## 3.5 Asset Identification and QR Codes
 
 Each asset shall be identified using its Asset ID, which is encoded in its QR code.
 
-- **FR-048:** The system shall associate each asset with a unique Asset ID.
-- **FR-049:** The Asset ID shall be encoded in the asset's QR code.
-- **FR-050:** The Asset ID shall uniquely identify its associated asset.
-- **FR-051:** The system shall support scanning asset QR codes using supported mobile devices.
-- **FR-052:** Scanning an asset QR code shall open the corresponding asset record.
-- **FR-053:** The system shall provide the information required to create an asset identification sticker.
-- **FR-054:** The QR code shall contain the Asset ID and shall not need to contain the asset's complete information.
+- **QRC-001:** The system shall associate each asset with a unique Asset ID.
+- **QRC-002:** The Asset ID shall be encoded in the asset's QR code.
+- **QRC-003:** The Asset ID shall uniquely identify its associated asset.
+- **QRC-004:** The system shall support scanning asset QR codes using supported mobile devices.
+- **QRC-005:** Scanning an asset QR code shall open the corresponding asset record.
+- **QRC-006:** The system shall provide the information required to create an asset identification sticker.
+- **QRC-007:** The QR code shall contain the Asset ID and shall not need to contain the asset's complete information.
 
 ## 3.6 Asset Checking and Scanning
 
 The system shall support physical inventory checking through QR scanning.
 
-- **FR-055:** A Checker shall be able to scan an asset QR code using a supported mobile device.
-- **FR-056:** The system shall identify the asset from the scanned Asset ID.
-- **FR-057:** The system shall record the scan event.
-- **FR-058:** The system shall record the user who performed the scan.
-- **FR-059:** The system shall record the date and time of the scan.
-- **FR-060:** The system shall indicate when a scanned Asset ID does not correspond to an existing asset.
-- **FR-061:** A Checker shall be able to update permitted asset information after scanning.
-- **FR-062:** The system shall record changes resulting from an asset check.
-- **FR-063:** Archived assets shall be handled according to their status and the user's permissions when scanned.
+- **CHK-001:** A Checker shall be able to scan an asset QR code using a supported mobile device.
+- **CHK-002:** The system shall identify the asset from the scanned Asset ID.
+- **CHK-003:** The system shall record the scan event.
+- **CHK-004:** The system shall record the user who performed the scan.
+- **CHK-005:** The system shall record the date and time of the scan.
+- **CHK-006:** The system shall indicate when a scanned Asset ID does not correspond to an existing asset.
+- **CHK-007:** A Checker shall be able to update permitted asset information after scanning.
+- **CHK-008:** The system shall record changes resulting from an asset check.
+- **CHK-009:** Archived assets shall be handled according to their status and the user's permissions when scanned.
 
 ## 3.7 Search, Filtering, and Inventory Views
 
 The system shall provide database-like inventory views.
 
-- **FR-064:** Users shall be able to search for assets.
-- **FR-065:** Users shall be able to filter assets using available asset fields.
-- **FR-066:** Users shall be able to sort asset results using available fields.
-- **FR-067:** The system shall display asset information in a tabular or equivalent inventory view.
-- **FR-068:** The system shall allow users to open an individual asset from an inventory view.
-- **FR-069:** Applied filters shall affect the displayed results and filtered exports where applicable.
-- **FR-070:** Custom fields shall be available as search and filter criteria where applicable.
+- **SRH-001:** Users shall be able to search for assets.
+- **SRH-002:** Users shall be able to filter assets using available asset fields.
+- **SRH-003:** Users shall be able to sort asset results using available fields.
+- **SRH-004:** The system shall display asset information in a tabular or equivalent inventory view.
+- **SRH-005:** The system shall allow users to open an individual asset from an inventory view.
+- **SRH-006:** Applied filters shall affect the displayed results and filtered exports where applicable.
+- **SRH-007:** Custom fields shall be available as search and filter criteria where applicable.
 
 ## 3.8 Audit and Activity Logs
 
 The system shall maintain an audit trail of relevant system activity.
 
-- **FR-071:** The system shall record asset creation events.
-- **FR-072:** The system shall record asset modification events.
-- **FR-073:** The system shall record asset archival and restoration events.
-- **FR-074:** The system shall record asset QR scan events.
-- **FR-075:** The system shall record custom field creation, modification, and deactivation events.
-- **FR-076:** The system shall record user, role, and permission changes.
-- **FR-077:** The system shall record backup and restoration events.
-- **FR-078:** The system shall record the user responsible for each logged event.
-- **FR-079:** The system shall record the date and time of each logged event.
-- **FR-080:** For applicable asset changes, the system shall record the affected field and its previous and new values.
-- **FR-081:** Authorized users shall be able to view relevant audit and activity logs from supported desktop and mobile devices.
-- **FR-082:** The system shall restrict log visibility according to the user's permissions.
-- **FR-083:** Audit logs shall not be editable through normal inventory management functions.
+- **AUD-001:** The system shall record asset creation events.
+- **AUD-002:** The system shall record asset modification events.
+- **AUD-003:** The system shall record asset archival and restoration events.
+- **AUD-004:** The system shall record asset QR scan events.
+- **AUD-005:** The system shall record custom field creation, modification, and deactivation events.
+- **AUD-006:** The system shall record user, role, and permission changes.
+- **AUD-007:** The system shall record backup and restoration events.
+- **AUD-008:** The system shall record the user responsible for each logged event.
+- **AUD-009:** The system shall record the date and time of each logged event.
+- **AUD-010:** For applicable asset changes, the system shall record the affected field and its previous and new values.
+- **AUD-011:** Authorized users shall be able to view relevant audit and activity logs from supported desktop and mobile devices.
+- **AUD-012:** The system shall restrict log visibility according to the user's permissions.
+- **AUD-013:** Audit logs shall not be editable through normal inventory management functions.
 
 ## 3.9 Export
 
 The system shall allow inventory information to be exported.
 
-- **FR-084:** Authorized users shall be able to export inventory data.
-- **FR-085:** The system shall provide an Excel-compatible export format.
-- **FR-086:** Users shall be able to select which fields are included in an export where supported.
-- **FR-087:** Users shall be able to export filtered inventory results.
-- **FR-088:** Authorized users shall be able to create saved export templates.
-- **FR-089:** An export template shall consist of a predefined set of filters and applicable export field selections.
-- **FR-090:** Users shall be able to apply a saved export template before generating an export.
-- **FR-091:** Export templates shall support configured custom fields.
-- **FR-092:** Exported data shall reflect the information available to the user generating the export.
+- **EXP-001:** Authorized users shall be able to export inventory data.
+- **EXP-002:** The system shall provide an Excel-compatible export format.
+- **EXP-003:** Users shall be able to select which fields are included in an export where supported.
+- **EXP-004:** Users shall be able to export filtered inventory results.
+- **EXP-005:** Authorized users shall be able to create saved export templates.
+- **EXP-006:** An export template shall consist of a predefined set of filters and applicable export field selections.
+- **EXP-007:** Users shall be able to apply a saved export template before generating an export.
+- **EXP-008:** Export templates shall support configured custom fields.
+- **EXP-009:** Exported data shall reflect the information available to the user generating the export.
 
 ## 3.10 Import
 
 The system shall support importing existing inventory data.
 
-- **FR-093:** Authorized users shall be able to import asset records.
-- **FR-094:** An import shall require, at minimum, an Asset Name for each imported asset.
-- **FR-095:** The system shall automatically generate an Asset ID for imported assets where one is not provided.
-- **FR-096:** Optional fields not supplied during import shall remain unset.
-- **FR-097:** The system shall validate imported values against the corresponding field types and requirements.
-- **FR-098:** The system shall report invalid or rejected records without corrupting existing inventory data.
-- **FR-099:** Import operations shall be recorded in the audit log.
+- **IMP-001:** Authorized users shall be able to import asset records.
+- **IMP-002:** An import shall require, at minimum, an Asset Name for each imported asset.
+- **IMP-003:** The system shall automatically generate an Asset ID for imported assets where one is not provided.
+- **IMP-004:** Optional fields not supplied during import shall remain unset.
+- **IMP-005:** The system shall validate imported values against the corresponding field types and requirements.
+- **IMP-006:** The system shall report invalid or rejected records without corrupting existing inventory data.
+- **IMP-007:** Import operations shall be recorded in the audit log.
 
 ## 3.11 Backup and Restore
 
 The system shall support scheduled and manual backups and full-system restoration.
 
-- **FR-100:** Automatic backups shall be disabled by default.
-- **FR-101:** During first-time system initialization, the system shall prompt the Admin to configure automatic backups.
-- **FR-102:** Office Admins shall be able to enable or disable automatic backups.
-- **FR-103:** Office Admins shall be able to configure the automatic backup schedule.
-- **FR-104:** The default proposed schedule shall be once per week on Sunday at 03:00 when automatic backups are enabled.
-- **FR-105:** The system shall detect when a scheduled backup was missed because the application was not running at the scheduled time.
-- **FR-106:** If a scheduled backup was missed, the system shall perform the pending backup when the application next starts.
-- **FR-107:** The system shall avoid creating duplicate backups for the same scheduled backup period.
-- **FR-108:** The system shall record the scheduled backup time and the actual backup time.
-- **FR-109:** A system backup shall include:
+- **BKP-001:** Automatic backups shall be disabled by default.
+- **BKP-002:** During first-time system initialization, the system shall prompt the Admin to configure automatic backups.
+- **BKP-003:** Office Admins shall be able to enable or disable automatic backups.
+- **BKP-004:** Office Admins shall be able to configure the automatic backup schedule.
+- **BKP-005:** The default proposed schedule shall be once per week on Sunday at 03:00 when automatic backups are enabled.
+- **BKP-006:** The system shall detect when a scheduled backup was missed because the application was not running at the scheduled time.
+- **BKP-007:** If a scheduled backup was missed, the system shall perform the pending backup when the application next starts.
+- **BKP-008:** The system shall avoid creating duplicate backups for the same scheduled backup period.
+- **BKP-009:** The system shall record the scheduled backup time and the actual backup time.
+- **BKP-010:** A system backup shall include:
   - Asset records.
   - User accounts.
   - Roles and permissions.
@@ -356,15 +356,15 @@ The system shall support scheduled and manual backups and full-system restoratio
   - Custom field values.
   - Audit and activity logs.
   - Relevant system configuration required for restoration.
-- **FR-110:** Authorized users shall be able to create a system backup manually.
-- **FR-111:** Authorized users shall be able to restore the system from a valid backup.
-- **FR-112:** The system shall warn users before a restoration that may overwrite existing data.
-- **FR-113:** The system shall record backup and restoration events in the audit log.
-- **FR-114:** The system shall provide backup status and confirmation information.
-- **FR-115:** The system shall maintain backup files in a configurable storage location.
-- **FR-116:** The default backup location shall be a directory mounted into the application deployment.
-- **FR-117:** The backup location shall be configurable independently of the application runtime.
-- **FR-118:** The system should support externally hosted backup locations such as NAS storage where practical.
+- **BKP-011:** Authorized users shall be able to create a system backup manually.
+- **BKP-012:** Authorized users shall be able to restore the system from a valid backup.
+- **BKP-013:** The system shall warn users before a restoration that may overwrite existing data.
+- **BKP-014:** The system shall record backup and restoration events in the audit log.
+- **BKP-015:** The system shall provide backup status and confirmation information.
+- **BKP-016:** The system shall maintain backup files in a configurable storage location.
+- **BKP-017:** The default backup location shall be a directory mounted into the application deployment.
+- **BKP-018:** The backup location shall be configurable independently of the application runtime.
+- **BKP-019:** The system should support externally hosted backup locations such as NAS storage where practical.
 
 ---
 
@@ -372,45 +372,45 @@ The system shall support scheduled and manual backups and full-system restoratio
 
 ## 4.1 Performance
 
-- **NFR-001:** Normal inventory operations shall respond within a reasonable time under the expected number of users and assets.
-- **NFR-002:** Asset searches and filtering shall not require the user to manually reload the application.
-- **NFR-003:** QR scanning shall open the corresponding asset record without unnecessary intermediate steps.
+- **PER-001:** Normal inventory operations shall respond within a reasonable time under the expected number of users and assets.
+- **PER-002:** Asset searches and filtering shall not require the user to manually reload the application.
+- **PER-003:** QR scanning shall open the corresponding asset record without unnecessary intermediate steps.
 
 ## 4.2 Usability
 
-- **NFR-004:** The application shall be usable through a standard web browser.
-- **NFR-005:** The interface shall provide a desktop-oriented management experience.
-- **NFR-006:** The interface shall provide a mobile-oriented experience for asset checking and QR scanning.
-- **NFR-007:** Common asset operations shall require minimal navigation.
-- **NFR-008:** Archival and restoration operations shall require appropriate confirmation.
-- **NFR-009:** Backup configuration shall clearly indicate whether automatic backups are enabled and the next scheduled backup time.
+- **USE-001:** The application shall be usable through a standard web browser.
+- **USE-002:** The interface shall provide a desktop-oriented management experience.
+- **USE-003:** The interface shall provide a mobile-oriented experience for asset checking and QR scanning.
+- **USE-004:** Common asset operations shall require minimal navigation.
+- **USE-005:** Archival and restoration operations shall require appropriate confirmation.
+- **USE-006:** Backup configuration shall clearly indicate whether automatic backups are enabled and the next scheduled backup time.
 
 ## 4.3 Security
 
-- **NFR-010:** Protected system functions shall require authentication.
-- **NFR-011:** The system shall enforce role-based and per-user access control.
-- **NFR-012:** Users shall only be able to access information and functions permitted by their effective permissions.
-- **NFR-013:** Authentication credentials shall not be stored in plaintext.
-- **NFR-014:** Audit logs shall be protected against modification by unauthorized users.
-- **NFR-015:** Backup and restore functions shall be restricted to authorized users.
-- **NFR-016:** Backup files shall be protected from unauthorized access.
-- **NFR-017:** Custom field configuration shall not bypass the system's fundamental data integrity or security controls.
+- **SEC-001:** Protected system functions shall require authentication.
+- **SEC-002:** The system shall enforce role-based and per-user access control.
+- **SEC-003:** Users shall only be able to access information and functions permitted by their effective permissions.
+- **SEC-004:** Authentication credentials shall not be stored in plaintext.
+- **SEC-005:** Audit logs shall be protected against modification by unauthorized users.
+- **SEC-006:** Backup and restore functions shall be restricted to authorized users.
+- **SEC-007:** Backup files shall be protected from unauthorized access.
+- **SEC-008:** Custom field configuration shall not bypass the system's fundamental data integrity or security controls.
 
 ## 4.4 Compatibility
 
-- **NFR-018:** The application shall support current versions of commonly used desktop web browsers.
-- **NFR-019:** The application shall support modern mobile browsers on supported smartphones.
-- **NFR-020:** QR scanning shall work with supported mobile device cameras or browser-based scanning functionality.
+- **CMP-001:** The application shall support current versions of commonly used desktop web browsers.
+- **CMP-002:** The application shall support modern mobile browsers on supported smartphones.
+- **CMP-003:** QR scanning shall work with supported mobile device cameras or browser-based scanning functionality.
 
 ## 4.5 Reliability and Recovery
 
-- **NFR-021:** The system shall handle invalid user input without corrupting existing inventory data.
-- **NFR-022:** Failed operations shall provide an appropriate error message.
-- **NFR-023:** The system shall maintain data integrity when creating or modifying records.
-- **NFR-024:** A valid backup shall be sufficient to restore the required application data.
-- **NFR-025:** The system shall not report a backup as successful unless the backup operation has completed successfully.
-- **NFR-026:** The system shall retain sufficient information to determine when the most recent successful backup occurred.
-- **NFR-027:** A missed scheduled backup shall be recoverable on the next application startup.
+- **REL-001:** The system shall handle invalid user input without corrupting existing inventory data.
+- **REL-002:** Failed operations shall provide an appropriate error message.
+- **REL-003:** The system shall maintain data integrity when creating or modifying records.
+- **REL-004:** A valid backup shall be sufficient to restore the required application data.
+- **REL-005:** The system shall not report a backup as successful unless the backup operation has completed successfully.
+- **REL-006:** The system shall retain sufficient information to determine when the most recent successful backup occurred.
+- **REL-007:** A missed scheduled backup shall be recoverable on the next application startup.
 
 ---
 
@@ -678,3 +678,4 @@ The project will be considered complete when:
 | 0.1 | 2026-08-15 | Initial requirements |
 | 0.2 | 2026-08-17 | Defined permission matching. |
 | 0.3 | 2026-08-21 | Expanded authorization requirements. |
+| 0.4 | 2025-08-25 | Refactored feature request codes. |
