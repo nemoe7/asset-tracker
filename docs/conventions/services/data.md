@@ -100,8 +100,8 @@ If the mutation fails, its audit record shall not remain in the database.
 
 This prevents states such as:
 
-* A change occurring without an audit record.
-* An audit record existing for a change that was rolled back.
+- A change occurring without an audit record.
+- An audit record existing for a change that was rolled back.
 
 The same principle applies to multi-step operations performed within one transaction.
 
@@ -111,9 +111,9 @@ The same principle applies to multi-step operations performed within one transac
 
 A data service may call another data service when doing so represents a legitimate data operation, particularly:
 
-* Looking up a related record.
-* Validating that a related record exists.
-* Obtaining data required to perform the operation.
+- Looking up a related record.
+- Validating that a related record exists.
+- Obtaining data required to perform the operation.
 
 Nested data-service calls shall automatically use the caller's database connection context.
 
@@ -127,8 +127,8 @@ Data services should not be chained arbitrarily merely to avoid placing straight
 
 Single-record lookup functions shall return:
 
-* The requested record when it exists.
-* `None` when it does not exist.
+- The requested record when it exists.
+- `None` when it does not exist.
 
 Example:
 
@@ -161,15 +161,15 @@ update_location(
 
 This applies to operations such as:
 
-* Update.
-* Archive.
-* Restore.
-* Permanent deletion.
+- Update.
+- Archive.
+- Restore.
+- Permanent deletion.
 
 The distinction is intentional:
 
-* Reads use `None` for absence.
-* Mutations raise a specific not-found exception because the requested operation cannot be performed.
+- Reads use `None` for absence.
+- Mutations raise a specific not-found exception because the requested operation cannot be performed.
 
 ---
 
@@ -200,9 +200,9 @@ Where multiple records can have the same primary ordering value, a stable unique
 
 Examples include:
 
-* Locations ordered by ID.
-* Users ordered by username.
-* Inventory ordered by name and then ID.
+- Locations ordered by ID.
+- Users ordered by username.
+- Inventory ordered by name and then ID.
 
 Callers should not rely on unspecified database ordering.
 
@@ -224,10 +224,10 @@ Filtering belongs in the data service responsible for the corresponding domain.
 
 For example, inventory filtering may include:
 
-* Search.
-* Location.
-* Archived status.
-* Other supported inventory fields.
+- Search.
+- Location.
+- Archived status.
+- Other supported inventory fields.
 
 Filtering shall use explicitly supported parameters.
 
@@ -247,10 +247,10 @@ Services shall not implicitly normalize stored input unless the service explicit
 
 In particular, services shall not automatically:
 
-* Strip leading/trailing whitespace from stored values.
-* Convert values to lowercase.
-* Change capitalization.
-* Convert empty strings to `None`.
+- Strip leading/trailing whitespace from stored values.
+- Convert values to lowercase.
+- Change capitalization.
+- Convert empty strings to `None`.
 
 Normalization requirements should be explicit and field-specific.
 
@@ -282,8 +282,8 @@ shall fail its required-field validation.
 
 Partial update functions shall distinguish between:
 
-* A field being omitted from the update.
-* A field explicitly being set to `None`.
+- A field being omitted from the update.
+- A field explicitly being set to `None`.
 
 The internal `_UNSET` sentinel shall represent an omitted argument.
 
@@ -301,8 +301,8 @@ update_item(
 
 means:
 
-* Leave `name` unchanged.
-* Explicitly clear `location_id`.
+- Leave `name` unchanged.
+- Explicitly clear `location_id`.
 
 `_UNSET` is an internal implementation sentinel and should not be persisted or exposed as application data.
 
@@ -314,10 +314,10 @@ A mutation that produces no actual state change shall succeed without modifying 
 
 A no-op mutation shall:
 
-* Return the operation's normal success result.
-* Not change `updated_at`.
-* Not create an audit record.
-* Not perform an unnecessary database mutation.
+- Return the operation's normal success result.
+- Not change `updated_at`.
+- Not create an audit record.
+- Not perform an unnecessary database mutation.
 
 This applies to idempotent operations such as archive and restore.
 
@@ -340,10 +340,10 @@ Return types are operation-specific rather than universally standardized.
 
 Examples:
 
-* Create operations return the newly created entity ID.
-* Update operations may return a success indicator.
-* Archive/restore operations may return a success indicator.
-* Operations producing meaningful result data may return that data.
+- Create operations return the newly created entity ID.
+- Update operations may return a success indicator.
+- Archive/restore operations may return a success indicator.
+- Operations producing meaningful result data may return that data.
 
 Services shall not return Flask responses, HTTP status codes, redirects, or other presentation-layer values.
 
@@ -389,10 +389,11 @@ The current application uses SQLite UTC timestamps.
 
 The following conventions apply:
 
-* `created_at` is immutable.
-* Where an entity has an `updated_at` column, it changes when persisted data actually changes.
-* No-op operations shall not change `updated_at`.
-* Where an entity has an `updated_at` column, archival and restoration count as state changes and therefore update `updated_at`.
+- `created_at` is immutable.
+- Where an entity has an `updated_at` column, it changes when persisted data actually changes.
+- No-op operations shall not change `updated_at`.
+- Where an entity has an `updated_at` column, archival and restoration count as state changes and therefore update `updated_at`.
+
 ---
 
 ## 22. Validation
@@ -401,11 +402,11 @@ Services shall validate input before attempting the relevant mutation.
 
 Validation shall cover:
 
-* Required fields.
-* Supported values.
-* Data types.
-* Related-record requirements.
-* Domain-specific constraints.
+- Required fields.
+- Supported values.
+- Data types.
+- Related-record requirements.
+- Domain-specific constraints.
 
 Validation failures shall use the existing specific service/domain exceptions.
 
@@ -419,18 +420,18 @@ Expected domain failures shall use specific service exceptions.
 
 Examples include:
 
-* `LocationNotFoundError`.
-* `ItemNotFoundError`.
-* Entity-specific validation errors.
-* Entity-specific conflict errors.
-* Entity-specific archived-state errors.
+- `LocationNotFoundError`.
+- `ItemNotFoundError`.
+- Entity-specific validation errors.
+- Entity-specific conflict errors.
+- Entity-specific archived-state errors.
 
 Unexpected programming, database, or infrastructure exceptions shall propagate rather than being converted into generic domain errors.
 
 This preserves the distinction between:
 
-* An expected failure caused by the requested operation.
-* An unexpected application/server failure.
+- An expected failure caused by the requested operation.
+- An unexpected application/server failure.
 
 The Flask layer is responsible for translating exceptions into appropriate HTTP behavior.
 
@@ -444,10 +445,10 @@ The service layer should perform validation so that callers receive meaningful d
 
 The database remains the final authority for constraints such as:
 
-* Primary keys.
-* Unique constraints.
-* Foreign keys.
-* Not-null constraints.
+- Primary keys.
+- Unique constraints.
+- Foreign keys.
+- Not-null constraints.
 
 Service validation shall not be treated as a replacement for database constraints.
 
@@ -556,7 +557,6 @@ Replacing a value with the same value is a no-op and shall not create an audit r
 
 Audit records shall not be directly editable through ordinary data-service operations.
 
-
 ---
 
 ## 30. Audit Actor Context
@@ -589,8 +589,8 @@ Audit records shall be append-only.
 
 Normal data services shall provide:
 
-* Creation of audit records.
-* Retrieval of audit records.
+- Creation of audit records.
+- Retrieval of audit records.
 
 They shall not provide normal update or delete operations for audit records.
 
@@ -606,8 +606,8 @@ Data services may still enforce domain/data integrity rules that are independent
 
 For example:
 
-* Authorization determines whether a user may update an inventory item.
-* The inventory data service determines whether the item exists, whether it is archived, and whether the supplied data is valid.
+- Authorization determines whether a user may update an inventory item.
+- The inventory data service determines whether the item exists, whether it is archived, and whether the supplied data is valid.
 
 This keeps permission logic centralized and prevents duplication across data services.
 
@@ -619,9 +619,9 @@ Many-to-many relationship tables that represent independently manipulated applic
 
 Examples include:
 
-* User ↔ Role.
-* Role ↔ Permission.
-* User ↔ Permission.
+- User ↔ Role.
+- Role ↔ Permission.
+- User ↔ Permission.
 
 Callers shall use the appropriate relationship service rather than directly modifying relationship tables.
 
@@ -635,8 +635,8 @@ Supporting records may be permanently deleted when their absence represents the 
 
 Examples include:
 
-* Sparse custom-field value records.
-* Relationship/junction records.
+- Sparse custom-field value records.
+- Relationship/junction records.
 
 Permanent deletion of such records does not imply that the associated domain entity itself should be permanently deleted.
 
@@ -648,13 +648,13 @@ Custom-field values shall be validated according to their configured field type.
 
 Supported types include:
 
-* Text.
-* Integer.
-* Decimal.
-* Boolean.
-* Date.
-* Enum.
-* User.
+- Text.
+- Integer.
+- Decimal.
+- Boolean.
+- Date.
+- Enum.
+- User.
 
 Validation shall occur before persistence.
 
@@ -746,12 +746,12 @@ Data services shall be usable without Flask.
 
 They shall not directly depend on:
 
-* `flask.request`.
-* `flask.session`.
-* Flask route objects.
-* HTTP response objects.
-* Templates.
-* HTTP status codes.
+- `flask.request`.
+- `flask.session`.
+- Flask route objects.
+- HTTP response objects.
+- Templates.
+- HTTP status codes.
 
 This allows data services to be tested directly with pytest and reused by routes, background operations, imports, backups, or other application components.
 
@@ -763,27 +763,27 @@ Data-service tests shall test service behavior independently of Flask routes and
 
 Tests should cover, where applicable:
 
-* Successful creation.
-* Successful retrieval.
-* Missing-record retrieval.
-* Validation failures.
-* Duplicate/conflict failures.
-* Updates.
-* No-op updates.
-* Archival.
-* Restoration.
-* Permanent deletion where supported.
-* Archived-record restrictions.
-* Foreign-key behavior.
-* Audit creation.
-* Audit/mutation transaction atomicity.
-* Rollback on failure.
-* Connection-context behavior.
-* Collection ordering.
-* Filtering.
-* Serialization and deserialization.
-* Custom-field type validation.
-* Custom-field value absence.
-* Permission-independent data behavior.
+- Successful creation.
+- Successful retrieval.
+- Missing-record retrieval.
+- Validation failures.
+- Duplicate/conflict failures.
+- Updates.
+- No-op updates.
+- Archival.
+- Restoration.
+- Permanent deletion where supported.
+- Archived-record restrictions.
+- Foreign-key behavior.
+- Audit creation.
+- Audit/mutation transaction atomicity.
+- Rollback on failure.
+- Connection-context behavior.
+- Collection ordering.
+- Filtering.
+- Serialization and deserialization.
+- Custom-field type validation.
+- Custom-field value absence.
+- Permission-independent data behavior.
 
 Route tests shall separately verify that the Flask layer correctly translates service outcomes into HTTP behavior.
