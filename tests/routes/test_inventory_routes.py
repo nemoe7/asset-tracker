@@ -59,3 +59,20 @@ def test_admin_can_edit_asset(
 
   assert response.status_code == 200
   assert response.json["name"] == "Updated Asset"
+
+
+def test_admin_can_archive_asset(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  item_id = gen_test_item(name="Test Asset")
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}/archive",
+  )
+
+  assert response.status_code == 302
+
+  response = gen_test_admin_client.get(f"/inventory/{item_id}")
+
+  assert response.status_code == 404
