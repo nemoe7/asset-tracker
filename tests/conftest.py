@@ -163,3 +163,16 @@ def test_admin(gen_empty_db, gen_test_password):
   connection.close()
 
   return user_id
+
+
+@pytest.fixture
+def test_admin_client(test_admin, test_client, gen_test_password):
+  test_client.post(
+    "/auth/login",
+    data={
+      "username": "test_admin",
+      "password": gen_test_password("test_admin"),
+    },
+  )
+
+  return test_client

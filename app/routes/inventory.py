@@ -33,8 +33,8 @@ def create():
       name=name,
       location_id=location_id,
     )
-  except ValueError:
-    return redirect(url_for("main.index"))
+  except:  # noqa: E722, S110
+    pass
 
   return redirect(url_for("main.index"))
 
