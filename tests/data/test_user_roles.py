@@ -13,10 +13,10 @@ from app.services.exceptions.data.user_roles import UserRoleNotFoundError
 from app.services.exceptions.data.users import UserNotFoundError
 
 
-def test_set_user_role(gen_test_admin):
+def test_set_user_role(gen_test_data_admin):
   role_id = create_role(name="Checker")
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   assert set_user_role(user_id, role_id) is True
 
@@ -26,10 +26,10 @@ def test_set_user_role(gen_test_admin):
   assert role["role_id"] == role_id
 
 
-def test_set_user_role_is_idempotent(gen_test_admin):
+def test_set_user_role_is_idempotent(gen_test_data_admin):
   role_id = create_role(name="Checker")
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   assert set_user_role(user_id, role_id) is True
 
@@ -40,34 +40,34 @@ def test_set_user_role_is_idempotent(gen_test_admin):
   assert len(roles) == 1
 
 
-def test_set_user_role_rejects_missing_user(gen_test_admin):
+def test_set_user_role_rejects_missing_user(gen_test_data_admin):
   role_id = create_role(name="Checker")
 
   with pytest.raises(UserNotFoundError):
     set_user_role(999, role_id)
 
 
-def test_set_user_role_rejects_missing_role(gen_test_admin):
-  user_id = gen_test_admin
+def test_set_user_role_rejects_missing_role(gen_test_data_admin):
+  user_id = gen_test_data_admin
 
   with pytest.raises(RoleNotFoundError):
     set_user_role(user_id, 999)
 
 
-def test_get_user_role_returns_none_when_missing(gen_test_admin):
+def test_get_user_role_returns_none_when_missing(gen_test_data_admin):
   role_id = create_role(name="Checker")
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   assert get_user_role(user_id, role_id) is None
 
 
-def test_get_user_roles(gen_test_admin):
+def test_get_user_roles(gen_test_data_admin):
   first_role_id = create_role(name="Checker")
 
   second_role_id = create_role(name="Manager")
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   set_user_role(user_id, first_role_id)
 
@@ -86,21 +86,21 @@ def test_get_user_roles(gen_test_admin):
   assert roles[1]["role"] == "Manager"
 
 
-def test_get_user_roles_returns_empty_list(gen_test_admin):
-  user_id = gen_test_admin
+def test_get_user_roles_returns_empty_list(gen_test_data_admin):
+  user_id = gen_test_data_admin
 
   assert get_user_roles(user_id) == []
 
 
-def test_get_user_roles_rejects_missing_user(gen_test_admin):
+def test_get_user_roles_rejects_missing_user(gen_test_data_admin):
   with pytest.raises(UserNotFoundError):
     get_user_roles(999)
 
 
-def test_delete_user_role(gen_test_admin):
+def test_delete_user_role(gen_test_data_admin):
   role_id = create_role(name="Checker")
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   set_user_role(user_id, role_id)
 
@@ -109,19 +109,19 @@ def test_delete_user_role(gen_test_admin):
   assert get_user_role(user_id, role_id) is None
 
 
-def test_delete_user_role_rejects_missing_mapping(gen_test_admin):
+def test_delete_user_role_rejects_missing_mapping(gen_test_data_admin):
   role_id = create_role(name="Checker")
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   with pytest.raises(UserRoleNotFoundError):
     delete_user_role(user_id, role_id)
 
 
 def test_set_user_role_no_op_does_not_create_audit_log(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
   role_id = create_role(
     name="Test Role",
   )

@@ -7,7 +7,7 @@ from app.services.data.audit import (
 )
 
 
-def test_create_audit_log(gen_test_admin):
+def test_create_audit_log(gen_test_data_admin):
   audit_id = create_audit_log(
     action="created",
     entity_type="test",
@@ -20,14 +20,14 @@ def test_create_audit_log(gen_test_admin):
 
   assert log is not None
   assert log["id"] == audit_id
-  assert log["user_id"] == gen_test_admin
+  assert log["user_id"] == gen_test_data_admin
   assert log["action"] == "created"
   assert log["entity_type"] == "test"
   assert log["entity_id"] == "123"
   assert log["details"] is None
 
 
-def test_create_audit_log_with_details(gen_test_admin):
+def test_create_audit_log_with_details(gen_test_data_admin):
   audit_id = create_audit_log(
     action="updated",
     entity_type="test",
@@ -51,7 +51,7 @@ def test_create_audit_log_with_details(gen_test_admin):
   }
 
 
-def test_create_audit_log_returns_id(gen_test_admin):
+def test_create_audit_log_returns_id(gen_test_data_admin):
   first_id = create_audit_log(
     action="created",
     entity_type="test",
@@ -69,11 +69,11 @@ def test_create_audit_log_returns_id(gen_test_admin):
   assert second_id > first_id
 
 
-def test_get_audit_log_returns_none_for_nonexistent_log(gen_test_admin):
+def test_get_audit_log_returns_none_for_nonexistent_log(gen_test_data_admin):
   assert get_audit_log(999) is None
 
 
-def test_get_audit_logs(gen_test_admin):
+def test_get_audit_logs(gen_test_data_admin):
   first_id = create_audit_log(
     action="created",
     entity_type="test",
@@ -96,7 +96,7 @@ def test_get_audit_logs(gen_test_admin):
   assert logs[1]["id"] == second_id
 
 
-def test_get_audit_logs_filters_by_entity_type(gen_test_admin):
+def test_get_audit_logs_filters_by_entity_type(gen_test_data_admin):
   create_audit_log(
     action="created",
     entity_type="user",
@@ -117,7 +117,7 @@ def test_get_audit_logs_filters_by_entity_type(gen_test_admin):
   assert logs[0]["entity_type"] == "user"
 
 
-def test_get_audit_logs_filters_by_entity_id(gen_test_admin):
+def test_get_audit_logs_filters_by_entity_id(gen_test_data_admin):
   create_audit_log(
     action="created",
     entity_type="user",
@@ -138,7 +138,7 @@ def test_get_audit_logs_filters_by_entity_id(gen_test_admin):
   assert logs[0]["entity_id"] == "1"
 
 
-def test_get_audit_logs_filters_by_entity_type_and_id(gen_test_admin):
+def test_get_audit_logs_filters_by_entity_type_and_id(gen_test_data_admin):
   create_audit_log(
     action="created",
     entity_type="user",
@@ -167,7 +167,7 @@ def test_get_audit_logs_filters_by_entity_type_and_id(gen_test_admin):
   assert logs[1]["action"] == "updated"
 
 
-def test_get_audit_logs_returns_logs_in_id_order(gen_test_admin):
+def test_get_audit_logs_returns_logs_in_id_order(gen_test_data_admin):
   first_id = create_audit_log(
     action="created",
     entity_type="test",
@@ -199,7 +199,7 @@ def test_get_audit_logs_returns_logs_in_id_order(gen_test_admin):
 
 
 def test_create_audit_log_without_current_user_fails(
-  gen_test_db,
+  gen_test_data_db,
 ):
   with pytest.raises(
     RuntimeError,

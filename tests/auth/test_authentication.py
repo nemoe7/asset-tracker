@@ -12,9 +12,9 @@ from app.services.data.users import (
 )
 
 
-def test_valid_credentials_are_accepted(gen_test_user, gen_test_password):
-  user_id = gen_test_user("alice")
-  password = gen_test_password("alice")
+def test_valid_credentials_are_accepted(gen_test_data_user, gen_password):
+  user_id = gen_test_data_user("alice")
+  password = gen_password("alice")
 
   assert (
     verify_password(
@@ -25,9 +25,9 @@ def test_valid_credentials_are_accepted(gen_test_user, gen_test_password):
   )
 
 
-def test_invalid_password_is_rejected(gen_test_user, gen_test_password):
-  user_id = gen_test_user("alice")
-  wrong_password = gen_test_password("bob")
+def test_invalid_password_is_rejected(gen_test_data_user, gen_password):
+  user_id = gen_test_data_user("alice")
+  wrong_password = gen_password("bob")
 
   assert (
     verify_password(
@@ -38,7 +38,7 @@ def test_invalid_password_is_rejected(gen_test_user, gen_test_password):
   )
 
 
-def test_nonexistent_user_is_rejected(gen_test_db):
+def test_nonexistent_user_is_rejected(gen_test_data_db):
   assert (
     verify_password(
       999,
@@ -48,9 +48,9 @@ def test_nonexistent_user_is_rejected(gen_test_db):
   )
 
 
-def test_archived_user_is_rejected(gen_test_user, gen_test_password):
-  user_id = gen_test_user("alice")
-  password = gen_test_password("alice")
+def test_archived_user_is_rejected(gen_test_data_user, gen_password):
+  user_id = gen_test_data_user("alice")
+  password = gen_password("alice")
 
   assert archive_user(user_id) is True
 
@@ -63,8 +63,8 @@ def test_archived_user_is_rejected(gen_test_user, gen_test_password):
   )
 
 
-def test_password_hash_is_not_returned_by_user_queries(gen_test_user):
-  user_id = gen_test_user("alice")
+def test_password_hash_is_not_returned_by_user_queries(gen_test_data_user):
+  user_id = gen_test_data_user("alice")
 
   user = get_user(user_id)
   user_by_username = get_user_by_username("alice")
@@ -78,11 +78,11 @@ def test_password_hash_is_not_returned_by_user_queries(gen_test_user):
 
 
 def test_password_is_stored_as_a_hash(
-  gen_test_user,
-  gen_test_password,
+  gen_test_data_user,
+  gen_password,
 ):
-  user_id = gen_test_user("alice")
-  password = gen_test_password("alice")
+  user_id = gen_test_data_user("alice")
+  password = gen_password("alice")
 
   from app.services.data.db import get_db
 
@@ -104,8 +104,8 @@ def test_password_is_stored_as_a_hash(
   assert user["password_hash"] is not None
 
 
-def test_set_current_user_sets_user_id(gen_test_admin):
-  user_id = gen_test_admin
+def test_set_current_user_sets_user_id(gen_test_data_admin):
+  user_id = gen_test_data_admin
   token = set_current_user(user_id)
 
   try:
@@ -114,8 +114,8 @@ def test_set_current_user_sets_user_id(gen_test_admin):
     reset_current_user(token)
 
 
-def test_authentication_contract_valid_credentials_set_current_user(gen_test_user):
-  user_id = gen_test_user("alice")
+def test_authentication_contract_valid_credentials_set_current_user(gen_test_data_user):
+  user_id = gen_test_data_user("alice")
 
   token = set_current_user(user_id)
 
@@ -125,8 +125,8 @@ def test_authentication_contract_valid_credentials_set_current_user(gen_test_use
     reset_current_user(token)
 
 
-def test_failed_authentication_does_not_establish_user(gen_test_user):
-  user_id = gen_test_user("alice")
+def test_failed_authentication_does_not_establish_user(gen_test_data_user):
+  user_id = gen_test_data_user("alice")
 
   token = set_current_user(None)
 
@@ -144,10 +144,10 @@ def test_failed_authentication_does_not_establish_user(gen_test_user):
     reset_current_user(token)
 
 
-def test_current_user_can_be_replaced(gen_test_user):
-  first_user_id = gen_test_user("alice")
+def test_current_user_can_be_replaced(gen_test_data_user):
+  first_user_id = gen_test_data_user("alice")
 
-  second_user_id = gen_test_user("bob")
+  second_user_id = gen_test_data_user("bob")
 
   first_token = set_current_user(first_user_id)
 

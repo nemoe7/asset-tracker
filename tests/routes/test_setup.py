@@ -2,21 +2,21 @@ from app.services.data.db import get_db
 from app.services.data.users import get_user_by_username
 
 
-def test_setup_page_is_rendered(test_client):
-  response = test_client.get("/auth/setup")
+def test_setup_page_is_rendered(gen_test_client):
+  response = gen_test_client.get("/auth/setup")
 
   assert response.status_code == 200
 
 
-def test_setup_page_redirects_after_first_run(test_admin, test_client):
-  response = test_client.get("/auth/setup")
+def test_setup_page_redirects_after_first_run(gen_test_admin, gen_test_client):
+  response = gen_test_client.get("/auth/setup")
 
   assert response.status_code == 302
   assert response.location.endswith("/")
 
 
-def test_setup_creates_initial_admin(test_client):
-  response = test_client.post(
+def test_setup_creates_initial_admin(gen_test_client):
+  response = gen_test_client.post(
     "/auth/setup",
     data={
       "username": "admin",
@@ -53,8 +53,8 @@ def test_setup_creates_initial_admin(test_client):
   assert role["name"] == "Admin"
 
 
-def test_setup_logs_initial_admin_in(test_client):
-  response = test_client.post(
+def test_setup_logs_initial_admin_in(gen_test_client):
+  response = gen_test_client.post(
     "/auth/setup",
     data={
       "username": "admin",
@@ -66,12 +66,12 @@ def test_setup_logs_initial_admin_in(test_client):
 
   assert response.status_code == 302
 
-  with test_client.session_transaction() as session:
+  with gen_test_client.session_transaction() as session:
     assert session["user_id"] is not None
 
 
-def test_setup_updates_first_run_state(test_client, test_app):
-  response = test_client.post(
+def test_setup_updates_first_run_state(gen_test_client, gen_test_app):
+  response = gen_test_client.post(
     "/auth/setup",
     data={
       "username": "admin",
@@ -82,11 +82,11 @@ def test_setup_updates_first_run_state(test_client, test_app):
   )
 
   assert response.status_code == 302
-  assert test_app.config["FIRST_RUN"] is False
+  assert gen_test_app.config["FIRST_RUN"] is False
 
 
-def test_setup_rejects_password_mismatch(test_client):
-  response = test_client.post(
+def test_setup_rejects_password_mismatch(gen_test_client):
+  response = gen_test_client.post(
     "/auth/setup",
     data={
       "username": "admin",
@@ -101,8 +101,8 @@ def test_setup_rejects_password_mismatch(test_client):
   assert get_user_by_username("admin") is None
 
 
-def test_setup_rejects_invalid_username(test_client):
-  response = test_client.post(
+def test_setup_rejects_invalid_username(gen_test_client):
+  response = gen_test_client.post(
     "/auth/setup",
     data={
       "username": "a",
@@ -116,8 +116,8 @@ def test_setup_rejects_invalid_username(test_client):
   assert get_user_by_username("a") is None
 
 
-def test_setup_rejects_invalid_password(test_client):
-  response = test_client.post(
+def test_setup_rejects_invalid_password(gen_test_client):
+  response = gen_test_client.post(
     "/auth/setup",
     data={
       "username": "admin",

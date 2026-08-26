@@ -1,9 +1,9 @@
-def test_admin_can_login(test_admin, test_client, gen_test_password):
-  response = test_client.post(
+def test_admin_can_login(gen_test_admin, gen_test_client, gen_password):
+  response = gen_test_client.post(
     "/auth/login",
     data={
       "username": "test_admin",
-      "password": gen_test_password("test_admin"),
+      "password": gen_password("test_admin"),
     },
   )
 
@@ -12,29 +12,29 @@ def test_admin_can_login(test_admin, test_client, gen_test_password):
 
 
 def test_admin_login_sets_session(
-  test_admin,
-  test_client,
-  gen_test_password,
+  gen_test_admin,
+  gen_test_client,
+  gen_password,
 ):
-  test_client.post(
+  gen_test_client.post(
     "/auth/login",
     data={
       "username": "test_admin",
-      "password": gen_test_password("test_admin"),
+      "password": gen_password("test_admin"),
     },
   )
 
-  with test_client.session_transaction() as session:
-    assert session["user_id"] == test_admin
+  with gen_test_client.session_transaction() as session:
+    assert session["user_id"] == gen_test_admin
     assert session.permanent is True
 
 
 def test_admin_login_rejects_invalid_password(
-  test_admin,
-  test_client,
-  gen_test_password,
+  gen_test_admin,
+  gen_test_client,
+  gen_password,
 ):
-  response = test_client.post(
+  response = gen_test_client.post(
     "/auth/login",
     data={
       "username": "test_admin",
@@ -47,9 +47,9 @@ def test_admin_login_rejects_invalid_password(
 
 
 def test_unauthenticated_user_is_redirected_to_login(
-  test_client,
+  gen_test_client,
 ):
-  response = test_client.get("/")
+  response = gen_test_client.get("/")
 
   assert response.status_code == 302
   assert response.location.endswith("/auth/login")

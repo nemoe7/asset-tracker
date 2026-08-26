@@ -13,9 +13,9 @@ from app.services.exceptions.data.user_permissions import *
 from app.services.exceptions.data.users import UserNotFoundError
 
 
-def test_set_user_permission(gen_test_admin):
+def test_set_user_permission(gen_test_data_admin):
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   permission_id = create_permission(
     name="inventory.read",
@@ -42,9 +42,9 @@ def test_set_user_permission(gen_test_admin):
   assert permission["allowed"] == 1
 
 
-def test_set_user_permission_can_deny(gen_test_admin):
+def test_set_user_permission_can_deny(gen_test_data_admin):
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   permission_id = create_permission(
     name="inventory.read",
@@ -64,9 +64,9 @@ def test_set_user_permission_can_deny(gen_test_admin):
   assert permission["allowed"] == 0
 
 
-def test_set_user_permission_updates_existing_permission(gen_test_admin):
+def test_set_user_permission_updates_existing_permission(gen_test_data_admin):
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   permission_id = create_permission(
     name="inventory.read",
@@ -103,11 +103,11 @@ def test_set_user_permission_updates_existing_permission(gen_test_admin):
   ],
 )
 def test_set_user_permission_rejects_non_boolean_allowed(
-  gen_test_admin,
+  gen_test_data_admin,
   allowed,
 ):
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   permission_id = create_permission(
     name="inventory.read",
@@ -121,7 +121,7 @@ def test_set_user_permission_rejects_non_boolean_allowed(
     )
 
 
-def test_set_user_permission_rejects_missing_user(gen_test_admin):
+def test_set_user_permission_rejects_missing_user(gen_test_data_admin):
 
   permission_id = create_permission(
     name="inventory.read",
@@ -135,9 +135,9 @@ def test_set_user_permission_rejects_missing_user(gen_test_admin):
     )
 
 
-def test_set_user_permission_rejects_missing_permission(gen_test_admin):
+def test_set_user_permission_rejects_missing_permission(gen_test_data_admin):
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   with pytest.raises(PermissionNotFoundError):
     set_user_permission(
@@ -147,9 +147,9 @@ def test_set_user_permission_rejects_missing_permission(gen_test_admin):
     )
 
 
-def test_get_user_permission_returns_none_when_missing(gen_test_admin):
+def test_get_user_permission_returns_none_when_missing(gen_test_data_admin):
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   permission_id = create_permission(
     name="inventory.read",
@@ -164,9 +164,9 @@ def test_get_user_permission_returns_none_when_missing(gen_test_admin):
   )
 
 
-def test_get_user_permissions(gen_test_admin):
+def test_get_user_permissions(gen_test_data_admin):
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   first_permission_id = create_permission(
     name="inventory.read",
@@ -211,22 +211,22 @@ def test_get_user_permissions(gen_test_admin):
   assert permissions[1]["allowed"] == 0
 
 
-def test_get_user_permissions_returns_empty_list(gen_test_admin):
+def test_get_user_permissions_returns_empty_list(gen_test_data_admin):
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   assert get_user_permissions(user_id) == []
 
 
-def test_get_user_permissions_rejects_missing_user(gen_test_admin):
+def test_get_user_permissions_rejects_missing_user(gen_test_data_admin):
 
   with pytest.raises(UserNotFoundError):
     get_user_permissions(999)
 
 
-def test_delete_user_permission(gen_test_admin):
+def test_delete_user_permission(gen_test_data_admin):
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   permission_id = create_permission(
     name="inventory.read",
@@ -256,10 +256,10 @@ def test_delete_user_permission(gen_test_admin):
 
 
 def test_delete_user_permission_rejects_missing_permission_mapping(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
 
-  user_id = gen_test_admin
+  user_id = gen_test_data_admin
 
   permission_id = create_permission(
     name="inventory.read",
@@ -273,9 +273,9 @@ def test_delete_user_permission_rejects_missing_permission_mapping(
 
 
 def test_set_user_permission_no_op_does_not_create_audit_log(
-  gen_test_user,
+  gen_test_data_user,
 ):
-  user_id = gen_test_user("test_user")
+  user_id = gen_test_data_user("test_user")
 
   permission_id = create_permission(
     name="inventory.read",
@@ -301,9 +301,9 @@ def test_set_user_permission_no_op_does_not_create_audit_log(
 
 
 def test_set_user_permission_change_creates_audit_log(
-  gen_test_user,
+  gen_test_data_user,
 ):
-  user_id = gen_test_user("test_user")
+  user_id = gen_test_data_user("test_user")
 
   permission_id = create_permission(
     name="inventory.read",

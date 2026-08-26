@@ -15,7 +15,7 @@ from app.services.exceptions.data.inventory import *
 from app.services.exceptions.data.locations import LocationNotFoundError
 
 
-def test_create_item(gen_test_admin):
+def test_create_item(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   assert item_id is not None
@@ -29,7 +29,7 @@ def test_create_item(gen_test_admin):
   assert item["custom_fields"] == {}
 
 
-def test_create_item_with_location(gen_test_admin):
+def test_create_item_with_location(gen_test_data_admin):
   location_id = create_location("Storage")
   item_id = create_item(
     "Laptop",
@@ -42,22 +42,22 @@ def test_create_item_with_location(gen_test_admin):
   assert item["location_name"] == "Storage"
 
 
-def test_create_item_with_empty_name_fails(gen_test_admin):
+def test_create_item_with_empty_name_fails(gen_test_data_admin):
   with pytest.raises(InvalidItemNameError):
     create_item("")
 
 
-def test_create_item_with_whitespace_name_fails(gen_test_admin):
+def test_create_item_with_whitespace_name_fails(gen_test_data_admin):
   with pytest.raises(InvalidItemNameError):
     create_item("   ")
 
 
-def test_create_item_with_non_string_name_fails(gen_test_admin):
+def test_create_item_with_non_string_name_fails(gen_test_data_admin):
   with pytest.raises(InvalidItemNameError):
     create_item(None)
 
 
-def test_create_item_with_nonexistent_location_fails(gen_test_admin):
+def test_create_item_with_nonexistent_location_fails(gen_test_data_admin):
   with pytest.raises(LocationNotFoundError):
     create_item(
       "Laptop",
@@ -65,7 +65,7 @@ def test_create_item_with_nonexistent_location_fails(gen_test_admin):
     )
 
 
-def test_get_item(gen_test_admin):
+def test_get_item(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   item = get_item(item_id)
@@ -74,11 +74,11 @@ def test_get_item(gen_test_admin):
   assert item["name"] == "Laptop"
 
 
-def test_get_nonexistent_item(gen_test_admin):
+def test_get_nonexistent_item(gen_test_data_admin):
   assert get_item("does-not-exist") is None
 
 
-def test_get_items(gen_test_admin):
+def test_get_items(gen_test_data_admin):
   create_item("Laptop")
   create_item("Monitor")
 
@@ -89,7 +89,7 @@ def test_get_items(gen_test_admin):
   assert items[1]["name"] == "Monitor"
 
 
-def test_get_items_search(gen_test_admin):
+def test_get_items_search(gen_test_data_admin):
   create_item("Gaming Laptop")
   create_item("Office Monitor")
 
@@ -99,7 +99,7 @@ def test_get_items_search(gen_test_admin):
   assert items[0]["name"] == "Gaming Laptop"
 
 
-def test_get_items_search_is_partial(gen_test_admin):
+def test_get_items_search_is_partial(gen_test_data_admin):
   create_item("Gaming Laptop")
 
   items = get_items(search="Lap")
@@ -108,7 +108,7 @@ def test_get_items_search_is_partial(gen_test_admin):
   assert items[0]["name"] == "Gaming Laptop"
 
 
-def test_get_items_by_location(gen_test_admin):
+def test_get_items_by_location(gen_test_data_admin):
   storage_id = create_location("Storage")
   office_id = create_location("Office")
 
@@ -127,12 +127,12 @@ def test_get_items_by_location(gen_test_admin):
   assert items[0]["name"] == "Laptop"
 
 
-def test_get_items_with_nonexistent_location_fails(gen_test_admin):
+def test_get_items_with_nonexistent_location_fails(gen_test_data_admin):
   with pytest.raises(LocationNotFoundError):
     get_items(location_id=999)
 
 
-def test_update_item_name(gen_test_admin):
+def test_update_item_name(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   assert (
@@ -148,7 +148,7 @@ def test_update_item_name(gen_test_admin):
   assert item["name"] == "Desktop"
 
 
-def test_update_item_location(gen_test_admin):
+def test_update_item_location(gen_test_data_admin):
   old_location = create_location("Storage")
   new_location = create_location("Office")
 
@@ -171,7 +171,7 @@ def test_update_item_location(gen_test_admin):
   assert item["location_name"] == "Office"
 
 
-def test_update_item_location_to_none(gen_test_admin):
+def test_update_item_location_to_none(gen_test_data_admin):
   location_id = create_location("Storage")
 
   item_id = create_item(
@@ -193,7 +193,7 @@ def test_update_item_location_to_none(gen_test_admin):
   assert item["location_name"] is None
 
 
-def test_update_item_with_no_fields_fails(gen_test_admin):
+def test_update_item_with_no_fields_fails(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   with pytest.raises(
@@ -203,7 +203,7 @@ def test_update_item_with_no_fields_fails(gen_test_admin):
     update_item(item_id)
 
 
-def test_update_nonexistent_item(gen_test_admin):
+def test_update_nonexistent_item(gen_test_data_admin):
   with pytest.raises(ItemNotFoundError):
     update_item(
       "does-not-exist",
@@ -211,7 +211,7 @@ def test_update_nonexistent_item(gen_test_admin):
     )
 
 
-def test_update_archived_item_fails(gen_test_admin):
+def test_update_archived_item_fails(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   archive_item(item_id)
@@ -223,7 +223,7 @@ def test_update_archived_item_fails(gen_test_admin):
     )
 
 
-def test_update_item_with_empty_name_fails(gen_test_admin):
+def test_update_item_with_empty_name_fails(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   with pytest.raises(InvalidItemNameError):
@@ -233,7 +233,7 @@ def test_update_item_with_empty_name_fails(gen_test_admin):
     )
 
 
-def test_update_item_with_nonexistent_location_fails(gen_test_admin):
+def test_update_item_with_nonexistent_location_fails(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   with pytest.raises(LocationNotFoundError):
@@ -243,7 +243,7 @@ def test_update_item_with_nonexistent_location_fails(gen_test_admin):
     )
 
 
-def test_update_item_with_same_name_creates_no_audit_log(gen_test_admin):
+def test_update_item_with_same_name_creates_no_audit_log(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   assert (
@@ -264,7 +264,7 @@ def test_update_item_with_same_name_creates_no_audit_log(gen_test_admin):
 
 
 def test_update_item_with_same_location_creates_no_audit_log(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   location_id = create_location("Storage")
 
@@ -290,7 +290,7 @@ def test_update_item_with_same_location_creates_no_audit_log(
   assert logs[0]["action"] == "created"
 
 
-def test_update_item_creates_audit_log(gen_test_admin):
+def test_update_item_creates_audit_log(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   assert (
@@ -321,7 +321,7 @@ def test_update_item_creates_audit_log(gen_test_admin):
 
 
 def test_update_item_creates_audit_log_for_location_change(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   old_location = create_location("Storage")
   new_location = create_location("Office")
@@ -358,7 +358,7 @@ def test_update_item_creates_audit_log_for_location_change(
   }
 
 
-def test_archive_item(gen_test_admin):
+def test_archive_item(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   assert archive_item(item_id) is True
@@ -368,7 +368,7 @@ def test_archive_item(gen_test_admin):
   assert item is None
 
 
-def test_archive_item_creates_audit_log(gen_test_admin):
+def test_archive_item_creates_audit_log(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   assert archive_item(item_id) is True
@@ -383,7 +383,7 @@ def test_archive_item_creates_audit_log(gen_test_admin):
   assert logs[1]["action"] == "archived"
 
 
-def test_archive_already_archived_item_fails(gen_test_admin):
+def test_archive_already_archived_item_fails(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   assert archive_item(item_id) is True
@@ -392,12 +392,12 @@ def test_archive_already_archived_item_fails(gen_test_admin):
     archive_item(item_id)
 
 
-def test_archive_nonexistent_item(gen_test_admin):
+def test_archive_nonexistent_item(gen_test_data_admin):
   with pytest.raises(ItemNotFoundError):
     archive_item("does-not-exist")
 
 
-def test_archived_item_excluded_from_get_items(gen_test_admin):
+def test_archived_item_excluded_from_get_items(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   archive_item(item_id)
@@ -405,7 +405,7 @@ def test_archived_item_excluded_from_get_items(gen_test_admin):
   assert get_items() == []
 
 
-def test_archived_item_included_when_requested(gen_test_admin):
+def test_archived_item_included_when_requested(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   archive_item(item_id)
@@ -418,7 +418,7 @@ def test_archived_item_included_when_requested(gen_test_admin):
   assert items[0]["archived_at"] is not None
 
 
-def test_restore_item(gen_test_admin):
+def test_restore_item(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   archive_item(item_id)
@@ -432,7 +432,7 @@ def test_restore_item(gen_test_admin):
   assert item["archived_at"] is None
 
 
-def test_restore_item_creates_audit_log(gen_test_admin):
+def test_restore_item_creates_audit_log(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   archive_item(item_id)
@@ -449,19 +449,19 @@ def test_restore_item_creates_audit_log(gen_test_admin):
   assert logs[2]["action"] == "restored"
 
 
-def test_restore_active_item_fails(gen_test_admin):
+def test_restore_active_item_fails(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   with pytest.raises(ItemIsNotArchivedError):
     restore_item(item_id)
 
 
-def test_restore_nonexistent_item(gen_test_admin):
+def test_restore_nonexistent_item(gen_test_data_admin):
   with pytest.raises(ItemNotFoundError):
     restore_item("does-not-exist")
 
 
-def test_archived_item_can_be_restored_and_found_again(gen_test_admin):
+def test_archived_item_can_be_restored_and_found_again(gen_test_data_admin):
   item_id = create_item("Laptop")
 
   archive_item(item_id)
@@ -479,7 +479,7 @@ def test_archived_item_can_be_restored_and_found_again(gen_test_admin):
 
 
 def test_update_item_creates_one_audit_log_for_multiple_changes(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   old_location = create_location("Storage")
   new_location = create_location("Office")

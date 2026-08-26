@@ -10,6 +10,7 @@ from ..services.data.inventory import (
   create_item,
   update_item,
 )
+from ..services.exceptions.data.inventory import InvalidItemNameError
 from .auth import login_required
 
 inventory = Blueprint(
@@ -33,7 +34,7 @@ def create():
       name=name,
       location_id=location_id,
     )
-  except:  # noqa: E722, S110
+  except InvalidItemNameError:
     pass
 
   return redirect(url_for("main.index"))
@@ -49,15 +50,12 @@ def update(item_id):
     location_id = int(location_id)
 
   try:
-    updated = update_item(
+    update_item(
       item_id,
       name=name,
       location_id=location_id,
     )
   except ValueError:
-    return redirect(url_for("main.index"))
-
-  if not updated:
     return redirect(url_for("main.index"))
 
   return redirect(url_for("main.index"))
