@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from app.services.data.audit import get_audit_logs
@@ -517,3 +519,16 @@ def test_update_item_creates_one_audit_log_for_multiple_changes(
       "new": new_location,
     },
   }
+
+
+def test_create_item_generates_uuid(gen_test_data_admin):
+  item_id = create_item("Test Asset")
+
+  assert uuid.UUID(item_id).version == 4
+
+
+def test_create_item_generates_unique_ids(gen_test_data_admin):
+  first_id = create_item("First Asset")
+  second_id = create_item("Second Asset")
+
+  assert first_id != second_id
