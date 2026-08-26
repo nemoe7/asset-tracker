@@ -1,5 +1,6 @@
 from flask import (
   Blueprint,
+  jsonify,
   redirect,
   request,
   url_for,
@@ -8,6 +9,7 @@ from flask import (
 from ..services.data.inventory import (
   archive_item,
   create_item,
+  get_item,
   update_item,
 )
 from ..services.exceptions.data.inventory import InvalidItemNameError
@@ -18,6 +20,29 @@ inventory = Blueprint(
   __name__,
   url_prefix="/inventory",
 )
+
+
+@inventory.route("/<item_id>", methods=["GET"])
+@login_required
+def get(item_id):
+  item = get_item(item_id)
+
+  if item is None:
+    return jsonify(
+      {
+        "error": "Inventory item not found",
+      }
+    ), 404
+
+  return jsonify(
+    {
+      "id": item["id"],
+      "name": item["name"],
+      "location_id": item["location_id"],
+      "location_name": item["location_name"],
+      "custom_fields": item["custom_fields"],
+    }
+  )
 
 
 @inventory.route("", methods=["POST"])

@@ -1,7 +1,6 @@
 from flask import (
   Blueprint,
   current_app,
-  jsonify,
   redirect,
   render_template,
   request,
@@ -12,7 +11,7 @@ from flask import (
 
 from ..services.auth.authorization import check_permission
 from ..services.data.db import get_db
-from ..services.data.inventory import get_item, get_items
+from ..services.data.inventory import get_items
 from ..services.data.locations import get_locations
 from .auth import login_required
 
@@ -71,29 +70,6 @@ def index():
     total_pages=1,
     username=user["username"],
     can_manage_users=can_manage_users,
-  )
-
-
-@main.route("/inventory/<item_id>")
-@login_required
-def inventory_item(item_id):
-  item = get_item(item_id)
-
-  if item is None:
-    return jsonify(
-      {
-        "error": "Inventory item not found",
-      }
-    ), 404
-
-  return jsonify(
-    {
-      "id": item["id"],
-      "name": item["name"],
-      "location_id": item["location_id"],
-      "location_name": item["location_name"],
-      "custom_fields": item["custom_fields"],
-    }
   )
 
 
