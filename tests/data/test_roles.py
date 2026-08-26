@@ -12,7 +12,7 @@ from app.services.exceptions.data.common import InvalidInputError
 from app.services.exceptions.data.roles import *
 
 
-def test_create_role(gen_test_admin):
+def test_create_role(gen_test_data_admin):
   role_id = create_role(
     name="Admin2",
     description="Administrator",
@@ -25,7 +25,7 @@ def test_create_role(gen_test_admin):
   assert role["description"] == "Administrator"
 
 
-def test_create_role_creates_audit_log(gen_test_admin):
+def test_create_role_creates_audit_log(gen_test_data_admin):
   role_id = create_role(
     name="Admin2",
     description="Administrator",
@@ -37,11 +37,11 @@ def test_create_role_creates_audit_log(gen_test_admin):
   )
 
   assert len(logs) == 1
-  assert logs[0]["user_id"] == gen_test_admin
+  assert logs[0]["user_id"] == gen_test_data_admin
   assert logs[0]["action"] == "created"
 
 
-def test_get_role(gen_test_admin):
+def test_get_role(gen_test_data_admin):
   role_id = create_role(
     name="Admin2",
     description="Administrator",
@@ -53,11 +53,11 @@ def test_get_role(gen_test_admin):
   assert role["id"] == role_id
 
 
-def test_get_nonexistent_role(gen_test_admin):
+def test_get_nonexistent_role(gen_test_data_admin):
   assert get_role(999) is None
 
 
-def test_get_roles(gen_test_admin):
+def test_get_roles(gen_test_data_admin):
   create_role(
     name="Admin2",
     description="Administrator",
@@ -75,7 +75,7 @@ def test_get_roles(gen_test_admin):
   assert roles[2]["name"] == "Checker"
 
 
-def test_update_role(gen_test_admin):
+def test_update_role(gen_test_data_admin):
   role_id = create_role(
     name="Admin2",
     description="Administrator",
@@ -96,7 +96,7 @@ def test_update_role(gen_test_admin):
   assert role["description"] == "Full administrator"
 
 
-def test_update_role_name_only(gen_test_admin):
+def test_update_role_name_only(gen_test_data_admin):
   role_id = create_role(
     name="Admin2",
     description="Administrator",
@@ -116,7 +116,7 @@ def test_update_role_name_only(gen_test_admin):
   assert role["description"] == "Administrator"
 
 
-def test_update_role_description_only(gen_test_admin):
+def test_update_role_description_only(gen_test_data_admin):
   role_id = create_role(
     name="Admin2",
     description="Administrator",
@@ -136,7 +136,7 @@ def test_update_role_description_only(gen_test_admin):
   assert role["description"] == "Full administrator"
 
 
-def test_update_role_creates_audit_log(gen_test_admin):
+def test_update_role_creates_audit_log(gen_test_data_admin):
   role_id = create_role(
     name="Admin2",
     description="Administrator",
@@ -158,11 +158,11 @@ def test_update_role_creates_audit_log(gen_test_admin):
   assert len(logs) == 2
   assert logs[0]["action"] == "created"
   assert logs[1]["action"] == "updated"
-  assert logs[1]["user_id"] == gen_test_admin
+  assert logs[1]["user_id"] == gen_test_data_admin
 
 
 def test_update_role_without_changes_creates_no_audit_log(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   role_id = create_role(
     name="Admin2",
@@ -187,7 +187,7 @@ def test_update_role_without_changes_creates_no_audit_log(
   assert logs[0]["action"] == "created"
 
 
-def test_update_nonexistent_role(gen_test_admin):
+def test_update_nonexistent_role(gen_test_data_admin):
   with pytest.raises(RoleNotFoundError):
     update_role(
       999,
@@ -195,7 +195,7 @@ def test_update_nonexistent_role(gen_test_admin):
     )
 
 
-def test_update_role_with_no_fields_fails(gen_test_admin):
+def test_update_role_with_no_fields_fails(gen_test_data_admin):
   role_id = create_role(
     name="Admin2",
     description="Administrator",
@@ -205,7 +205,7 @@ def test_update_role_with_no_fields_fails(gen_test_admin):
     update_role(role_id)
 
 
-def test_delete_role(gen_test_admin):
+def test_delete_role(gen_test_data_admin):
   role_id = create_role(
     name="Admin2",
     description="Administrator",
@@ -215,7 +215,7 @@ def test_delete_role(gen_test_admin):
   assert get_role(role_id) is None
 
 
-def test_delete_role_creates_audit_log(gen_test_admin):
+def test_delete_role_creates_audit_log(gen_test_data_admin):
   role_id = create_role(
     name="Admin2",
     description="Administrator",
@@ -231,15 +231,15 @@ def test_delete_role_creates_audit_log(gen_test_admin):
   assert len(logs) == 2
   assert logs[0]["action"] == "created"
   assert logs[1]["action"] == "deleted"
-  assert logs[1]["user_id"] == gen_test_admin
+  assert logs[1]["user_id"] == gen_test_data_admin
 
 
-def test_delete_nonexistent_role(gen_test_admin):
+def test_delete_nonexistent_role(gen_test_data_admin):
   with pytest.raises(RoleNotFoundError):
     delete_role(999)
 
 
-def test_create_role_with_empty_name_fails(gen_test_admin):
+def test_create_role_with_empty_name_fails(gen_test_data_admin):
   with pytest.raises(InvalidRoleNameError):
     create_role(
       name="",
@@ -247,7 +247,7 @@ def test_create_role_with_empty_name_fails(gen_test_admin):
     )
 
 
-def test_create_role_with_whitespace_name_fails(gen_test_admin):
+def test_create_role_with_whitespace_name_fails(gen_test_data_admin):
   with pytest.raises(InvalidRoleNameError):
     create_role(
       name="   ",
@@ -255,7 +255,7 @@ def test_create_role_with_whitespace_name_fails(gen_test_admin):
     )
 
 
-def test_create_duplicate_role_fails(gen_test_admin):
+def test_create_duplicate_role_fails(gen_test_data_admin):
   create_role(
     name="Admin2",
     description="Administrator",

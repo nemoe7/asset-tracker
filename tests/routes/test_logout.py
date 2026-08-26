@@ -1,36 +1,36 @@
 def test_admin_can_logout(
-  test_admin,
-  test_client,
-  gen_test_password,
+  gen_test_admin,
+  gen_test_client,
+  gen_password,
 ):
-  test_client.post(
+  gen_test_client.post(
     "/auth/login",
     data={
       "username": "test_admin",
-      "password": gen_test_password("test_admin"),
+      "password": gen_password("test_admin"),
     },
   )
 
-  response = test_client.post("/auth/logout")
+  response = gen_test_client.post("/auth/logout")
 
   assert response.status_code == 302
   assert response.location.endswith("/auth/login")
 
 
 def test_admin_logout_clears_session(
-  test_admin,
-  test_client,
-  gen_test_password,
+  gen_test_admin,
+  gen_test_client,
+  gen_password,
 ):
-  test_client.post(
+  gen_test_client.post(
     "/auth/login",
     data={
       "username": "test_admin",
-      "password": gen_test_password("test_admin"),
+      "password": gen_password("test_admin"),
     },
   )
 
-  test_client.post("/auth/logout")
+  gen_test_client.post("/auth/logout")
 
-  with test_client.session_transaction() as session:
+  with gen_test_client.session_transaction() as session:
     assert "user_id" not in session

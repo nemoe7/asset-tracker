@@ -21,13 +21,13 @@ from app.services.exceptions.auth.orization import (
 
 
 def test_read_permission_defaults_to_allow(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   create_permission(name="inventory.read")
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.read",
     )
     is True
@@ -35,13 +35,13 @@ def test_read_permission_defaults_to_allow(
 
 
 def test_non_read_permission_defaults_to_deny(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   create_permission(name="inventory.create")
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.create",
     )
     is False
@@ -49,21 +49,21 @@ def test_non_read_permission_defaults_to_deny(
 
 
 def test_explicit_allow_allows_permission(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   permission_id = create_permission(
     name="inventory.create",
   )
 
   set_user_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     permission_id,
     True,
   )
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.create",
     )
     is True
@@ -71,21 +71,21 @@ def test_explicit_allow_allows_permission(
 
 
 def test_explicit_deny_denies_permission(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   permission_id = create_permission(
     name="inventory.read",
   )
 
   set_user_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     permission_id,
     False,
   )
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.read",
     )
     is False
@@ -93,14 +93,14 @@ def test_explicit_deny_denies_permission(
 
 
 def test_namespace_wildcard_permission_allows_operations(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   permission_id = create_permission(
     name="inventory.*",
   )
 
   set_user_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     permission_id,
     True,
   )
@@ -110,7 +110,7 @@ def test_namespace_wildcard_permission_allows_operations(
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.create",
     )
     is True
@@ -118,7 +118,7 @@ def test_namespace_wildcard_permission_allows_operations(
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.update",
     )
     is True
@@ -126,12 +126,12 @@ def test_namespace_wildcard_permission_allows_operations(
 
 
 def test_global_wildcard_permission_allows_any_permission(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   permission_id = get_permission_by_name(name="*")["id"]
 
   set_user_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     permission_id,
     True,
   )
@@ -141,7 +141,7 @@ def test_global_wildcard_permission_allows_any_permission(
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.create",
     )
     is True
@@ -149,7 +149,7 @@ def test_global_wildcard_permission_allows_any_permission(
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "users.delete",
     )
     is True
@@ -157,7 +157,7 @@ def test_global_wildcard_permission_allows_any_permission(
 
 
 def test_exact_permission_takes_precedence_over_namespace_wildcard(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   wildcard_id = create_permission(
     name="inventory.*",
@@ -167,20 +167,20 @@ def test_exact_permission_takes_precedence_over_namespace_wildcard(
   )
 
   set_user_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     wildcard_id,
     True,
   )
 
   set_user_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     exact_id,
     False,
   )
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.delete",
     )
     is False
@@ -188,7 +188,7 @@ def test_exact_permission_takes_precedence_over_namespace_wildcard(
 
 
 def test_namespace_wildcard_takes_precedence_over_global_wildcard(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   global_id = get_permission_by_name(name="*")["id"]
   wildcard_id = create_permission(
@@ -196,13 +196,13 @@ def test_namespace_wildcard_takes_precedence_over_global_wildcard(
   )
 
   set_user_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     global_id,
     False,
   )
 
   set_user_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     wildcard_id,
     True,
   )
@@ -211,7 +211,7 @@ def test_namespace_wildcard_takes_precedence_over_global_wildcard(
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.create",
     )
     is True
@@ -219,7 +219,7 @@ def test_namespace_wildcard_takes_precedence_over_global_wildcard(
 
 
 def test_direct_deny_overrides_namespace_wildcard(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   wildcard_id = create_permission(
     name="inventory.*",
@@ -229,20 +229,20 @@ def test_direct_deny_overrides_namespace_wildcard(
   )
 
   set_user_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     wildcard_id,
     True,
   )
 
   set_user_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     exact_id,
     False,
   )
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.delete",
     )
     is False
@@ -250,14 +250,14 @@ def test_direct_deny_overrides_namespace_wildcard(
 
 
 def test_nested_namespace_wildcard(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   wildcard_id = create_permission(
     name="field.12.*",
   )
 
   set_user_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     wildcard_id,
     True,
   )
@@ -268,7 +268,7 @@ def test_nested_namespace_wildcard(
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "field.12.read",
     )
     is True
@@ -276,7 +276,7 @@ def test_nested_namespace_wildcard(
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "field.12.update",
     )
     is True
@@ -284,7 +284,7 @@ def test_nested_namespace_wildcard(
 
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "field.13.read",
     )
     is True
@@ -292,9 +292,9 @@ def test_nested_namespace_wildcard(
 
 
 def test_archived_user_is_denied(
-  gen_test_user,
+  gen_test_data_user,
 ):
-  user_id = gen_test_user("alice")
+  user_id = gen_test_data_user("alice")
   archive_user(user_id)
 
   create_permission(name="inventory.read")
@@ -308,7 +308,7 @@ def test_archived_user_is_denied(
   )
 
 
-def test_unknown_user_is_denied(gen_test_admin):
+def test_unknown_user_is_denied(gen_test_data_admin):
   create_permission(name="inventory.read")
 
   assert (
@@ -321,54 +321,54 @@ def test_unknown_user_is_denied(gen_test_admin):
 
 
 def test_require_permission_allows_authorized_user(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   create_permission(name="inventory.read")
 
   require_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     "inventory.read",
   )
 
 
 def test_require_permission_raises_when_denied(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   create_permission(name="inventory.create")
 
   with pytest.raises(PermissionDeniedError):
     require_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.create",
     )
 
 
 def test_require_permission_raises_for_explicit_deny(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   permission_id = create_permission(
     name="inventory.read",
   )
 
   set_user_permission(
-    gen_test_admin,
+    gen_test_data_admin,
     permission_id,
     False,
   )
 
   with pytest.raises(PermissionDeniedError):
     require_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.read",
     )
 
 
 def test_unknown_read_permission_defaults_to_allow(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   assert (
     check_permission(
-      gen_test_admin,
+      gen_test_data_admin,
       "inventory.read",
     )
     is True
@@ -376,7 +376,7 @@ def test_unknown_read_permission_defaults_to_allow(
 
 
 def test_permission_required_allows_authorized_user(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   create_permission(name="inventory.read")
 
@@ -388,13 +388,13 @@ def test_permission_required_allows_authorized_user(
     return "allowed"
 
   with app.test_request_context():
-    session["user_id"] = gen_test_admin
+    session["user_id"] = gen_test_data_admin
 
     assert view() == "allowed"
 
 
 def test_permission_required_denies_unauthorized_user(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   create_permission(name="inventory.create")
 
@@ -406,7 +406,7 @@ def test_permission_required_denies_unauthorized_user(
     return "allowed"
 
   with app.test_request_context():
-    session["user_id"] = gen_test_admin
+    session["user_id"] = gen_test_data_admin
 
     with pytest.raises(PermissionDeniedError):
       view()

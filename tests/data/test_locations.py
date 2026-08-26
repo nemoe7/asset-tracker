@@ -12,7 +12,7 @@ from app.services.exceptions.data.common import InvalidInputError
 from app.services.exceptions.data.locations import *
 
 
-def test_create_location(gen_test_admin):
+def test_create_location(gen_test_data_admin):
   location_id = create_location("Warehouse")
 
   assert location_id is not None
@@ -24,7 +24,7 @@ def test_create_location(gen_test_admin):
   assert location["description"] is None
 
 
-def test_create_location_with_description(gen_test_admin):
+def test_create_location_with_description(gen_test_data_admin):
   location_id = create_location(
     "Warehouse",
     description="Main storage area",
@@ -36,24 +36,24 @@ def test_create_location_with_description(gen_test_admin):
   assert location["description"] == "Main storage area"
 
 
-def test_create_location_with_empty_name_fails(gen_test_admin):
+def test_create_location_with_empty_name_fails(gen_test_data_admin):
   with pytest.raises(InvalidLocationNameError):
     create_location("")
 
 
-def test_create_location_with_whitespace_name_fails(gen_test_admin):
+def test_create_location_with_whitespace_name_fails(gen_test_data_admin):
   with pytest.raises(InvalidLocationNameError):
     create_location("   ")
 
 
-def test_create_duplicate_location_fails(gen_test_admin):
+def test_create_duplicate_location_fails(gen_test_data_admin):
   create_location("Warehouse")
 
   with pytest.raises(LocationAlreadyExistsError):
     create_location("Warehouse")
 
 
-def test_get_location(gen_test_admin):
+def test_get_location(gen_test_data_admin):
   location_id = create_location("Warehouse")
 
   location = get_location(location_id)
@@ -62,11 +62,11 @@ def test_get_location(gen_test_admin):
   assert location["name"] == "Warehouse"
 
 
-def test_get_nonexistent_location(gen_test_admin):
+def test_get_nonexistent_location(gen_test_data_admin):
   assert get_location(999) is None
 
 
-def test_get_locations(gen_test_admin):
+def test_get_locations(gen_test_data_admin):
   first_id = create_location("Warehouse")
   second_id = create_location("Office")
 
@@ -77,7 +77,7 @@ def test_get_locations(gen_test_admin):
   assert locations[1]["id"] == second_id
 
 
-def test_update_location_name(gen_test_admin):
+def test_update_location_name(gen_test_data_admin):
   location_id = create_location("Warehouse")
 
   assert (
@@ -93,7 +93,7 @@ def test_update_location_name(gen_test_admin):
   assert location["name"] == "Main Warehouse"
 
 
-def test_update_location_description(gen_test_admin):
+def test_update_location_description(gen_test_data_admin):
   location_id = create_location("Warehouse")
 
   assert (
@@ -109,7 +109,7 @@ def test_update_location_description(gen_test_admin):
   assert location["description"] == "Storage area"
 
 
-def test_update_location_name_and_description(gen_test_admin):
+def test_update_location_name_and_description(gen_test_data_admin):
   location_id = create_location("Warehouse")
 
   assert (
@@ -128,7 +128,7 @@ def test_update_location_name_and_description(gen_test_admin):
 
 
 def test_update_location_with_same_name_creates_no_audit_log(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   location_id = create_location("Warehouse")
 
@@ -150,7 +150,7 @@ def test_update_location_with_same_name_creates_no_audit_log(
 
 
 def test_update_location_with_same_description_creates_no_audit_log(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   location_id = create_location(
     "Warehouse",
@@ -174,7 +174,7 @@ def test_update_location_with_same_description_creates_no_audit_log(
   assert logs[0]["action"] == "created"
 
 
-def test_update_location_creates_audit_log(gen_test_admin):
+def test_update_location_creates_audit_log(gen_test_data_admin):
   location_id = create_location("Warehouse")
 
   assert (
@@ -195,7 +195,7 @@ def test_update_location_creates_audit_log(gen_test_admin):
   assert logs[1]["action"] == "updated"
 
 
-def test_update_location_to_existing_name_fails(gen_test_admin):
+def test_update_location_to_existing_name_fails(gen_test_data_admin):
   create_location("Warehouse")
   location_id = create_location("Office")
 
@@ -206,7 +206,7 @@ def test_update_location_to_existing_name_fails(gen_test_admin):
     )
 
 
-def test_update_location_with_empty_name_fails(gen_test_admin):
+def test_update_location_with_empty_name_fails(gen_test_data_admin):
   location_id = create_location("Warehouse")
 
   with pytest.raises(InvalidLocationNameError):
@@ -216,7 +216,7 @@ def test_update_location_with_empty_name_fails(gen_test_admin):
     )
 
 
-def test_update_nonexistent_location_fails(gen_test_admin):
+def test_update_nonexistent_location_fails(gen_test_data_admin):
   with pytest.raises(LocationNotFoundError):
     update_location(
       999,
@@ -224,14 +224,14 @@ def test_update_nonexistent_location_fails(gen_test_admin):
     )
 
 
-def test_update_location_with_no_fields_fails(gen_test_admin):
+def test_update_location_with_no_fields_fails(gen_test_data_admin):
   location_id = create_location("Warehouse")
 
   with pytest.raises(InvalidInputError, match="No fields to update"):
     update_location(location_id)
 
 
-def test_delete_location_requires_confirmation(gen_test_admin):
+def test_delete_location_requires_confirmation(gen_test_data_admin):
   location_id = create_location("Warehouse")
 
   with pytest.raises(
@@ -241,7 +241,7 @@ def test_delete_location_requires_confirmation(gen_test_admin):
     delete_location(location_id)
 
 
-def test_delete_location(gen_test_admin):
+def test_delete_location(gen_test_data_admin):
   location_id = create_location("Warehouse")
 
   assert (
@@ -255,7 +255,7 @@ def test_delete_location(gen_test_admin):
   assert get_location(location_id) is None
 
 
-def test_delete_nonexistent_location_fails(gen_test_admin):
+def test_delete_nonexistent_location_fails(gen_test_data_admin):
   with pytest.raises(LocationNotFoundError):
     delete_location(
       999,
@@ -263,7 +263,7 @@ def test_delete_nonexistent_location_fails(gen_test_admin):
     )
 
 
-def test_delete_location_creates_audit_log(gen_test_admin):
+def test_delete_location_creates_audit_log(gen_test_data_admin):
   location_id = create_location("Warehouse")
 
   assert (
@@ -285,7 +285,7 @@ def test_delete_location_creates_audit_log(gen_test_admin):
 
 
 def test_update_location_creates_one_audit_log_for_multiple_changes(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   location_id = create_location(
     "Warehouse",

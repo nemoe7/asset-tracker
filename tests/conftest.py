@@ -11,11 +11,12 @@ import config
 from app import create_app
 from app.services.auth.context import reset_current_user, set_current_user
 from app.services.data.db import init_db
+from app.services.data.inventory import create_item
 from app.services.data.users import create_user, get_user_by_username
 
 
 @pytest.fixture
-def gen_test_db(tmp_path, monkeypatch):
+def gen_test_data_db(tmp_path, monkeypatch):
   db_path = tmp_path / "test.db"
 
   monkeypatch.setattr(config, "DB_PATH", db_path)
@@ -45,7 +46,7 @@ def gen_test_db(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def gen_test_admin(gen_test_db):
+def gen_test_data_admin(gen_test_data_db):
   user = get_user_by_username("test_admin")
   test_admin_id = user["id"]
 
@@ -58,13 +59,13 @@ def gen_test_admin(gen_test_db):
 
 
 @pytest.fixture
-def gen_test_user(gen_test_admin, gen_test_password):
+def gen_test_data_user(gen_test_data_admin, gen_password):
   def _create(username, name=None, password=None):
     if name is None:
       name = username.capitalize()
 
     if password is None:
-      password = gen_test_password(username)
+      password = gen_password(username)
 
     return create_user(
       username=username,
@@ -76,7 +77,7 @@ def gen_test_user(gen_test_admin, gen_test_password):
 
 
 @pytest.fixture
-def gen_test_password():
+def gen_password():
   def _create(username):
     password = username
     count = 0
@@ -91,7 +92,7 @@ def gen_test_password():
 
 
 @pytest.fixture
-def gen_empty_db(tmp_path, monkeypatch):
+def gen_init_db(tmp_path, monkeypatch):
   db_path = tmp_path / "test.db"
 
   monkeypatch.setattr(config, "DB_PATH", db_path)
@@ -102,7 +103,7 @@ def gen_empty_db(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def test_app(gen_empty_db):
+def gen_test_app(gen_init_db):
   app = create_app()
   app.config.update(
     TESTING=True,
@@ -112,13 +113,13 @@ def test_app(gen_empty_db):
 
 
 @pytest.fixture
-def test_client(test_app):
-  return test_app.test_client()
+def gen_test_client(gen_test_app):
+  return gen_test_app.test_client()
 
 
 @pytest.fixture
-def test_admin(gen_empty_db, gen_test_password):
-  connection = sqlite3.connect(gen_empty_db)
+def gen_test_admin(gen_init_db, gen_password):
+  connection = sqlite3.connect(gen_init_db)
 
   cursor = connection.execute(
     """
@@ -134,7 +135,7 @@ def test_admin(gen_empty_db, gen_test_password):
     (
       "test_admin",
       "Test Admin",
-      generate_password_hash(gen_test_password("test_admin")),
+      generate_password_hash(gen_password("test_admin")),
     ),
   )
 
@@ -166,13 +167,24 @@ def test_admin(gen_empty_db, gen_test_password):
 
 
 @pytest.fixture
-def test_admin_client(test_admin, test_client, gen_test_password):
-  test_client.post(
+def gen_test_admin_client(gen_test_admin, gen_test_client, gen_password):
+  gen_test_client.post(
     "/auth/login",
     data={
       "username": "test_admin",
-      "password": gen_test_password("test_admin"),
+      "password": gen_password("test_admin"),
     },
   )
 
-  return test_client
+  return gen_test_client
+
+
+@pytest.fixture
+def gen_test_item(gen_test_admin):
+  def _create(name):
+    token = set_current_user(gen_test_admin)
+    uuid = create_item("Test Asset")
+    reset_current_user(token)
+    return uuid
+
+  return _create

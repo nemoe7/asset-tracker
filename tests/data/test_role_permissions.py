@@ -14,7 +14,7 @@ from app.services.exceptions.data.role_permissions import *
 from app.services.exceptions.data.roles import RoleNotFoundError
 
 
-def test_set_role_permission(gen_test_admin):
+def test_set_role_permission(gen_test_data_admin):
   role_id = create_role(
     name="Checker",
   )
@@ -41,7 +41,7 @@ def test_set_role_permission(gen_test_admin):
   assert permission["allowed"] == 1
 
 
-def test_set_role_permission_can_deny(gen_test_admin):
+def test_set_role_permission_can_deny(gen_test_data_admin):
   role_id = create_role(
     name="Checker",
   )
@@ -63,7 +63,7 @@ def test_set_role_permission_can_deny(gen_test_admin):
   assert permission["allowed"] == 0
 
 
-def test_set_role_permission_updates_existing_permission(gen_test_admin):
+def test_set_role_permission_updates_existing_permission(gen_test_data_admin):
   role_id = create_role(
     name="Checker",
   )
@@ -101,7 +101,7 @@ def test_set_role_permission_updates_existing_permission(gen_test_admin):
   ],
 )
 def test_set_role_permission_rejects_non_boolean_allowed(
-  gen_test_admin,
+  gen_test_data_admin,
   allowed,
 ):
   role_id = create_role(
@@ -119,7 +119,7 @@ def test_set_role_permission_rejects_non_boolean_allowed(
     )
 
 
-def test_set_role_permission_rejects_missing_role(gen_test_admin):
+def test_set_role_permission_rejects_missing_role(gen_test_data_admin):
   permission_id = create_permission(
     name="inventory.read",
   )
@@ -132,7 +132,7 @@ def test_set_role_permission_rejects_missing_role(gen_test_admin):
     )
 
 
-def test_set_role_permission_rejects_missing_permission(gen_test_admin):
+def test_set_role_permission_rejects_missing_permission(gen_test_data_admin):
   role_id = create_role(
     name="Checker",
   )
@@ -145,7 +145,7 @@ def test_set_role_permission_rejects_missing_permission(gen_test_admin):
     )
 
 
-def test_get_role_permission_returns_none_when_missing(gen_test_admin):
+def test_get_role_permission_returns_none_when_missing(gen_test_data_admin):
   role_id = create_role(
     name="Checker",
   )
@@ -162,7 +162,7 @@ def test_get_role_permission_returns_none_when_missing(gen_test_admin):
   )
 
 
-def test_get_role_permissions(gen_test_admin):
+def test_get_role_permissions(gen_test_data_admin):
   role_id = create_role(
     name="Checker",
   )
@@ -201,7 +201,7 @@ def test_get_role_permissions(gen_test_admin):
   assert permissions[1]["allowed"] == 0
 
 
-def test_get_role_permissions_returns_empty_list(gen_test_admin):
+def test_get_role_permissions_returns_empty_list(gen_test_data_admin):
   role_id = create_role(
     name="Checker",
   )
@@ -209,12 +209,12 @@ def test_get_role_permissions_returns_empty_list(gen_test_admin):
   assert get_role_permissions(role_id) == []
 
 
-def test_get_role_permissions_rejects_missing_role(gen_test_admin):
+def test_get_role_permissions_rejects_missing_role(gen_test_data_admin):
   with pytest.raises(RoleNotFoundError):
     get_role_permissions(999)
 
 
-def test_delete_role_permission(gen_test_admin):
+def test_delete_role_permission(gen_test_data_admin):
   role_id = create_role(
     name="Checker",
   )
@@ -246,7 +246,7 @@ def test_delete_role_permission(gen_test_admin):
 
 
 def test_delete_role_permission_rejects_missing_permission_mapping(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   role_id = create_role(
     name="Checker",
@@ -263,7 +263,7 @@ def test_delete_role_permission_rejects_missing_permission_mapping(
 
 
 def test_set_role_permission_no_op_does_not_create_audit_log(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   role_id = create_role(
     name="Test Role",
@@ -293,7 +293,7 @@ def test_set_role_permission_no_op_does_not_create_audit_log(
 
 
 def test_set_role_permission_change_creates_audit_log(
-  gen_test_admin,
+  gen_test_data_admin,
 ):
   role_id = create_role(
     name="Test Role",
