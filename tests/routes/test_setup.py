@@ -20,7 +20,7 @@ def test_setup_creates_initial_admin(test_client):
     "/auth/setup",
     data={
       "username": "admin",
-      "display-name": "Administrator",
+      "display_name": "Administrator",
       "password": "password123",
       "confirm_password": "password123",
     },
@@ -58,7 +58,7 @@ def test_setup_logs_initial_admin_in(test_client):
     "/auth/setup",
     data={
       "username": "admin",
-      "display-name": "Administrator",
+      "display_name": "Administrator",
       "password": "password123",
       "confirm_password": "password123",
     },
@@ -75,7 +75,7 @@ def test_setup_updates_first_run_state(test_client, test_app):
     "/auth/setup",
     data={
       "username": "admin",
-      "display-name": "Administrator",
+      "display_name": "Administrator",
       "password": "password123",
       "confirm_password": "password123",
     },
@@ -90,7 +90,7 @@ def test_setup_rejects_password_mismatch(test_client):
     "/auth/setup",
     data={
       "username": "admin",
-      "display-name": "Administrator",
+      "display_name": "Administrator",
       "password": "password123",
       "confirm_password": "different123",
     },
@@ -106,7 +106,7 @@ def test_setup_rejects_invalid_username(test_client):
     "/auth/setup",
     data={
       "username": "a",
-      "display-name": "Administrator",
+      "display_name": "Administrator",
       "password": "password123",
       "confirm_password": "password123",
     },
@@ -121,7 +121,7 @@ def test_setup_rejects_invalid_password(test_client):
     "/auth/setup",
     data={
       "username": "admin",
-      "display-name": "Administrator",
+      "display_name": "Administrator",
       "password": "short",
       "confirm_password": "short",
     },
