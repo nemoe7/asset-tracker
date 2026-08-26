@@ -37,7 +37,7 @@ def setup_post():
     return redirect(url_for("main.index"))
 
   username = request.form["username"].strip()
-  display_name = request.form["display-name"].strip()
+  display_name = request.form["display_name"].strip()
   password = request.form["password"]
   confirm_password = request.form["confirm_password"]
 

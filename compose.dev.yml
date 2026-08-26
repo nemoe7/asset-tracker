@@ -23,7 +23,6 @@ services:
       start_period: 10s
     volumes:
       - .:/home/appuser
-      - ./data:/home/appuser/data
     working_dir: /home/appuser
     command: python run.py
 
