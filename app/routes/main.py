@@ -49,9 +49,10 @@ def index():
     return redirect(url_for("auth.login"))
 
   search = request.args.get("search", "").strip()
-
+  include_archived = request.args.get("include_archived") == "true"
   items = get_items(
     search=search,
+    include_archived=include_archived,
   )
 
   locations = get_locations()
