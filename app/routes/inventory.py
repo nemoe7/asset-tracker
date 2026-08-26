@@ -10,6 +10,7 @@ from ..services.data.inventory import (
   archive_item,
   create_item,
   get_item,
+  restore_item,
   update_item,
 )
 from ..services.exceptions.data.inventory import InvalidItemNameError
@@ -25,7 +26,12 @@ inventory = Blueprint(
 @inventory.route("/<item_id>", methods=["GET"])
 @login_required
 def get(item_id):
-  item = get_item(item_id)
+  include_archived = request.args.get("include_archived") == "true"
+
+  item = get_item(
+    item_id,
+    include_archived=include_archived,
+  )
 
   if item is None:
     return jsonify(
@@ -34,15 +40,18 @@ def get(item_id):
       }
     ), 404
 
-  return jsonify(
-    {
-      "id": item["id"],
-      "name": item["name"],
-      "location_id": item["location_id"],
-      "location_name": item["location_name"],
-      "custom_fields": item["custom_fields"],
-    }
-  )
+  data = {
+    "id": item["id"],
+    "name": item["name"],
+    "location_id": item["location_id"],
+    "location_name": item["location_name"],
+    "custom_fields": item["custom_fields"],
+  }
+
+  if include_archived:
+    data["archived_at"] = item["archived_at"]
+
+  return jsonify(data)
 
 
 @inventory.route("", methods=["POST"])
@@ -90,5 +99,13 @@ def update(item_id):
 @login_required
 def archive(item_id):
   archive_item(item_id)
+
+  return redirect(url_for("main.index"))
+
+
+@inventory.route("/<item_id>/restore", methods=["POST"])
+@login_required
+def restore(item_id):
+  restore_item(item_id)
 
   return redirect(url_for("main.index"))

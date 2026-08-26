@@ -100,16 +100,20 @@ def create_item(name, location_id=None):
       action="created",
       entity_type="inventory_item",
       entity_id=item_id,
-
     )
 
     return item_id
 
 
-def get_item(item_id):
+def get_item(item_id, include_archived=False):
   with db_connection() as connection:
+    archived_condition = ""
+
+    if not include_archived:
+      archived_condition = "AND inventory_items.archived_at IS NULL"
+
     item = connection.execute(
-      """
+      f"""
       SELECT
         inventory_items.*,
         locations.name AS location_name
@@ -117,7 +121,7 @@ def get_item(item_id):
       LEFT JOIN locations
         ON locations.id = inventory_items.location_id
       WHERE inventory_items.id = ?
-        AND inventory_items.archived_at IS NULL
+        {archived_condition}
       """,
       (item_id,),
     ).fetchone()
@@ -251,7 +255,6 @@ def update_item(
       entity_type="inventory_item",
       entity_id=item_id,
       details=details,
-
     )
 
     return True
@@ -288,7 +291,6 @@ def archive_item(item_id):
       action="archived",
       entity_type="inventory_item",
       entity_id=item_id,
-
     )
 
     return True
@@ -325,7 +327,6 @@ def restore_item(item_id):
       action="restored",
       entity_type="inventory_item",
       entity_id=item_id,
-
     )
 
     return True

@@ -76,3 +76,49 @@ def test_admin_can_archive_asset(
   response = gen_test_admin_client.get(f"/inventory/{item_id}")
 
   assert response.status_code == 404
+
+
+def test_archived_asset_can_be_viewed(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  item_id = gen_test_item(name="Test Asset")
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}/archive",
+  )
+
+  assert response.status_code == 302
+
+  response = gen_test_admin_client.get(
+    f"/inventory/{item_id}?include_archived=true",
+  )
+
+  assert response.status_code == 200
+  print(response.json)
+  assert response.json["id"] == item_id
+  assert response.json["archived_at"] is not None
+
+def test_admin_can_restore_asset(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  item_id = gen_test_item(name="Test Asset")
+
+  gen_test_admin_client.post(
+    f"/inventory/{item_id}/archive",
+  )
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}/restore",
+  )
+
+  assert response.status_code == 302
+
+  response = gen_test_admin_client.get(
+    f"/inventory/{item_id}?include_archived=true",
+  )
+
+  assert response.status_code == 200
+  assert response.json["id"] == item_id
+  assert response.json["archived_at"] is None

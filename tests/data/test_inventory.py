@@ -532,3 +532,20 @@ def test_create_item_generates_unique_ids(gen_test_data_admin):
   second_id = create_item("Second Asset")
 
   assert first_id != second_id
+
+def test_archived_asset_is_distinguishable(
+  gen_test_data_admin,
+):
+  item_id = create_item("Laptop")
+
+  active_item = get_item(item_id)
+  assert active_item["archived_at"] is None
+
+  archive_item(item_id)
+
+  archived_item = get_item(
+    item_id,
+    include_archived=True,
+  )
+
+  assert archived_item["archived_at"] is not None
