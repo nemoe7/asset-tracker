@@ -70,21 +70,6 @@ def test_setup_logs_initial_admin_in(gen_test_client):
     assert session["user_id"] is not None
 
 
-def test_setup_updates_first_run_state(gen_test_client, gen_test_app):
-  response = gen_test_client.post(
-    "/auth/setup",
-    data={
-      "username": "admin",
-      "display_name": "Administrator",
-      "password": "password123",
-      "confirm_password": "password123",
-    },
-  )
-
-  assert response.status_code == 302
-  assert gen_test_app.config["FIRST_RUN"] is False
-
-
 def test_setup_rejects_password_mismatch(gen_test_client):
   response = gen_test_client.post(
     "/auth/setup",

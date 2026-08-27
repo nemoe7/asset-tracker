@@ -13,6 +13,9 @@ from ..services.auth.authorization import check_permission
 from ..services.data.db import get_db
 from ..services.data.inventory import get_items
 from ..services.data.locations import get_locations
+from ..services.data.setup import (
+  is_first_run,
+)
 from .auth import login_required
 
 main = Blueprint("main", __name__)
@@ -21,7 +24,7 @@ main = Blueprint("main", __name__)
 @main.route("/")
 @login_required
 def index():
-  if current_app.config["FIRST_RUN"]:
+  if is_first_run():
     return redirect(url_for("auth.setup"))
 
   user_id = session.get("user_id")

@@ -1,19 +1,20 @@
 from flask import (
   Blueprint,
-  current_app,
   redirect,
   render_template,
   request,
   session,
   url_for,
 )
-from werkzeug.security import check_password_hash
 
 from ..services.auth.authentication import login_required
-from ..services.data.db import get_db
 from ..services.data.setup import (
   create_initial_admin,
   is_first_run,
+)
+from ..services.data.users import (
+  get_user_by_username,
+  verify_password,
 )
 from ..services.exceptions.data.users import (
   InvalidPasswordError,
@@ -25,7 +26,7 @@ auth = Blueprint("auth", __name__, url_prefix="/auth")
 
 @auth.route("/setup", methods=["GET"])
 def setup():
-  if not current_app.config["FIRST_RUN"]:
+  if not is_first_run():
     return redirect(url_for("main.index"))
 
   return render_template("setup.jinja")
@@ -33,7 +34,7 @@ def setup():
 
 @auth.route("/setup", methods=["POST"])
 def setup_post():
-  if not current_app.config["FIRST_RUN"]:
+  if not is_first_run():
     return redirect(url_for("main.index"))
 
   username = request.form["username"].strip()
@@ -66,14 +67,12 @@ def setup_post():
   session.clear()
   session["user_id"] = user_id
 
-  current_app.config["FIRST_RUN"] = is_first_run()
-
   return redirect(url_for("main.index"))
 
 
 @auth.route("/login", methods=["GET"])
 def login():
-  if current_app.config["FIRST_RUN"]:
+  if is_first_run():
     return redirect(url_for("auth.setup"))
 
   if session.get("user_id") is not None:
@@ -84,30 +83,18 @@ def login():
 
 @auth.route("/login", methods=["POST"])
 def login_post():
-  if current_app.config["FIRST_RUN"]:
+  if is_first_run():
     return redirect(url_for("auth.setup"))
 
   username = request.form["username"].strip()
   password = request.form["password"]
 
-  connection = get_db()
+  user = get_user_by_username(username)
 
-  try:
-    user = connection.execute(
-      """
-      SELECT id, password_hash
-      FROM users
-      WHERE username = ?
-        AND archived_at IS NULL
-      """,
-      (username,),
-    ).fetchone()
-  finally:
-    connection.close()
-
-  if user is None or not check_password_hash(
-    user["password_hash"],
-    password,
+  if (
+    user is None
+    or user["archived_at"] is not None
+    or not verify_password(user["id"], password)
   ):
     return render_template(
       "login.jinja",
