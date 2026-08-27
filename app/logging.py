@@ -109,4 +109,4 @@ def configure_logging(show_logger_name=False):
   werkzeug_logger.setLevel(logging.INFO)
   werkzeug_logger.propagate = False
 
-  # werkzeug_logger.addFilter(HealthCheckFilter())
+  werkzeug_logger.addFilter(HealthCheckFilter())
