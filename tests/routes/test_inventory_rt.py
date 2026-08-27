@@ -99,6 +99,7 @@ def test_archived_asset_can_be_viewed(
   assert response.json["id"] == item_id
   assert response.json["archived_at"] is not None
 
+
 def test_admin_can_restore_asset(
   gen_test_admin_client,
   gen_test_item,
