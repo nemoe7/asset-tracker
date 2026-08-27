@@ -20,8 +20,8 @@ def test_admin_cannot_create_asset_without_name(gen_test_admin_client):
     },
   )
 
-  assert response.status_code == 302
-  assert response.location.endswith("/")
+  assert response.status_code == 400
+  assert response.json["error"]
 
 
 def test_admin_can_view_created_asset(gen_test_admin_client):
@@ -159,3 +159,39 @@ def test_admin_can_update_asset_custom_field_value(
 
   assert item_response.status_code == 200
   assert item_response.json["custom_fields"][field_name] == "SN12345"
+
+def test_admin_cannot_update_asset_with_invalid_location(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  item_id = gen_test_item()
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "location_id": "999999",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
+def test_admin_cannot_update_nonexistent_asset(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/inventory/does-not-exist",
+    data={
+      "name": "Updated Asset",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 404
+  assert response.json["error"]

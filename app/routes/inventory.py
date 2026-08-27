@@ -14,10 +14,17 @@ from ..services.data.inventory import (
   archive_item,
   create_item,
   get_item,
+  get_items,
   restore_item,
   update_item,
 )
-from ..services.exceptions.data.inventory import InvalidItemNameError
+from ..services.exceptions.data.common import InvalidInputError
+from ..services.exceptions.data.inventory import (
+  ItemIsArchivedError,
+  ItemIsNotArchivedError,
+  ItemNotFoundError,
+)
+from ..services.exceptions.data.locations import LocationNotFoundError
 from .auth import login_required
 
 inventory = Blueprint(
@@ -25,6 +32,53 @@ inventory = Blueprint(
   __name__,
   url_prefix="/inventory",
 )
+
+
+@inventory.route("", methods=["GET"])
+@login_required
+def index():
+  search = request.args.get("search")
+  location_id = request.args.get("location_id")
+
+  if location_id:
+    location_id = int(location_id)
+
+  items = get_items(
+    search=search,
+    location_id=location_id,
+  )
+
+  return jsonify(items)
+
+
+@inventory.route("", methods=["POST"])
+@login_required
+def create():
+  name = request.form.get("name", "").strip()
+  location_id = request.form.get("location_id")
+
+  if location_id:
+    location_id = int(location_id)
+
+  try:
+    item_id = create_item(
+      name=name,
+      location_id=location_id,
+    )
+  except InvalidInputError as error:
+    return jsonify({"error": str(error)}), 400
+  except LocationNotFoundError as error:
+    return jsonify({"error": str(error)}), 400
+
+  if request.headers.get("Accept") == "application/json":
+    return jsonify(
+      {
+        "id": item_id,
+        "name": name,
+      }
+    )
+
+  return redirect(url_for("main.index"))
 
 
 @inventory.route("/<item_id>", methods=["GET"])
@@ -38,44 +92,9 @@ def get(item_id):
   )
 
   if item is None:
-    return jsonify(
-      {
-        "error": "Inventory item not found",
-      }
-    ), 404
+    return jsonify({"error": "Item does not exist"}), 404
 
-  data = {
-    "id": item["id"],
-    "name": item["name"],
-    "location_id": item["location_id"],
-    "location_name": item["location_name"],
-    "custom_fields": item["custom_fields"],
-  }
-
-  if include_archived:
-    data["archived_at"] = item["archived_at"]
-
-  return jsonify(data)
-
-
-@inventory.route("", methods=["POST"])
-@login_required
-def create():
-  name = request.form.get("name", "").strip()
-  location_id = request.form.get("location_id") or None
-
-  if location_id is not None:
-    location_id = int(location_id)
-
-  try:
-    create_item(
-      name=name,
-      location_id=location_id,
-    )
-  except InvalidItemNameError:
-    pass
-
-  return redirect(url_for("main.index"))
+  return jsonify(item)
 
 
 @inventory.route("/<item_id>", methods=["POST"])
@@ -113,8 +132,12 @@ def update(item_id):
           field["id"],
           value,
         )
-  except ValueError:
-    return redirect(url_for("main.index"))
+  except InvalidInputError as error:
+    return jsonify({"error": str(error)}), 400
+  except LocationNotFoundError as error:
+    return jsonify({"error": str(error)}), 400
+  except ItemNotFoundError as error:
+    return jsonify({"error": str(error)}), 404
 
   return redirect(url_for("main.index"))
 
@@ -122,7 +145,12 @@ def update(item_id):
 @inventory.route("/<item_id>/archive", methods=["POST"])
 @login_required
 def archive(item_id):
-  archive_item(item_id)
+  try:
+    archive_item(item_id)
+  except ItemNotFoundError as error:
+    return jsonify({"error": str(error)}), 404
+  except ItemIsArchivedError as error:
+    return jsonify({"error": str(error)}), 400
 
   return redirect(url_for("main.index"))
 
@@ -130,6 +158,11 @@ def archive(item_id):
 @inventory.route("/<item_id>/restore", methods=["POST"])
 @login_required
 def restore(item_id):
-  restore_item(item_id)
+  try:
+    restore_item(item_id)
+  except ItemNotFoundError as error:
+    return jsonify({"error": str(error)}), 404
+  except ItemIsNotArchivedError as error:
+    return jsonify({"error": str(error)}), 400
 
   return redirect(url_for("main.index"))
