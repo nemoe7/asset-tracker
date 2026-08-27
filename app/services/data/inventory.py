@@ -28,8 +28,8 @@ def _get_custom_fields(connection, item_id):
   rows = connection.execute(
     """
     SELECT
-      inventory_item_fields.field_id,
       inventory_item_fields.value,
+      custom_fields.name,
       custom_fields.field_type
     FROM inventory_item_fields
     JOIN custom_fields
@@ -52,7 +52,7 @@ def _get_custom_fields(connection, item_id):
     elif field_type == "boolean":
       value = value == "1"
 
-    fields[row["field_id"]] = value
+    fields[row["name"]] = value
 
   return fields
 
