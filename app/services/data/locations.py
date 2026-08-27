@@ -49,7 +49,6 @@ def create_location(name, description=None):
       action="created",
       entity_type="location",
       entity_id=location_id,
-
     )
 
     return location_id
@@ -64,6 +63,18 @@ def get_location(location_id):
       WHERE id = ?
       """,
       (location_id,),
+    ).fetchone()
+
+
+def get_location_by_name(name):
+  with db_connection() as connection:
+    return connection.execute(
+      """
+      SELECT *
+      FROM locations
+      WHERE name = ?
+      """,
+      (name,),
     ).fetchone()
 
 
@@ -160,7 +171,6 @@ def update_location(
       entity_type="location",
       entity_id=location_id,
       details=details,
-
     )
 
     return True
@@ -197,7 +207,6 @@ def delete_location(location_id, confirm=False):
       action="deleted",
       entity_type="location",
       entity_id=location_id,
-
     )
 
     return True
