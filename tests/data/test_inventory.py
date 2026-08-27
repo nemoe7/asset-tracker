@@ -3,6 +3,8 @@ import uuid
 import pytest
 
 from app.services.data.audit import get_audit_logs
+from app.services.data.custom_field_values import set_custom_field_value
+from app.services.data.custom_fields import create_custom_field
 from app.services.data.inventory import (
   archive_item,
   create_item,
@@ -533,6 +535,7 @@ def test_create_item_generates_unique_ids(gen_test_data_admin):
 
   assert first_id != second_id
 
+
 def test_archived_asset_is_distinguishable(
   gen_test_data_admin,
 ):
@@ -549,3 +552,434 @@ def test_archived_asset_is_distinguishable(
   )
 
   assert archived_item["archived_at"] is not None
+
+
+def test_get_items_search_and_location(gen_test_data_admin):
+  storage_id = create_location("Storage")
+  office_id = create_location("Office")
+
+  create_item(
+    "Gaming Laptop",
+    location_id=storage_id,
+  )
+  create_item(
+    "Office Laptop",
+    location_id=office_id,
+  )
+  create_item(
+    "Gaming Monitor",
+    location_id=storage_id,
+  )
+
+  items = get_items(
+    search="Laptop",
+    location_id=storage_id,
+  )
+
+  assert len(items) == 1
+  assert items[0]["name"] == "Gaming Laptop"
+
+
+def test_get_items_sort_by_name_ascending(gen_test_data_admin):
+  create_item("Monitor")
+  create_item("Laptop")
+  create_item("Keyboard")
+
+  items = get_items(
+    sort_by="name",
+    sort_order="asc",
+  )
+
+  assert [item["name"] for item in items] == [
+    "Keyboard",
+    "Laptop",
+    "Monitor",
+  ]
+
+
+def test_get_items_sort_by_name_descending(gen_test_data_admin):
+  create_item("Monitor")
+  create_item("Laptop")
+  create_item("Keyboard")
+
+  items = get_items(
+    sort_by="name",
+    sort_order="desc",
+  )
+
+  assert [item["name"] for item in items] == [
+    "Monitor",
+    "Laptop",
+    "Keyboard",
+  ]
+
+
+def test_get_items_filter_by_custom_field(gen_test_data_admin):
+  field_id = create_custom_field(
+    "Department",
+    "text",
+  )
+
+  it_item_id = create_item("Laptop")
+  hr_item_id = create_item("Monitor")
+
+  set_custom_field_value(
+    it_item_id,
+    field_id,
+    "IT",
+  )
+  set_custom_field_value(
+    hr_item_id,
+    field_id,
+    "HR",
+  )
+
+  items = get_items(
+    custom_fields={
+      field_id: "IT",
+    },
+  )
+
+  assert [item["id"] for item in items] == [it_item_id]
+
+
+def test_get_items_filter_by_multiple_custom_fields(gen_test_data_admin):
+  department_id = create_custom_field(
+    "Department",
+    "text",
+  )
+  type_id = create_custom_field(
+    "Type",
+    "text",
+  )
+
+  matching_id = create_item("Laptop")
+  department_only_id = create_item("Monitor")
+  type_only_id = create_item("Keyboard")
+
+  set_custom_field_value(matching_id, department_id, "IT")
+  set_custom_field_value(matching_id, type_id, "Hardware")
+
+  set_custom_field_value(department_only_id, department_id, "IT")
+  set_custom_field_value(type_only_id, type_id, "Hardware")
+
+  items = get_items(
+    custom_fields={
+      department_id: "IT",
+      type_id: "Hardware",
+    },
+  )
+
+  assert [item["id"] for item in items] == [matching_id]
+
+
+def test_get_items_sort_by_custom_field(gen_test_data_admin):
+  field_id = create_custom_field(
+    "Department",
+    "text",
+  )
+
+  it_id = create_item("Laptop")
+  hr_id = create_item("Monitor")
+  finance_id = create_item("Keyboard")
+
+  set_custom_field_value(it_id, field_id, "IT")
+  set_custom_field_value(hr_id, field_id, "HR")
+  set_custom_field_value(finance_id, field_id, "Finance")
+
+  items = get_items(
+    sort_by=field_id,
+    sort_order="asc",
+  )
+
+  assert [item["id"] for item in items] == [
+    finance_id,
+    hr_id,
+    it_id,
+  ]
+
+
+def test_get_items_sort_by_integer_custom_field(gen_test_data_admin):
+  field_id = create_custom_field(
+    "Quantity",
+    "integer",
+  )
+
+  item_2_id = create_item("Item 2")
+  item_10_id = create_item("Item 10")
+  item_100_id = create_item("Item 100")
+
+  set_custom_field_value(item_2_id, field_id, 2)
+  set_custom_field_value(item_10_id, field_id, 10)
+  set_custom_field_value(item_100_id, field_id, 100)
+
+  items = get_items(
+    sort_by=field_id,
+    sort_order="asc",
+  )
+
+  assert [item["id"] for item in items] == [
+    item_2_id,
+    item_10_id,
+    item_100_id,
+  ]
+
+
+def test_get_items_sort_by_custom_field_descending(gen_test_data_admin):
+  field_id = create_custom_field(
+    "Department",
+    "text",
+  )
+
+  it_id = create_item("Laptop")
+  hr_id = create_item("Monitor")
+  finance_id = create_item("Keyboard")
+
+  set_custom_field_value(it_id, field_id, "IT")
+  set_custom_field_value(hr_id, field_id, "HR")
+  set_custom_field_value(finance_id, field_id, "Finance")
+
+  items = get_items(
+    sort_by=field_id,
+    sort_order="desc",
+  )
+
+  assert [item["id"] for item in items] == [
+    it_id,
+    hr_id,
+    finance_id,
+  ]
+
+
+def test_get_items_with_invalid_sort_field_fails(gen_test_data_admin):
+  create_item("Laptop")
+
+  with pytest.raises(InvalidInputError):
+    get_items(
+      sort_by="invalid",
+      sort_order="asc",
+    )
+
+
+def test_get_items_with_invalid_sort_order_fails(gen_test_data_admin):
+  create_item("Laptop")
+
+  with pytest.raises(InvalidInputError):
+    get_items(
+      sort_by="name",
+      sort_order="invalid",
+    )
+
+
+def test_get_items_filter_by_custom_field_excludes_missing_values(
+  gen_test_data_admin,
+):
+  field_id = create_custom_field(
+    "Department",
+    "text",
+  )
+
+  matching_id = create_item("Laptop")
+  create_item("Monitor")
+
+  set_custom_field_value(
+    matching_id,
+    field_id,
+    "IT",
+  )
+
+  items = get_items(
+    custom_fields={
+      field_id: "IT",
+    },
+  )
+
+  assert [item["id"] for item in items] == [matching_id]
+
+
+def test_get_items_sort_by_custom_field_with_missing_values(
+  gen_test_data_admin,
+):
+  field_id = create_custom_field(
+    "Department",
+    "text",
+  )
+
+  it_id = create_item("Laptop")
+  missing_id = create_item("Monitor")
+  hr_id = create_item("Keyboard")
+
+  set_custom_field_value(
+    it_id,
+    field_id,
+    "IT",
+  )
+  set_custom_field_value(
+    hr_id,
+    field_id,
+    "HR",
+  )
+
+  items = get_items(
+    sort_by=field_id,
+    sort_order="asc",
+  )
+
+  assert [item["id"] for item in items] == [
+    missing_id,
+    hr_id,
+    it_id,
+  ]
+
+
+def test_archived_items_are_excluded_from_search_and_sort(
+  gen_test_data_admin,
+):
+  active_id = create_item("Laptop")
+  archived_id = create_item("Monitor")
+
+  archive_item(archived_id)
+
+  items = get_items(
+    search="",
+    sort_by="name",
+    sort_order="asc",
+  )
+
+  assert [item["id"] for item in items] == [active_id]
+
+
+def test_archived_items_are_excluded_from_custom_field_filter(
+  gen_test_data_admin,
+):
+  field_id = create_custom_field(
+    "Department",
+    "text",
+  )
+
+  active_id = create_item("Laptop")
+  archived_id = create_item("Monitor")
+
+  set_custom_field_value(
+    active_id,
+    field_id,
+    "IT",
+  )
+  set_custom_field_value(
+    archived_id,
+    field_id,
+    "IT",
+  )
+
+  archive_item(archived_id)
+
+  items = get_items(
+    custom_fields={
+      field_id: "IT",
+    },
+  )
+
+  assert [item["id"] for item in items] == [active_id]
+
+
+def test_archived_items_can_be_included_in_search_and_sort(
+  gen_test_data_admin,
+):
+  active_id = create_item("Laptop")
+  archived_id = create_item("Monitor")
+
+  archive_item(archived_id)
+
+  items = get_items(
+    include_archived=True,
+    sort_by="name",
+    sort_order="asc",
+  )
+
+  assert [item["id"] for item in items] == [
+    active_id,
+    archived_id,
+  ]
+
+
+def test_get_items_sort_by_decimal_custom_field(gen_test_data_admin):
+  field_id = create_custom_field(
+    "Price",
+    "decimal",
+  )
+
+  item_2_id = create_item("Item 2")
+  item_10_id = create_item("Item 10")
+  item_100_id = create_item("Item 100")
+
+  set_custom_field_value(item_2_id, field_id, 2.5)
+  set_custom_field_value(item_10_id, field_id, 10.25)
+  set_custom_field_value(item_100_id, field_id, 100.75)
+
+  items = get_items(
+    sort_by=field_id,
+    sort_order="asc",
+  )
+
+  assert [item["id"] for item in items] == [
+    item_2_id,
+    item_10_id,
+    item_100_id,
+  ]
+
+
+def test_get_items_sort_by_boolean_custom_field(gen_test_data_admin):
+  field_id = create_custom_field(
+    "Active",
+    "boolean",
+  )
+
+  false_id = create_item("False")
+  true_id = create_item("True")
+
+  set_custom_field_value(false_id, field_id, False)
+  set_custom_field_value(true_id, field_id, True)
+
+  items = get_items(
+    sort_by=field_id,
+    sort_order="asc",
+  )
+
+  assert [item["id"] for item in items] == [
+    false_id,
+    true_id,
+  ]
+
+def test_get_items_sort_by_custom_field_descending_with_missing_values(
+  gen_test_data_admin,
+):
+  field_id = create_custom_field(
+    "Department",
+    "text",
+  )
+
+  missing_id = create_item("Missing")
+  it_id = create_item("IT")
+  hr_id = create_item("HR")
+
+  set_custom_field_value(
+    it_id,
+    field_id,
+    "IT",
+  )
+  set_custom_field_value(
+    hr_id,
+    field_id,
+    "HR",
+  )
+
+  items = get_items(
+    sort_by=field_id,
+    sort_order="desc",
+  )
+
+  assert [item["id"] for item in items] == [
+    missing_id,
+    it_id,
+    hr_id,
+  ]

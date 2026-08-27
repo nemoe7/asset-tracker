@@ -136,7 +136,13 @@ def get_items(
   search=None,
   location_id=None,
   include_archived=False,
+  custom_fields=None,
+  sort_by="name",
+  sort_order="asc",
 ):
+  if sort_order not in ("asc", "desc"):
+    raise InvalidInputError("Invalid sort order")
+
   with db_connection() as connection:
     conditions = []
     parameters = []
@@ -154,22 +160,94 @@ def get_items(
       conditions.append("inventory_items.location_id = ?")
       parameters.append(location_id)
 
+    if custom_fields:
+      for field_id, value in custom_fields.items():
+        conditions.append(
+          """
+          EXISTS (
+            SELECT 1
+            FROM inventory_item_fields
+            WHERE inventory_item_fields.item_id = inventory_items.id
+              AND inventory_item_fields.field_id = ?
+              AND inventory_item_fields.value = ?
+          )
+          """
+        )
+        parameters.extend(
+          [
+            field_id,
+            str(value),
+          ]
+        )
+
     where_clause = ""
 
     if conditions:
       where_clause = f"WHERE {' AND '.join(conditions)}"
 
+    if sort_by == "name":
+      sort_expression = "inventory_items.name"
+
+      query = f"""
+        SELECT
+          inventory_items.*,
+          locations.name AS location_name
+        FROM inventory_items
+        LEFT JOIN locations
+          ON locations.id = inventory_items.location_id
+        {where_clause}
+        ORDER BY
+          {sort_expression} {sort_order.upper()},
+          inventory_items.id
+      """
+
+    else:
+      field = connection.execute(
+        """
+        SELECT
+          id,
+          field_type
+        FROM custom_fields
+        WHERE id = ?
+          AND archived_at IS NULL
+        """,
+        (sort_by,),
+      ).fetchone()
+
+      if field is None:
+        raise InvalidInputError("Invalid sort field")
+
+      if field["field_type"] in ("integer", "decimal", "user"):
+        sort_expression = "CAST(inventory_item_fields.value AS NUMERIC)"
+      elif field["field_type"] == "boolean":
+        sort_expression = "CAST(inventory_item_fields.value AS INTEGER)"
+      else:
+        sort_expression = "inventory_item_fields.value"
+
+      query = f"""
+        SELECT
+          inventory_items.*,
+          locations.name AS location_name
+        FROM inventory_items
+        LEFT JOIN locations
+          ON locations.id = inventory_items.location_id
+        LEFT JOIN inventory_item_fields
+          ON inventory_item_fields.item_id = inventory_items.id
+          AND inventory_item_fields.field_id = ?
+        {where_clause}
+        ORDER BY
+          CASE WHEN inventory_item_fields.value IS NULL THEN 0 ELSE 1 END,
+          {sort_expression} {sort_order.upper()},
+          inventory_items.id
+      """
+
+      parameters = [
+        sort_by,
+        *parameters,
+      ]
+
     items = connection.execute(
-      f"""
-      SELECT
-        inventory_items.*,
-        locations.name AS location_name
-      FROM inventory_items
-      LEFT JOIN locations
-        ON locations.id = inventory_items.location_id
-      {where_clause}
-      ORDER BY inventory_items.name, inventory_items.id
-      """,
+      query,
       parameters,
     ).fetchall()
 
