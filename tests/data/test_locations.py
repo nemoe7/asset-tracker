@@ -5,6 +5,7 @@ from app.services.data.locations import (
   create_location,
   delete_location,
   get_location,
+  get_location_by_name,
   get_locations,
   update_location,
 )
@@ -320,3 +321,16 @@ def test_update_location_creates_one_audit_log_for_multiple_changes(
       "new": "New description",
     },
   }
+
+
+def test_get_location_by_name(gen_test_data_admin):
+  location_id = create_location("Warehouse")
+
+  location = get_location_by_name("Warehouse")
+
+  assert location["id"] == location_id
+  assert location["name"] == "Warehouse"
+
+
+def test_get_nonexistent_location_by_name(gen_test_data_admin):
+  assert get_location_by_name("does-not-exist") is None
