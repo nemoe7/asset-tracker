@@ -1,18 +1,15 @@
 from flask import (
   Blueprint,
   current_app,
-  redirect,
   render_template,
   request,
   send_from_directory,
-  url_for,
 )
 
 from ..services.auth.authorization import check_permission
 from ..services.auth.context import get_current_user
 from ..services.data.inventory import get_items
 from ..services.data.locations import get_locations
-from ..services.data.setup import is_first_run
 from ..services.data.users import get_user
 from .auth import login_required
 
