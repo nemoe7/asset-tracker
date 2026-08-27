@@ -5,17 +5,15 @@ from flask import (
   render_template,
   request,
   send_from_directory,
-  session,
   url_for,
 )
 
 from ..services.auth.authorization import check_permission
-from ..services.data.db import get_db
+from ..services.auth.context import get_current_user
 from ..services.data.inventory import get_items
 from ..services.data.locations import get_locations
-from ..services.data.setup import (
-  is_first_run,
-)
+from ..services.data.setup import is_first_run
+from ..services.data.users import get_user
 from .auth import login_required
 
 main = Blueprint("main", __name__)
@@ -27,32 +25,12 @@ def index():
   if is_first_run():
     return redirect(url_for("auth.setup"))
 
-  user_id = session.get("user_id")
-
-  if user_id is None:
-    return redirect(url_for("auth.login"))
-
-  connection = get_db()
-
-  try:
-    user = connection.execute(
-      """
-      SELECT username
-      FROM users
-      WHERE id = ?
-        AND archived_at IS NULL
-      """,
-      (user_id,),
-    ).fetchone()
-  finally:
-    connection.close()
-
-  if user is None:
-    session.clear()
-    return redirect(url_for("auth.login"))
+  user_id = get_current_user()
+  user = get_user(user_id)
 
   search = request.args.get("search", "").strip()
   include_archived = request.args.get("include_archived") == "true"
+
   items = get_items(
     search=search,
     include_archived=include_archived,
