@@ -6,6 +6,7 @@ from flask import (
   url_for,
 )
 
+from app.services.checks import check_item
 from app.services.data.custom_field_values import set_custom_field_value
 from app.services.data.custom_fields import get_custom_field_by_name
 
@@ -166,3 +167,16 @@ def restore(item_id):
     return jsonify({"error": str(error)}), 400
 
   return redirect(url_for("main.index"))
+
+
+@inventory.route("/<item_id>/check", methods=["POST"])
+@login_required
+def check(item_id):
+  try:
+    item = check_item(item_id)
+  except ItemNotFoundError as error:
+    return jsonify({"error": str(error)}), 404
+  except ItemIsArchivedError as error:
+    return jsonify({"error": str(error)}), 400
+
+  return jsonify(item)
