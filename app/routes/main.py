@@ -22,9 +22,6 @@ main = Blueprint("main", __name__)
 @main.route("/")
 @login_required
 def index():
-  if is_first_run():
-    return redirect(url_for("auth.setup"))
-
   user_id = get_current_user()
   user = get_user(user_id)
 
