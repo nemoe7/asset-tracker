@@ -15,6 +15,7 @@ from ..services.data.custom_fields import (
   update_custom_field,
 )
 from ..services.exceptions.data.common import InvalidInputError
+from ..services.exceptions.data.custom_fields import CustomFieldNotFoundError
 from .auth import login_required
 
 custom_fields = Blueprint(
@@ -36,7 +37,7 @@ def create():
       field_type=field_type,
     )
   except InvalidInputError as error:
-    return str(error), 400
+    return jsonify({"error": str(error)}), 400
 
   if request.headers.get("Accept") == "application/json":
     return jsonify(
@@ -68,11 +69,7 @@ def get(field_id):
   field = get_custom_field(field_id)
 
   if field is None:
-    return jsonify(
-      {
-        "error": "Custom field not found",
-      }
-    ), 404
+    return jsonify({"error": "Custom field not found"}), 404
 
   return jsonify(field)
 
@@ -105,7 +102,9 @@ def update(field_id):
       **kwargs,
     )
   except InvalidInputError as error:
-    return str(error), 400
+    return jsonify({"error": str(error)}), 400
+  except CustomFieldNotFoundError as error:
+    return jsonify({"error": str(error)}), 404
 
   return redirect(url_for("main.index"))
 
@@ -116,7 +115,9 @@ def archive(field_id):
   try:
     archive_custom_field(field_id)
   except InvalidInputError as error:
-    return str(error), 400
+    return jsonify({"error": str(error)}), 400
+  except CustomFieldNotFoundError as error:
+    return jsonify({"error": str(error)}), 404
 
   return redirect(url_for("main.index"))
 
@@ -127,6 +128,8 @@ def restore(field_id):
   try:
     restore_custom_field(field_id)
   except InvalidInputError as error:
-    return str(error), 400
+    return jsonify({"error": str(error)}), 400
+  except CustomFieldNotFoundError as error:
+    return jsonify({"error": str(error)}), 404
 
   return redirect(url_for("main.index"))
