@@ -160,6 +160,7 @@ def test_admin_can_update_asset_custom_field_value(
   assert item_response.status_code == 200
   assert item_response.json["custom_fields"][field_name] == "SN12345"
 
+
 def test_admin_cannot_update_asset_with_invalid_location(
   gen_test_admin_client,
   gen_test_item,
@@ -194,4 +195,41 @@ def test_admin_cannot_update_nonexistent_asset(
   )
 
   assert response.status_code == 404
+  assert response.json["error"]
+
+
+def test_check_item(gen_test_admin_client, gen_test_item):
+  item_id = gen_test_item("Laptop")
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}/check",
+  )
+
+  assert response.status_code == 200
+  assert response.json["id"] == item_id
+  assert response.json["name"] == "Laptop"
+  assert response.json["location_id"] is None
+
+
+def test_check_item_not_found(gen_test_admin_client):
+  response = gen_test_admin_client.post(
+    "/inventory/does-not-exist/check",
+  )
+
+  assert response.status_code == 404
+  assert response.json["error"]
+
+
+def test_check_item_archived(gen_test_admin_client, gen_test_item):
+  item_id = gen_test_item("Laptop")
+
+  gen_test_admin_client.post(
+    f"/inventory/{item_id}/archive",
+  )
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}/check",
+  )
+
+  assert response.status_code == 400
   assert response.json["error"]
