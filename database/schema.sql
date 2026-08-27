@@ -123,20 +123,6 @@ CREATE TABLE inventory_item_fields (
 );
 
 
-CREATE TABLE checks (
-  id INTEGER PRIMARY KEY,
-  item_id TEXT NOT NULL,
-  user_id INTEGER NOT NULL,
-  checked_at TEXT NOT NULL,
-  FOREIGN KEY (item_id)
-    REFERENCES inventory_items(id)
-    ON DELETE RESTRICT,
-  FOREIGN KEY (user_id)
-    REFERENCES users(id)
-    ON DELETE RESTRICT
-);
-
-
 CREATE TABLE audit_log (
   id INTEGER PRIMARY KEY,
   user_id INTEGER NOT NULL,

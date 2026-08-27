@@ -86,13 +86,6 @@ Table inventory_item_fields {
   }
 }
 
-Table checks {
-  id integer [pk]
-  item_id text [not null]
-  user_id integer [not null]
-  checked_at text [not null]
-}
-
 Table audit_log {
   id integer [pk]
   user_id integer [not null]
@@ -146,9 +139,6 @@ Ref: user_permissions.permission_id > permissions.id
 
 Ref: inventory_item_fields.item_id > inventory_items.id
 Ref: inventory_item_fields.field_id > custom_fields.id
-
-Ref: checks.item_id > inventory_items.id
-Ref: checks.user_id > users.id
 
 Ref: audit_log.user_id > users.id
 
