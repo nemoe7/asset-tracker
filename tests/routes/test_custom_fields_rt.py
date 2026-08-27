@@ -193,7 +193,7 @@ def test_admin_cannot_create_custom_field_without_name(
   )
 
   assert response.status_code == 400
-  assert b"Custom field name cannot be empty" in response.data
+  assert response.json["error"] == "Custom field name cannot be empty"
 
 
 def test_admin_cannot_create_custom_field_with_whitespace_name(
@@ -208,7 +208,7 @@ def test_admin_cannot_create_custom_field_with_whitespace_name(
   )
 
   assert response.status_code == 400
-  assert b"Custom field name cannot be empty" in response.data
+  assert response.json["error"] == "Custom field name cannot be empty"
 
 
 def test_admin_cannot_create_custom_field_with_invalid_type(
@@ -223,7 +223,7 @@ def test_admin_cannot_create_custom_field_with_invalid_type(
   )
 
   assert response.status_code == 400
-  assert b"Invalid custom field type" in response.data
+  assert response.json["error"] == "Invalid custom field type"
 
 
 def test_admin_cannot_create_duplicate_custom_field(
@@ -246,7 +246,7 @@ def test_admin_cannot_create_duplicate_custom_field(
   )
 
   assert response.status_code == 400
-  assert b"Custom field already exists" in response.data
+  assert response.json["error"] == "Custom field already exists"
 
 
 def test_admin_cannot_update_nonexistent_custom_field(
@@ -260,7 +260,7 @@ def test_admin_cannot_update_nonexistent_custom_field(
   )
 
   assert response.status_code == 400
-  assert b"Custom field does not exist" in response.data
+  assert response.json["error"] == "Custom field does not exist"
 
 
 def test_admin_cannot_archive_nonexistent_custom_field(
@@ -271,7 +271,7 @@ def test_admin_cannot_archive_nonexistent_custom_field(
   )
 
   assert response.status_code == 400
-  assert b"Custom field does not exist" in response.data
+  assert response.json["error"] == "Custom field does not exist"
 
 
 def test_admin_cannot_restore_active_custom_field(
@@ -295,7 +295,7 @@ def test_admin_cannot_restore_active_custom_field(
   )
 
   assert response.status_code == 400
-  assert b"Custom field is not archived" in response.data
+  assert response.json["error"] == "Custom field is not archived"
 
 
 def test_admin_cannot_archive_already_archived_custom_field(
@@ -323,7 +323,7 @@ def test_admin_cannot_archive_already_archived_custom_field(
   )
 
   assert response.status_code == 400
-  assert b"Custom field is archived" in response.data
+  assert response.json["error"] == "Custom field is archived"
 
 
 def test_admin_can_list_custom_fields(
@@ -429,7 +429,7 @@ def test_admin_cannot_get_nonexistent_custom_field(
   )
 
   assert response.status_code == 404
-  assert b"Custom field not found" in response.data
+  assert response.json["error"] == "Custom field not found"
 
 
 def test_admin_cannot_update_custom_field_with_empty_name(
@@ -456,7 +456,7 @@ def test_admin_cannot_update_custom_field_with_empty_name(
   )
 
   assert response.status_code == 400
-  assert b"Custom field name cannot be empty" in response.data
+  assert response.json["error"] == "Custom field name cannot be empty"
 
 
 def test_admin_cannot_update_custom_field_with_invalid_type(
@@ -483,7 +483,7 @@ def test_admin_cannot_update_custom_field_with_invalid_type(
   )
 
   assert response.status_code == 400
-  assert b"Invalid custom field type" in response.data
+  assert response.json["error"] == "Invalid custom field type"
 
 
 def test_admin_cannot_update_custom_field_to_duplicate_name(
@@ -494,9 +494,6 @@ def test_admin_cannot_update_custom_field_to_duplicate_name(
     data={
       "name": "Serial Number",
       "field_type": "text",
-    },
-    headers={
-      "Accept": "application/json",
     },
   )
 
@@ -521,7 +518,7 @@ def test_admin_cannot_update_custom_field_to_duplicate_name(
   )
 
   assert response.status_code == 400
-  assert b"Custom field already exists" in response.data
+  assert response.json["error"] == "Custom field already exists"
 
 
 def test_admin_cannot_update_archived_custom_field(
@@ -552,7 +549,7 @@ def test_admin_cannot_update_archived_custom_field(
   )
 
   assert response.status_code == 400
-  assert b"Custom field is archived" in response.data
+  assert response.json["error"] == "Custom field is archived"
 
 
 def test_admin_cannot_update_custom_field_without_fields(
@@ -576,4 +573,4 @@ def test_admin_cannot_update_custom_field_without_fields(
   )
 
   assert response.status_code == 400
-  assert b"No fields to update" in response.data
+  assert response.json["error"] == "No fields to update"
