@@ -181,9 +181,9 @@ def gen_test_admin_client(gen_test_admin, gen_test_client, gen_password):
 
 @pytest.fixture
 def gen_test_item(gen_test_admin):
-  def _create(name):
+  def _create(name="Test Asset"):
     token = set_current_user(gen_test_admin)
-    uuid = create_item("Test Asset")
+    uuid = create_item(name)
     reset_current_user(token)
     return uuid
 

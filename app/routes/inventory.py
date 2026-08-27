@@ -6,7 +6,11 @@ from flask import (
   url_for,
 )
 
+from app.services.data.custom_field_values import set_custom_field_value
+from app.services.data.custom_fields import get_custom_field_by_name
+
 from ..services.data.inventory import (
+  _UNSET,
   archive_item,
   create_item,
   get_item,
@@ -78,10 +82,16 @@ def create():
 @login_required
 def update(item_id):
   name = request.form.get("name", "").strip()
-  location_id = request.form.get("location_id") or None
+
+  if not name:
+    name = _UNSET
+
+  location_id = request.form.get("location_id")
 
   if location_id is not None:
     location_id = int(location_id)
+  else:
+    location_id = _UNSET
 
   try:
     update_item(
@@ -89,6 +99,20 @@ def update(item_id):
       name=name,
       location_id=location_id,
     )
+
+    for key, value in request.form.items():
+      if key.startswith("f_"):
+        field_name = key[2:]
+        field = get_custom_field_by_name(field_name)
+
+        if field is None:
+          continue
+
+        set_custom_field_value(
+          item_id,
+          field["id"],
+          value,
+        )
   except ValueError:
     return redirect(url_for("main.index"))
 

@@ -489,7 +489,7 @@ def test_admin_cannot_update_custom_field_with_invalid_type(
 def test_admin_cannot_update_custom_field_to_duplicate_name(
   gen_test_admin_client,
 ):
-  first_response = gen_test_admin_client.post(
+  gen_test_admin_client.post(
     "/custom-fields",
     data={
       "name": "Serial Number",
@@ -511,7 +511,6 @@ def test_admin_cannot_update_custom_field_to_duplicate_name(
     },
   )
 
-  first_id = first_response.json["id"]
   second_id = second_response.json["id"]
 
   response = gen_test_admin_client.post(
