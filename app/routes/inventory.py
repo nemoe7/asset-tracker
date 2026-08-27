@@ -40,14 +40,21 @@ inventory = Blueprint(
 def index():
   search = request.args.get("search")
   location_id = request.args.get("location_id")
+  sort_by = request.args.get("sort_by", "name")
+  sort_order = request.args.get("sort_order", "asc")
 
   if location_id:
     location_id = int(location_id)
 
-  items = get_items(
-    search=search,
-    location_id=location_id,
-  )
+  try:
+    items = get_items(
+      search=search,
+      location_id=location_id,
+      sort_by=sort_by,
+      sort_order=sort_order,
+    )
+  except InvalidInputError as error:
+    return jsonify({"error": str(error)}), 400
 
   return jsonify(items)
 

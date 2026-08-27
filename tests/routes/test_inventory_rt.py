@@ -233,3 +233,74 @@ def test_check_item_archived(gen_test_admin_client, gen_test_item):
 
   assert response.status_code == 400
   assert response.json["error"]
+
+
+def test_admin_can_search_inventory(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  gen_test_item("Laptop")
+  gen_test_item("Monitor")
+
+  response = gen_test_admin_client.get(
+    "/inventory?search=Laptop",
+  )
+
+  assert response.status_code == 200
+  assert [item["name"] for item in response.json] == ["Laptop"]
+
+
+def test_admin_can_filter_inventory_by_location(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  storage_response = gen_test_admin_client.post(
+    "/locations",
+    data={"name": "Storage"},
+    headers={"Accept": "application/json"},
+  )
+  storage_id = storage_response.json["id"]
+
+  gen_test_item(
+    "Laptop",
+    location_id=storage_id,
+  )
+  gen_test_item("Monitor")
+
+  response = gen_test_admin_client.get(
+    f"/inventory?location_id={storage_id}",
+  )
+
+  assert response.status_code == 200
+  assert [item["name"] for item in response.json] == ["Laptop"]
+
+
+def test_admin_can_sort_inventory(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  gen_test_item("Monitor")
+  gen_test_item("Laptop")
+  gen_test_item("Keyboard")
+
+  response = gen_test_admin_client.get(
+    "/inventory?sort_by=name&sort_order=desc",
+  )
+
+  assert response.status_code == 200
+  assert [item["name"] for item in response.json] == [
+    "Monitor",
+    "Laptop",
+    "Keyboard",
+  ]
+
+
+def test_admin_cannot_use_invalid_sort_order(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.get(
+    "/inventory?sort_order=invalid",
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
