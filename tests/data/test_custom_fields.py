@@ -5,6 +5,7 @@ from app.services.data.custom_fields import (
   archive_custom_field,
   create_custom_field,
   get_custom_field,
+  get_custom_field_by_name,
   get_custom_fields,
   restore_custom_field,
   update_custom_field,
@@ -593,3 +594,19 @@ def test_restore_custom_field_succeeds_for_archived_field(gen_test_data_admin):
   archive_custom_field(field_id)
 
   assert restore_custom_field(field_id) is True
+
+def test_get_custom_field_by_name(gen_test_data_admin):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  field = get_custom_field_by_name("Serial Number")
+
+  assert field["id"] == field_id
+  assert field["name"] == "Serial Number"
+  assert field["field_type"] == "text"
+
+
+def test_get_nonexistent_custom_field_by_name(gen_test_data_admin):
+  assert get_custom_field_by_name("does-not-exist") is None

@@ -123,3 +123,39 @@ def test_admin_can_restore_asset(
   assert response.status_code == 200
   assert response.json["id"] == item_id
   assert response.json["archived_at"] is None
+
+
+def test_admin_can_update_asset_custom_field_value(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  field_response = gen_test_admin_client.post(
+    "/custom-fields",
+    data={
+      "name": "Serial Number",
+      "field_type": "text",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  field_name = field_response.json["name"]
+  item_id = gen_test_item(name="Test Asset")
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      f"f_{field_name}": "SN12345",
+      "name": "Test Asset",
+    },
+  )
+
+  assert response.status_code == 302
+
+  item_response = gen_test_admin_client.get(
+    f"/inventory/{item_id}",
+  )
+
+  assert item_response.status_code == 200
+  assert item_response.json["custom_fields"][field_name] == "SN12345"

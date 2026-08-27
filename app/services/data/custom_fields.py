@@ -141,6 +141,33 @@ def get_custom_field(field_id):
     return field
 
 
+def get_custom_field_by_name(name):
+  with db_connection() as connection:
+    field = connection.execute(
+      """
+      SELECT
+        id,
+        name,
+        field_type,
+        description,
+        required,
+        enum_values,
+        archived_at
+      FROM custom_fields
+      WHERE name = ?
+      """,
+      (name,),
+    ).fetchone()
+
+    if field is None:
+      return None
+
+    field = dict(field)
+    field["enum_values"] = _deserialize_enum_values(field)
+
+    return field
+
+
 def get_custom_fields(include_archived=False):
   with db_connection() as connection:
     query = """
