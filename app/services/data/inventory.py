@@ -92,11 +92,14 @@ def _build_item_query(
     conditions.append("inventory_items.name LIKE ?")
     parameters.append(f"%{search}%")
 
-  if location_id is not None:
-    _validate_location(location_id)
+  if location_id is not _UNSET:
+    if location_id is None:
+      conditions.append("inventory_items.location_id IS NULL")
+    else:
+      _validate_location(location_id)
 
-    conditions.append("inventory_items.location_id = ?")
-    parameters.append(location_id)
+      conditions.append("inventory_items.location_id = ?")
+      parameters.append(location_id)
 
   if custom_fields:
     for field_id, value in custom_fields.items():
@@ -300,7 +303,7 @@ def get_items(
 
 def get_items_paginated(
   search=None,
-  location_id=None,
+  location_id=_UNSET,
   include_archived=False,
   custom_fields=None,
   sort_by="name",
