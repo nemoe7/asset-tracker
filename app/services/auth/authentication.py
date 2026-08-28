@@ -6,8 +6,9 @@ from flask import (
   url_for,
 )
 
-from ..data.db import get_db
+from ..data.db import db_connection
 from ..data.setup import is_first_run
+from ..data.users import get_user
 from .context import (
   reset_current_user,
   set_current_user,
@@ -25,20 +26,8 @@ def login_required(view):
     if user_id is None:
       return redirect(url_for("auth.login"))
 
-    connection = get_db()
-
-    try:
-      user = connection.execute(
-        """
-        SELECT id
-        FROM users
-        WHERE id = ?
-          AND archived_at IS NULL
-        """,
-        (user_id,),
-      ).fetchone()
-    finally:
-      connection.close()
+    with db_connection():
+      user = get_user(user_id)
 
     if user is None:
       session.clear()

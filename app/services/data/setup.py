@@ -1,22 +1,33 @@
+import sqlite3
+
 from werkzeug.security import generate_password_hash
 
 from ..auth.context import reset_current_user, set_current_user
 from .audit import create_audit_log
-from .db import db_connection, db_transaction
+from .db import db_connection, db_transaction, init_db
 from .users import _validate_password, _validate_username
 
 
 def is_first_run():
-  with db_connection() as connection:
-    result = connection.execute(
-      """
-      SELECT 1
-      FROM users
-      LIMIT 1
-      """
-    ).fetchone()
+  try:
+    with db_connection() as connection:
+      result = connection.execute(
+        """
+        SELECT 1
+        FROM users
+        LIMIT 1
+        """
+      ).fetchone()
 
-    return result is None
+      return result is None
+  except sqlite3.OperationalError as oe:
+    if oe.sqlite_errorcode == sqlite3.SQLITE_CANTOPEN or (
+      oe.sqlite_errorcode == sqlite3.SQLITE_ERROR
+      and str(oe).startswith("no such table:")
+    ):
+      init_db()
+      return True
+    raise
 
 
 def create_initial_admin(username, name, password):
