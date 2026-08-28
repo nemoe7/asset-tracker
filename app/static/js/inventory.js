@@ -159,9 +159,7 @@ const filterItemModal = document.getElementById('filter-item-modal');
 const closeFilterItemModal = document.getElementById('close-filter-item-modal');
 const clearFilterItem = document.getElementById('clear-filter-item');
 
-const locationFilterOptions = document.getElementById(
-  'location-filter-options'
-);
+const filterLocation = document.getElementById('filter-location');
 
 
 // Load current locations.
@@ -175,33 +173,20 @@ async function loadLocations() {
 
     const locations = await response.json();
 
-    const selectedLocationIds = new Set(
-      [...filterForm.querySelectorAll('input[name="location_id"]:checked')]
-        .map((input) => input.value)
-    );
+    if (filterLocation) {
+      const selectedValue = filterLocation.value;
 
-    if (locationFilterOptions) {
-      locationFilterOptions.replaceChildren();
+      filterLocation.replaceChildren(
+        new Option('<All Locations>', '')
+      );
 
       for (const location of locations) {
-        const label = document.createElement('label');
-        label.className = 'flex items-center gap-3 text-sm text-zinc-300';
-
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.name = 'location_id';
-        input.value = location.id;
-        input.checked = selectedLocationIds.has(String(location.id));
-        input.className =
-          'h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-zinc-500';
-
-        const span = document.createElement('span');
-        span.className = 'min-w-0 truncate';
-        span.textContent = location.name;
-
-        label.append(input, span);
-        locationFilterOptions.append(label);
+        filterLocation.append(
+          new Option(location.name, location.id)
+        );
       }
+
+      filterLocation.value = selectedValue;
     }
 
     for (const select of [addItemLocation, editItemLocation]) {
@@ -607,11 +592,8 @@ function resetInventoryFilters() {
     includeArchived.checked = false;
   }
 
-  for (
-    const checkbox of
-    filterForm?.querySelectorAll('input[name="location_id"]') || []
-  ) {
-    checkbox.checked = false;
+  if (filterLocation) {
+    filterLocation.value = '';
   }
 }
 
