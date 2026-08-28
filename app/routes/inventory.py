@@ -170,12 +170,12 @@ def update(item_id):
 
   location_id = request.form.get("location_id")
 
-  if location_id:
-    location_id = int(location_id)
-  else:
-    location_id = None
-
   try:
+    if location_id:
+      location_id = int(location_id)
+    else:
+      location_id = None
+
     update_item(
       item_id,
       name=name,
@@ -195,9 +195,7 @@ def update(item_id):
           field["id"],
           value,
         )
-  except InvalidInputError as error:
-    return jsonify({"error": str(error)}), 400
-  except LocationNotFoundError as error:
+  except (InvalidInputError, ValueError) as error:
     return jsonify({"error": str(error)}), 400
   except ItemNotFoundError as error:
     return jsonify({"error": str(error)}), 404
