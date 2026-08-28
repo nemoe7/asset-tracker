@@ -30,8 +30,6 @@ def index():
     include_archived=include_archived,
   )
 
-  locations = get_locations()
-
   can_manage_users = check_permission(
     user_id,
     "users.manage",
@@ -40,7 +38,6 @@ def index():
   return render_template(
     "inventory/index.jinja",
     items=items,
-    locations=locations,
     search=search,
     page=1,
     total_pages=1,
