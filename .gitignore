@@ -24,7 +24,8 @@ htmlcov/
 logs/
 
 # Misc.
-.diff
+**/.diff
+**/*.session.sql
 
 # Node
 node_modules/

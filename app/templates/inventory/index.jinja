@@ -1,684 +1,307 @@
 {% extends "base.jinja" %}
 
-{% block title %}
-Inventory
-{% endblock %}
+{% block title %}Inventory{% endblock %}
 
-{% block content %}
+{% block body %}
+<div class="min-h-screen bg-zinc-950 text-zinc-100">
+  <header class="border-b border-zinc-800 bg-zinc-900">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+      <div>
+        <h1 class="text-xl font-semibold tracking-tight">
+          Inventory
+        </h1>
 
-<main>
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <h1 class="text-2xl font-bold">
-        Inventory
-      </h1>
-
-      <div class="md:hidden">
-        <button type="button" onclick="openQrScanner()"
-          class="rounded-lg bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-100 hover:bg-zinc-600">
-          Scan QR
-        </button>
+        <p class="mt-1 text-sm text-zinc-400">
+          Manage your inventory items.
+        </p>
       </div>
-    </div>
 
-    <div class="relative">
-      <details class="group">
-        <summary
-          class="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full bg-zinc-700 text-sm font-semibold text-zinc-100 hover:bg-zinc-600"
-          title="{{ username }}">
-          {{ username[0]|upper }}
-        </summary>
+      <div class="flex items-center gap-3">
+        <span class="hidden text-sm text-zinc-400 sm:block">
+          {{ username }}
+        </span>
 
-        <div class="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-zinc-700 bg-zinc-800 shadow-xl">
-          <div class="border-b border-zinc-700 px-5 py-3">
-            <p class="truncate text-sm font-medium text-zinc-100">
-              {{ username }}
-            </p>
-          </div>
-
-          <div class="p-2">
-            {% if can_manage_users %}
-            <a href="{{ url_for('admin.users') }}"
-              class="block rounded-lg px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
-              Manage Users
-            </a>
-            {% endif %}
-
-            <form method="post" action="{{ url_for('auth.logout') }}" class="mt-1">
-              <button type="submit"
-                class="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-400 hover:bg-red-950/50 hover:text-red-300">
-                Log out
-              </button>
-            </form>
-          </div>
-        </div>
-      </details>
-    </div>
-  </div>
-
-  <div class="mt-6 rounded-xl border border-zinc-700 bg-zinc-800">
-    <div class="border-b border-zinc-700 p-4">
-      <div class="flex gap-3">
-        <form method="get" class="flex min-w-0 flex-1 gap-3">
-          <input type="search" name="search" value="{{ search }}" placeholder="Search inventory..."
-            class="min-w-0 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 placeholder-zinc-500 outline-none focus:border-zinc-400">
-
-          <button type="submit"
-            class="shrink-0 rounded-lg bg-zinc-100 px-5 py-2 font-medium text-zinc-900 hover:bg-zinc-200">
-            Search
-          </button>
-        </form>
-
-        <button type="button" onclick="document.getElementById('add-item-modal').showModal()"
-          class="shrink-0 rounded-lg bg-zinc-700 px-5 py-2 font-medium text-zinc-100 hover:bg-zinc-600">
-          Add Item
-        </button>
-      </div>
-    </div>
-
-    <div class="hidden md:block">
-      <table class="w-full table-fixed text-left text-sm">
-        <thead class="border-b border-zinc-700 text-zinc-400">
-          <tr>
-            <th class="px-4 py-3 font-medium">
-              Name
-            </th>
-
-            <th class="w-64 px-4 py-3 font-medium">
-              Location
-            </th>
-
-            <th class="w-40 whitespace-nowrap px-4 py-3 font-medium">
-              Updated
-            </th>
-
-            <th class="w-24 whitespace-nowrap px-4 py-3 text-center font-medium">
-              Actions
-            </th>
-          </tr>
-        </thead>
-
-        <tbody class="divide-y divide-zinc-700">
-          {% for item in items %}
-          {% include "inventory/item_table.jinja" %}
-          {% else %}
-          <tr>
-            <td colspan="4" class="px-4 py-10 text-center text-zinc-500">
-              No inventory items found.
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="divide-y divide-zinc-700 md:hidden">
-      {% for item in items %}
-      {% include "inventory/item_card.jinja" %}
-      {% else %}
-      <div class="px-4 py-10 text-center text-zinc-500">
-        No inventory items found.
-      </div>
-      {% endfor %}
-    </div>
-
-    <div class="flex items-center justify-between border-t border-zinc-700 p-4">
-      <span class="text-sm text-zinc-400">
-        Page {{ page }} of {{ total_pages }}
-      </span>
-
-      <div class="flex gap-2">
-        {% if page > 1 %}
-        <a href="?page={{ page - 1 }}&search={{ search }}"
-          class="rounded-lg border border-zinc-600 px-4 py-2 text-sm hover:bg-zinc-700">
-          Previous
+        {% if can_manage_users %}
+        <a href="{{ url_for('admin.users') }}"
+          class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+          Users
         </a>
         {% endif %}
 
-        {% if page < total_pages %} <a href="?page={{ page + 1 }}&search={{ search }}"
-          class="rounded-lg border border-zinc-600 px-4 py-2 text-sm hover:bg-zinc-700">
-          Next
-          </a>
-          {% endif %}
+        <a href="{{ url_for('auth.logout') }}"
+          class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+          Log out
+        </a>
       </div>
     </div>
-  </div>
-</main>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+      <form method="get" action="{{ url_for('main.index') }}" class="w-full sm:flex-1">
+        <label for="search" class="sr-only">
+          Search inventory
+        </label>
+
+        <input id="search" name="search" type="search" value="{{ search }}" placeholder="Search inventory..."
+          class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+      </form>
+
+      <button type="button" id="add-item-button"
+        class="w-full rounded-lg bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950 sm:w-auto">
+        <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
+        Add item
+      </button>
+    </div>
+
+    {% if items %}
+    <section class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+      <div class="hidden overflow-x-auto md:block">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-zinc-800">
+            <tr>
+              <th class="px-5 py-3 font-medium text-zinc-400">
+                Name
+              </th>
+
+              <th class="px-5 py-3 font-medium text-zinc-400">
+                Location
+              </th>
+
+              <th class="px-5 py-3 text-center font-medium text-zinc-400 w-px whitespace-nowrap">
+                Actions
+              </th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-zinc-800">
+            {% for item in items %}
+            <tr class="transition hover:bg-zinc-800/60">
+              <td class="px-5 py-4 font-medium text-zinc-100">
+                {{ item["name"] }}
+              </td>
+
+              <td class="px-5 py-4 text-zinc-400">
+                {{ item["location_name"] or "No location" }}
+              </td>
+
+              <td class="px-5 py-4">
+                <div class="flex justify-end gap-1">
+                  <button type="button"
+                    class="copy-item-id rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+                    data-item-id="{{ item['id'] }}" title="Copy ID" aria-label="Copy ID">
+                    <i class="bi bi-copy" aria-hidden="true"></i>
+                  </button>
+
+                  <button type="button"
+                    class="edit-item rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+                    data-item-id="{{ item['id'] }}" title="Edit asset" aria-label="Edit asset">
+                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="divide-y divide-zinc-800 md:hidden">
+        {% for item in items %}
+        <article class="p-4 transition hover:bg-zinc-800/60">
+          <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <h2 class="truncate font-medium text-zinc-100">
+                {{ item["name"] }}
+              </h2>
+
+              <p class="mt-1 text-sm text-zinc-400">
+                {{ item["location_name"] or "No location" }}
+              </p>
+            </div>
+
+            <div class="flex shrink-0 gap-1">
+              <button type="button"
+                class="copy-item-id rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+                data-item-id="{{ item['id'] }}" title="Copy ID" aria-label="Copy ID">
+                <i class="bi bi-copy" aria-hidden="true"></i>
+              </button>
+
+              <button type="button"
+                class="edit-item rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+                data-item-id="{{ item['id'] }}" title="Edit asset" aria-label="Edit asset">
+                <i class="bi bi-pencil" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% else %}
+    <section class="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/50 px-6 py-16 text-center">
+      <i class="bi bi-box-seam text-3xl text-zinc-600" aria-hidden="true"></i>
+
+      <h2 class="mt-4 text-lg font-medium text-zinc-200">
+        No inventory items
+      </h2>
+
+      {% if search %}
+      <p class="mt-2 text-sm text-zinc-400">
+        No items match "{{ search }}".
+      </p>
+      {% else %}
+      <p class="mt-2 text-sm text-zinc-400">
+        Add your first inventory item to get started.
+      </p>
+      {% endif %}
+
+      <button type="button" id="empty-add-item-button"
+        class="mt-6 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+        <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
+        Add item
+      </button>
+    </section>
+    {% endif %}
+  </main>
+</div>
 
 <dialog id="add-item-modal"
-  class="mx-auto my-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
-  <div class="p-6">
-    <div class="flex items-center justify-between">
-      <h2 class="text-xl font-semibold">
-        Add Item
-      </h2>
+  class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+  <form method="post" action="{{ url_for('inventory.create') }}" class="p-6">
+    <div class="mb-6 flex items-start justify-between gap-4">
+      <div>
+        <h2 class="text-lg font-semibold">
+          Add item
+        </h2>
 
-      <button type="button" onclick="document.getElementById('add-item-modal').close()"
-        class="text-2xl text-zinc-400 hover:text-zinc-100">
-        &times;
+        <p class="mt-1 text-sm text-zinc-400">
+          Add a new item to the inventory.
+        </p>
+      </div>
+
+      <button type="button" id="close-add-item-modal"
+        class="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100" aria-label="Close">
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
       </button>
     </div>
 
-    {% if error %}
-    <div class="mt-4 rounded-lg border border-red-900 bg-red-950/50 px-4 py-3 text-sm text-red-300">
-      {{ error }}
-    </div>
-    {% endif %}
-
-    <form method="post" action="{{ url_for('inventory.create') }}" class="mt-6 space-y-5">
+    <div class="space-y-5">
       <div>
-        <label for="item-name" class="block text-sm font-medium text-zinc-300">
+        <label for="item-name" class="mb-2 block text-sm font-medium text-zinc-300">
           Name
         </label>
 
-        <input id="item-name" name="name" type="text" value="{{ name or '' }}" required autofocus
-          class="mt-2 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
+        <input id="item-name" name="name" type="text" required
+          class="block w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
       </div>
 
       <div>
-        <label for="add-item-location" class="block text-sm font-medium text-zinc-300">
+        <label for="item-location" class="mb-2 block text-sm font-medium text-zinc-300">
           Location
         </label>
 
-        <div class="mt-2 flex gap-2">
-          <select id="add-item-location" name="location_id"
-            class="min-w-0 flex-1 rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
-            <option value="">
-              No location
-            </option>
+        <div class="relative">
+          <select id="item-location" name="location_id"
+            class="block w-full appearance-none rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 pr-10 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+            <option value="">No location</option>
 
             {% for location in locations %}
-            <option value="{{ location.id }}">
-              {{ location.name }}
+            <option value="{{ location['id'] }}">
+              {{ location['name'] }}
             </option>
             {% endfor %}
           </select>
 
-          <button type="button" onclick="enableQuickAddLocation('add')"
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-700 text-xl text-zinc-100 hover:bg-zinc-600"
-            title="Add location">
-            +
-          </button>
-        </div>
-
-        <div id="add-location-quick" class="mt-2 hidden">
-          <div class="flex gap-2">
-            <input id="add-location-name" type="text" placeholder="New location name"
-              class="min-w-0 flex-1 rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
-
-            <button type="button" onclick="createQuickLocation('add')"
-              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-lg font-medium text-zinc-900 hover:bg-zinc-200"
-              title="Create location">
-              ✓
-            </button>
-
-            <button type="button" onclick="cancelQuickAddLocation('add')"
-              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-600 text-lg text-zinc-300 hover:bg-zinc-700"
-              title="Cancel">
-              &times;
-            </button>
-          </div>
-
-          <p id="add-location-error" class="mt-2 hidden text-sm text-red-400"></p>
+          <i class="bi bi-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+            aria-hidden="true"></i>
         </div>
       </div>
+    </div>
 
-      <div class="flex justify-end gap-3">
-        <button type="button" onclick="document.getElementById('add-item-modal').close()"
-          class="rounded-lg border border-zinc-600 px-4 py-2 text-zinc-300 hover:bg-zinc-700">
-          Cancel
-        </button>
+    <div class="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <button type="button" id="cancel-add-item"
+        class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+        Cancel
+      </button>
 
-        <button type="submit" class="rounded-lg bg-zinc-100 px-4 py-2 font-medium text-zinc-900 hover:bg-zinc-200">
-          Create Item
-        </button>
-      </div>
-    </form>
-  </div>
+      <button type="submit"
+        class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-900">
+        <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
+        Add item
+      </button>
+    </div>
+  </form>
 </dialog>
+<dialog id="edit-item-modal"
+  class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+  <form id="edit-item-form" method="post" class="p-6">
+    <div class="mb-6 flex items-start justify-between gap-4">
+      <div>
+        <h2 class="text-lg font-semibold">
+          Edit asset
+        </h2>
 
-{% for item in items %}
-<dialog id="edit-item-{{ item.id }}"
-  class="mx-auto my-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
-  <div class="p-6">
-    <div class="flex items-center justify-between">
-      <h2 class="text-xl font-semibold">
-        Edit Item
-      </h2>
+        <p class="mt-1 text-sm text-zinc-400">
+          Update the asset information.
+        </p>
+      </div>
 
-      <button type="button" onclick="document.getElementById('edit-item-{{ item.id }}').close()"
-        class="text-2xl text-zinc-400 hover:text-zinc-100">
-        &times;
+      <button type="button" id="close-edit-item-modal"
+        class="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100" aria-label="Close">
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
       </button>
     </div>
 
-    <p class="mt-2 font-mono text-xs text-zinc-500">
-      {{ item.id }}
-    </p>
-
-    <form method="post" action="{{ url_for('inventory.update', item_id=item.id) }}" class="mt-6 space-y-5">
+    <div class="space-y-5">
       <div>
-        <label for="edit-name-{{ item.id }}" class="block text-sm font-medium text-zinc-300">
+        <label for="edit-item-name" class="mb-2 block text-sm font-medium text-zinc-300">
           Name
         </label>
 
-        <input id="edit-name-{{ item.id }}" name="name" type="text" value="{{ item.name }}" required
-          class="mt-2 w-full rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
+        <input id="edit-item-name" name="name" type="text" required
+          class="block w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
       </div>
 
       <div>
-        <label for="edit-item-location-{{ item.id }}" class="block text-sm font-medium text-zinc-300">
+        <label for="edit-item-location" class="mb-2 block text-sm font-medium text-zinc-300">
           Location
         </label>
 
-        <div class="mt-2 flex gap-2">
-          <select id="edit-item-location-{{ item.id }}" name="location_id"
-            class="min-w-0 flex-1 rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
-            <option value="">
-              No location
-            </option>
+        <div class="relative">
+          <select id="edit-item-location" name="location_id"
+            class="block w-full appearance-none rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 pr-10 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+            <option value="">No location</option>
 
             {% for location in locations %}
-            <option value="{{ location.id }}" {% if item.location_id==location.id %}selected{% endif %}>
-              {{ location.name }}
+            <option value="{{ location['id'] }}">
+              {{ location['name'] }}
             </option>
             {% endfor %}
           </select>
 
-          <button type="button" onclick="enableQuickAddLocation('edit-{{ item.id }}')"
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-700 text-xl text-zinc-100 hover:bg-zinc-600"
-            title="Add location">
-            +
-          </button>
-        </div>
-
-        <div id="edit-{{ item.id }}-location-quick" class="mt-2 hidden">
-          <div class="flex gap-2">
-            <input id="edit-{{ item.id }}-location-name" type="text" placeholder="New location name"
-              class="min-w-0 flex-1 rounded-lg border border-zinc-600 bg-zinc-900 px-4 py-2 text-zinc-100 outline-none focus:border-zinc-400">
-
-            <button type="button" onclick="createQuickLocation('edit-{{ item.id }}')"
-              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-lg font-medium text-zinc-900 hover:bg-zinc-200"
-              title="Create location">
-              ✓
-            </button>
-
-            <button type="button" onclick="cancelQuickAddLocation('edit-{{ item.id }}')"
-              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-600 text-lg text-zinc-300 hover:bg-zinc-700"
-              title="Cancel">
-              &times;
-            </button>
-          </div>
-
-          <p id="edit-{{ item.id }}-location-error" class="mt-2 hidden text-sm text-red-400"></p>
+          <i class="bi bi-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+            aria-hidden="true"></i>
         </div>
       </div>
+    </div>
 
-      <div class="flex items-center justify-between gap-3 pt-2">
-        <button type="submit" formaction="{{ url_for('inventory.archive', item_id=item.id) }}"
-          class="shrink-0 rounded-lg px-4 py-2 text-sm text-red-400 hover:bg-red-950/50 hover:text-red-300">
-          Archive
-        </button>
+    <div class="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <button type="button" id="cancel-edit-item"
+        class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+        Cancel
+      </button>
 
-        <div class="flex shrink-0 gap-3">
-          <button type="button" onclick="document.getElementById('edit-item-{{ item.id }}').close()"
-            class="rounded-lg border border-zinc-600 px-4 py-2 text-zinc-300 hover:bg-zinc-700">
-            Cancel
-          </button>
-
-          <button type="submit" class="rounded-lg bg-zinc-100 px-4 py-2 font-medium text-zinc-900 hover:bg-zinc-200">
-            Save Changes
-          </button>
-        </div>
-      </div>
-    </form>
-  </div>
-</dialog>
-{% endfor %}
-
-<dialog id="qr-scanner-modal"
-  class="mx-auto my-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
-  <div class="p-6">
-    <div class="flex items-center justify-between">
-      <h2 class="text-xl font-semibold">
-        Scan QR Code
-      </h2>
-
-      <button type="button" onclick="closeQrScanner()" class="text-2xl text-zinc-400 hover:text-zinc-100">
-        &times;
+      <button type="submit"
+        class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+        <i class="bi bi-check-lg mr-1" aria-hidden="true"></i>
+        Save changes
       </button>
     </div>
-
-    <div class="mt-5 overflow-hidden rounded-xl bg-black">
-      <div id="qr-reader" class="w-full"></div>
-    </div>
-
-    <p id="qr-scanner-status" class="mt-4 text-center text-sm text-zinc-400">
-      Point your camera at an inventory QR code.
-    </p>
-  </div>
+  </form>
 </dialog>
+{% endblock %}
 
-<div id="copy-toast"
-  class="pointer-events-none fixed z-50 max-w-[min(16rem,calc(100vw-2rem))] -translate-y-1/2 truncate rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 opacity-0 shadow-xl transition-opacity duration-200">
-</div>
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-
-<script>
-  let qrScanner = null;
-  let qrScannerRunning = false;
-  let copyToastTimeout;
-
-  function openEditItem(id) {
-    const modal = document.getElementById(`edit-item-${id}`);
-
-    if (modal) {
-      modal.showModal();
-    }
-  }
-
-  function openQrScanner() {
-    const modal = document.getElementById("qr-scanner-modal");
-
-    modal.showModal();
-    startQrScanner();
-  }
-
-  async function startQrScanner() {
-    const status = document.getElementById("qr-scanner-status");
-
-    status.textContent = "Starting camera...";
-
-    if (qrScanner) {
-      return;
-    }
-
-    qrScanner = new Html5Qrcode("qr-reader");
-
-    try {
-      qrScannerRunning = true;
-
-      await qrScanner.start(
-        {
-          facingMode: "environment"
-        },
-        {
-          fps: 10,
-          qrbox: {
-            width: 250,
-            height: 250
-          }
-        },
-        async (decodedText) => {
-          if (!qrScannerRunning) {
-            return;
-          }
-
-          qrScannerRunning = false;
-          status.textContent = "QR code scanned.";
-
-          await stopQrScanner();
-
-          const scannerModal =
-            document.getElementById("qr-scanner-modal");
-
-          if (scannerModal.open) {
-            scannerModal.close();
-          }
-
-          const itemId = decodedText.trim();
-
-          const itemModal =
-            document.getElementById(`edit-item-${itemId}`);
-
-          if (itemModal) {
-            itemModal.showModal();
-          } else {
-            window.location.href =
-              "{{ url_for('main.index') }}" +
-              "?id=" +
-              encodeURIComponent(itemId);
-          }
-        },
-        () => {
-          // Ignore failed frames.
-        }
-      );
-
-      status.textContent =
-        "Point your camera at an inventory QR code.";
-    } catch (error) {
-      console.error("QR scanner error:", error);
-
-      qrScannerRunning = false;
-      qrScanner = null;
-
-      status.textContent =
-        error?.message ||
-        "Unable to access the camera.";
-    }
-  }
-
-  async function stopQrScanner() {
-    if (!qrScanner) {
-      qrScannerRunning = false;
-      return;
-    }
-
-    try {
-      if (qrScannerRunning) {
-        await qrScanner.stop();
-      }
-
-      await qrScanner.clear();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      qrScanner = null;
-      qrScannerRunning = false;
-    }
-  }
-
-  async function closeQrScanner() {
-    await stopQrScanner();
-
-    document
-      .getElementById("qr-scanner-modal")
-      .close();
-  }
-
-  document
-    .getElementById("qr-scanner-modal")
-    .addEventListener("close", () => {
-      stopQrScanner();
-    });
-
-  function copyItemId(id, button) {
-    navigator.clipboard.writeText(id);
-
-    const toast = document.getElementById("copy-toast");
-
-    toast.textContent = `Copied: ${id}`;
-
-    const rect = button.getBoundingClientRect();
-
-    toast.style.left = `${rect.left - 8}px`;
-    toast.style.top = `${rect.top + rect.height / 2}px`;
-    toast.style.transform =
-      "translate(-100%, -50%) translateX(16px)";
-
-    clearTimeout(copyToastTimeout);
-
-    toast.classList.remove("opacity-0");
-    toast.classList.add("opacity-100");
-
-    requestAnimationFrame(() => {
-      toast.style.transform =
-        "translate(-100%, -50%) translateX(0)";
-    });
-
-    copyToastTimeout = setTimeout(() => {
-      toast.classList.remove("opacity-100");
-      toast.classList.add("opacity-0");
-
-      setTimeout(() => {
-        toast.style.transform =
-          "translate(-100%, -50%) translateX(16px)";
-      }, 200);
-    }, 2300);
-  }
-
-  function enableQuickAddLocation(prefix) {
-    const select = document.getElementById(
-      prefix === "add"
-        ? "add-item-location"
-        : `edit-item-location-${prefix.replace("edit-", "")}`
-    );
-
-    const quick = document.getElementById(
-      prefix === "add"
-        ? "add-location-quick"
-        : `${prefix}-location-quick`
-    );
-
-    const input = document.getElementById(
-      prefix === "add"
-        ? "add-location-name"
-        : `${prefix}-location-name`
-    );
-
-    select.parentElement.classList.add("hidden");
-    quick.classList.remove("hidden");
-    input.focus();
-  }
-
-  function cancelQuickAddLocation(prefix) {
-    const select = document.getElementById(
-      prefix === "add"
-        ? "add-item-location"
-        : `edit-item-location-${prefix.replace("edit-", "")}`
-    );
-
-    const quick = document.getElementById(
-      prefix === "add"
-        ? "add-location-quick"
-        : `${prefix}-location-quick`
-    );
-
-    const input = document.getElementById(
-      prefix === "add"
-        ? "add-location-name"
-        : `${prefix}-location-name`
-    );
-
-    const error = document.getElementById(
-      prefix === "add"
-        ? "add-location-error"
-        : `${prefix}-location-error`
-    );
-
-    quick.classList.add("hidden");
-    select.parentElement.classList.remove("hidden");
-
-    input.value = "";
-    error.textContent = "";
-    error.classList.add("hidden");
-  }
-
-  async function createQuickLocation(prefix) {
-    const select = document.getElementById(
-      prefix === "add"
-        ? "add-item-location"
-        : `edit-item-location-${prefix.replace("edit-", "")}`
-    );
-
-    const quick = document.getElementById(
-      prefix === "add"
-        ? "add-location-quick"
-        : `${prefix}-location-quick`
-    );
-
-    const input = document.getElementById(
-      prefix === "add"
-        ? "add-location-name"
-        : `${prefix}-location-name`
-    );
-
-    const error = document.getElementById(
-      prefix === "add"
-        ? "add-location-error"
-        : `${prefix}-location-error`
-    );
-
-    const name = input.value.trim();
-
-    error.textContent = "";
-    error.classList.add("hidden");
-
-    if (!name) {
-      error.textContent = "Location name cannot be empty";
-      error.classList.remove("hidden");
-      input.focus();
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        "{{ url_for('locations.create') }}",
-        {
-          method: "POST",
-          headers: {
-            "Accept": "application/json",
-            "Content-Type":
-              "application/x-www-form-urlencoded"
-          },
-          body: new URLSearchParams({
-            name: name
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        error.textContent =
-          data.error ||
-          "Unable to create location";
-
-        error.classList.remove("hidden");
-        input.focus();
-        return;
-      }
-
-      const option = new Option(
-        data.name,
-        data.id,
-        true,
-        true
-      );
-
-      select.add(option);
-
-      quick.classList.add("hidden");
-      select.parentElement.classList.remove("hidden");
-      input.value = "";
-    } catch (requestError) {
-      console.error(requestError);
-
-      error.textContent =
-        "Unable to create location";
-
-      error.classList.remove("hidden");
-    }
-  }
-</script>
-
-{% if error %}
-<script>
-  document
-    .getElementById("add-item-modal")
-    .showModal();
-</script>
-{% endif %}
-
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/inventory.js') }}"></script>
 {% endblock %}

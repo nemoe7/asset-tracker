@@ -29,7 +29,7 @@ def setup():
   if not is_first_run():
     return redirect(url_for("main.index"))
 
-  return render_template("setup.jinja")
+  return render_template("auth/setup.jinja")
 
 
 @auth.route("/setup", methods=["POST"])
@@ -44,7 +44,7 @@ def setup_post():
 
   if password != confirm_password:
     return render_template(
-      "setup.jinja",
+      "auth/setup.jinja",
       error="Passwords do not match.",
       username=username,
       display_name=display_name,
@@ -58,7 +58,7 @@ def setup_post():
     )
   except (InvalidUsernameError, InvalidPasswordError) as error:
     return render_template(
-      "setup.jinja",
+      "auth/setup.jinja",
       error=str(error),
       username=username,
       display_name=display_name,
@@ -78,7 +78,7 @@ def login():
   if session.get("user_id") is not None:
     return redirect(url_for("main.index"))
 
-  return render_template("login.jinja")
+  return render_template("auth/login.jinja")
 
 
 @auth.route("/login", methods=["POST"])
@@ -97,7 +97,7 @@ def login_post():
     or not verify_password(user["id"], password)
   ):
     return render_template(
-      "login.jinja",
+      "auth/login.jinja",
       error="Invalid username or password.",
       username=username,
     )

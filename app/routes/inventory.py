@@ -65,14 +65,16 @@ def create():
   name = request.form.get("name", "").strip()
   location_id = request.form.get("location_id")
 
-  if location_id:
-    location_id = int(location_id)
-
   try:
-    item_id = create_item(
-      name=name,
-      location_id=location_id,
-    )
+    if location_id:
+      item_id = create_item(
+        name=name,
+        location_id=int(location_id),
+      )
+    else:
+      item_id = create_item(
+        name=name,
+      )
   except InvalidInputError as error:
     return jsonify({"error": str(error)}), 400
   except LocationNotFoundError as error:
@@ -115,7 +117,7 @@ def update(item_id):
 
   location_id = request.form.get("location_id")
 
-  if location_id is not None:
+  if location_id is not None and location_id != "":
     location_id = int(location_id)
   else:
     location_id = _UNSET

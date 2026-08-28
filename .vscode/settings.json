@@ -1,4 +1,12 @@
 {
   "python.testing.pytestArgs": ["tests", "-n", "auto"],
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestEnabled": true,
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "driver": "SQLite",
+      "name": "inventory-management-dev",
+      "database": "./.data/inventory.db"
+    }
+  ]
 }
