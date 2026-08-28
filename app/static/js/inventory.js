@@ -178,7 +178,8 @@ async function loadLocations() {
       const selectedValue = filterLocation.value;
 
       filterLocation.replaceChildren(
-        new Option('<All Locations>', '')
+        new Option('<All Locations>', ''),
+        new Option('<No Location>', '__none__')
       );
 
       for (const location of locations) {

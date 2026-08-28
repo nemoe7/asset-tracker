@@ -1,3 +1,5 @@
+import logging
+
 from flask import (
   Blueprint,
   jsonify,
@@ -29,6 +31,8 @@ from ..services.exceptions.data.inventory import (
 from ..services.exceptions.data.locations import LocationNotFoundError
 from .auth import login_required
 
+logger = logging.getLogger(__name__)
+
 inventory = Blueprint(
   "inventory",
   __name__,
@@ -44,9 +48,14 @@ def index():
   sort_by = request.args.get("sort_by", "name")
   sort_order = request.args.get("sort_order", "asc")
   include_archived = request.args.get("include_archived") == "true"
-
   try:
-    location_id = int(location_id) if location_id else None
+    if location_id == "__none__":
+      location_id = None
+    elif location_id:
+      location_id = int(location_id)
+    else:
+      location_id = _UNSET
+
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 25))
 
@@ -75,7 +84,12 @@ def fragment():
   include_archived = request.args.get("include_archived") == "true"
 
   try:
-    location_id = int(location_id) if location_id else None
+    if location_id == "__none__":
+      location_id = None
+    elif location_id:
+      location_id = int(location_id)
+    else:
+      location_id = _UNSET
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 25))
 
