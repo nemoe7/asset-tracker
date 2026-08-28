@@ -337,6 +337,9 @@
   .max-w-7xl {
     max-width: var(--container-7xl);
   }
+  .max-w-\[16rem\] {
+    max-width: 16rem;
+  }
   .max-w-md {
     max-width: var(--container-md);
   }
