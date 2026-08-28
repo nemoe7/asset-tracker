@@ -28,10 +28,12 @@
         </a>
         {% endif %}
 
-        <a href="{{ url_for('auth.logout') }}"
-          class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
-          Log out
-        </a>
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <button type="submit"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+            Log out
+          </button>
+        </form>
       </div>
     </div>
   </header>
