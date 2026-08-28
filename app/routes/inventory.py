@@ -43,6 +43,7 @@ def index():
   location_id = request.args.get("location_id")
   sort_by = request.args.get("sort_by", "name")
   sort_order = request.args.get("sort_order", "asc")
+  include_archived = request.args.get("include_archived") == "true"
 
   try:
     location_id = int(location_id) if location_id else None
@@ -52,6 +53,7 @@ def index():
     result = get_items_paginated(
       search=search,
       location_id=location_id,
+      include_archived=include_archived,
       sort_by=sort_by,
       sort_order=sort_order,
       page=page,
@@ -70,6 +72,7 @@ def fragment():
   location_id = request.args.get("location_id")
   sort_by = request.args.get("sort_by", "name")
   sort_order = request.args.get("sort_order", "asc")
+  include_archived = request.args.get("include_archived") == "true"
 
   try:
     location_id = int(location_id) if location_id else None
@@ -79,6 +82,7 @@ def fragment():
     result = get_items_paginated(
       search=search,
       location_id=location_id,
+      include_archived=include_archived,
       sort_by=sort_by,
       sort_order=sort_order,
       page=page,

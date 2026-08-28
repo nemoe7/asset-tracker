@@ -4,6 +4,10 @@ const inventoryContent = document.getElementById('inventory-content');
 const inventoryLoading = document.getElementById('inventory-loading');
 const searchInput = document.getElementById('search');
 const filterForm = document.getElementById('filter-item-form');
+const filterSortBy = document.getElementById('filter-sort-by');
+const includeArchived = document.querySelector(
+  'input[name="include_archived"]'
+);
 
 let inventorySearchTimeout = null;
 let inventoryRequest = null;
@@ -509,6 +513,32 @@ document
 
 
 // ==================== Initial Load ====================
+
+// ==================== Filter Defaults ====================
+
+function resetInventoryFilters() {
+  if (filterSortBy) {
+    filterSortBy.value = 'name';
+  }
+
+  const sortOrder = document.querySelector(
+    'input[name="sort_order"][value="asc"]'
+  );
+
+  if (sortOrder) {
+    sortOrder.checked = true;
+  }
+
+  if (includeArchived) {
+    includeArchived.checked = false;
+  }
+
+  for (const checkbox of filterForm?.querySelectorAll(
+    'input[name="location_id"]'
+  ) || []) {
+    checkbox.checked = false;
+  }
+}
 
 loadInventory();
 

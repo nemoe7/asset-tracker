@@ -150,31 +150,20 @@
     {# ==================== End Filter Modal Header ==================== #}
 
 
-    {# ==================== Status Filter ==================== #}
+    {# ==================== Include Archived Filter ==================== #}
     <fieldset>
 
-      <legend class="mb-3 text-sm font-medium text-zinc-300">
-        Status
-      </legend>
+      <label class="flex items-center gap-3 text-sm text-zinc-300">
 
-      <div class="space-y-3">
+        <input type="checkbox" name="include_archived" value="true" {% if include_archived %}checked{% endif %}
+          class="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-zinc-500">
 
-        <label class="flex items-center gap-3 text-sm text-zinc-300">
-          <input type="checkbox" name="status" value="active" {% if "active" in statuses %} checked {% endif %}
-            class="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-zinc-500">
-          Active
-        </label>
+        Include Archived
 
-        <label class="flex items-center gap-3 text-sm text-zinc-300">
-          <input type="checkbox" name="status" value="archived" {% if "archived" in statuses %} checked {% endif %}
-            class="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-zinc-500">
-          Archived
-        </label>
-
-      </div>
+      </label>
 
     </fieldset>
-    {# ==================== End Status Filter ==================== #}
+    {# ==================== End Include Archived Filter ==================== #}
 
 
     {# ==================== Location Filter ==================== #}
