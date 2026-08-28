@@ -375,6 +375,13 @@
           <i class="bi bi-floppy" aria-hidden="true"></i>
         </button>
 
+        {# Archive Asset #}
+        <button type="button" id="archive-item-button"
+          class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300" title="Archive asset"
+          aria-label="Archive asset">
+          <i class="bi bi-archive" aria-hidden="true"></i>
+        </button>
+
         {# Close Modal #}
         <button type="button" id="close-edit-item-modal"
           class="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100" title="Close"
@@ -454,6 +461,55 @@
 </dialog>
 {# ==================== End Edit Asset Modal ==================== #}
 
+{# ==================== Archive Confirmation Modal ==================== #}
+<dialog id="archive-item-modal"
+  class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-0 text-zinc-100 shadow-2xl">
+
+  <div class="p-6">
+
+    {# ==================== Archive Confirmation Header ==================== #}
+    <div class="flex items-start gap-4">
+
+      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-950 text-red-400">
+        <i class="bi bi-archive" aria-hidden="true"></i>
+      </div>
+
+      <div>
+        <h2 class="text-lg font-semibold">
+          Archive asset?
+        </h2>
+
+        <p class="mt-1 text-sm text-zinc-400">
+          This will remove the asset from the active inventory.
+          You can restore it later.
+        </p>
+      </div>
+
+    </div>
+    {# ==================== End Archive Confirmation Header ==================== #}
+
+
+    {# ==================== Archive Confirmation Actions ==================== #}
+    <div class="mt-6 flex justify-end gap-3">
+
+      <button type="button" id="cancel-archive-item"
+        class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+        Cancel
+      </button>
+
+      <button type="button" id="confirm-archive-item"
+        class="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-500">
+        <i class="bi bi-archive mr-1" aria-hidden="true"></i>
+        Archive asset
+      </button>
+
+    </div>
+    {# ==================== End Archive Confirmation Actions ==================== #}
+
+  </div>
+
+</dialog>
+{# ==================== End Archive Confirmation Modal ==================== #}
 
 {# ==================== View Asset Modal ==================== #}
 <dialog id="view-item-modal"
@@ -488,6 +544,13 @@
 
       {# Header Actions #}
       <div class="flex shrink-0 gap-1">
+
+        {# Copy Asset ID #}
+        <button type="button" id="view-item-copy"
+          class="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100" title="Copy ID"
+          aria-label="Copy ID">
+          <i class="bi bi-copy" aria-hidden="true"></i>
+        </button>
 
         {# Edit Asset #}
         <button type="button" id="view-item-edit"
