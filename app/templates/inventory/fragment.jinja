@@ -29,10 +29,20 @@
         {% for item in items %}
 
         {# Entire row opens View Asset. Action buttons are excluded in JS. #}
-        <tr class="view-item cursor-pointer transition hover:bg-zinc-800/60" data-item-id="{{ item['id'] }}">
+        <tr
+          class="view-item cursor-pointer transition hover:bg-zinc-800/60{% if item['archived_at'] %} opacity-60{% endif %}"
+          data-item-id="{{ item['id'] }}">
 
           <td class="px-5 py-4 font-medium text-zinc-100">
-            {{ item["name"] }}
+            <div class="flex items-center gap-2">
+              <span>{{ item["name"] }}</span>
+
+              {% if item["archived_at"] %}
+              <span class="rounded bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
+                Archived
+              </span>
+              {% endif %}
+            </div>
           </td>
 
           <td class="px-5 py-4 text-zinc-400">
@@ -77,14 +87,24 @@
     {% for item in items %}
 
     {# Entire card opens View Asset. #}
-    <article class="view-item cursor-pointer p-4 transition hover:bg-zinc-800/60" data-item-id="{{ item['id'] }}">
+    <article
+      class="view-item cursor-pointer p-4 transition hover:bg-zinc-800/60{% if item['archived_at'] %} opacity-60{% endif %}"
+      data-item-id="{{ item['id'] }}">
 
       <div class="flex items-start justify-between gap-4">
 
         <div class="min-w-0">
-          <h2 class="truncate font-medium text-zinc-100">
-            {{ item["name"] }}
-          </h2>
+          <div class="flex items-center gap-2">
+            <h2 class="truncate font-medium text-zinc-100">
+              {{ item["name"] }}
+            </h2>
+
+            {% if item["archived_at"] %}
+            <span class="shrink-0 rounded bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
+              Archived
+            </span>
+            {% endif %}
+          </div>
 
           <p class="mt-1 text-sm text-zinc-400">
             {{ item["location_name"] or "—" }}
