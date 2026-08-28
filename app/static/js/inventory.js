@@ -13,28 +13,32 @@ const closeAddItemButtons = [
 ];
 
 
-// Open Add Item modal.
+// ==================== Open Add Item Modal ====================
+
 for (const button of openAddItemButtons) {
   button?.addEventListener('click', () => {
     addItemModal?.showModal();
   });
 }
 
+// ==================== End Open Add Item Modal ====================
 
-// Close Add Item modal.
+
+// ==================== Close Add Item Modal ====================
+
 for (const button of closeAddItemButtons) {
   button?.addEventListener('click', () => {
     addItemModal?.close();
   });
 }
 
-
-// Close Add Item modal when clicking the backdrop.
 addItemModal?.addEventListener('click', (event) => {
   if (event.target === addItemModal) {
     addItemModal.close();
   }
 });
+
+// ==================== End Close Add Item Modal ====================
 
 
 // ==================== Copy Asset ID ====================
@@ -56,14 +60,16 @@ for (const button of document.querySelectorAll('.copy-item-id')) {
     }
 
     icon.classList.remove('bi-copy');
-    icon.classList.add('bi-clipboard-check');
+    icon.classList.add('bi-check-lg');
 
     setTimeout(() => {
-      icon.classList.remove('bi-clipboard-check');
+      icon.classList.remove('bi-check-lg');
       icon.classList.add('bi-copy');
     }, 1500);
   });
 }
+
+// ==================== End Copy Asset ID ====================
 
 
 // ==================== Edit Asset Modal ====================
@@ -76,8 +82,11 @@ const editItemId = document.getElementById('edit-item-id');
 const editItemName = document.getElementById('edit-item-name');
 const editItemLocation = document.getElementById('edit-item-location');
 
+let currentEditItemId = null;
 
-// Open Edit Asset modal immediately, then load current asset data.
+
+// ==================== Open Edit Asset Modal ====================
+
 for (const button of document.querySelectorAll('.edit-item')) {
   button.addEventListener('click', async () => {
     const itemId = button.dataset.itemId;
@@ -85,6 +94,8 @@ for (const button of document.querySelectorAll('.edit-item')) {
     if (!itemId) {
       return;
     }
+
+    currentEditItemId = itemId;
 
     editItemLoading?.classList.remove('hidden');
     editItemForm?.classList.add('hidden');
@@ -100,33 +111,34 @@ for (const button of document.querySelectorAll('.edit-item')) {
 
     const item = await response.json();
 
-    // Populate the current asset data.
     editItemId.textContent = item.id;
     editItemName.value = item.name;
     editItemLocation.value = item.location_id ?? '';
     editItemForm.action = `/inventory/${itemId}`;
 
-    // Replace loading state with the form.
     editItemLoading?.classList.add('hidden');
     editItemForm?.classList.remove('hidden');
   });
 }
 
+// ==================== End Open Edit Asset Modal ====================
 
-// Close Edit Asset modal.
+
+// ==================== Close Edit Asset Modal ====================
+
 document
   .getElementById('close-edit-item-modal')
   ?.addEventListener('click', () => {
     editItemModal?.close();
   });
 
-
-// Close Edit Asset modal when clicking the backdrop.
 editItemModal?.addEventListener('click', (event) => {
   if (event.target === editItemModal) {
     editItemModal.close();
   }
 });
+
+// ==================== End Close Edit Asset Modal ====================
 
 
 // ==================== View Asset Modal ====================
@@ -139,12 +151,14 @@ const viewItemId = document.getElementById('view-item-id');
 const viewItemName = document.getElementById('view-item-name');
 const viewItemLocation = document.getElementById('view-item-location');
 
+const viewItemCopy = document.getElementById('view-item-copy');
 const viewItemEdit = document.getElementById('view-item-edit');
 
 let currentViewItemId = null;
 
 
-// Open View Asset modal immediately, then load current asset data.
+// ==================== Open View Asset Modal ====================
+
 for (const item of document.querySelectorAll('.view-item')) {
   item.addEventListener('click', async (event) => {
 
@@ -161,7 +175,6 @@ for (const item of document.querySelectorAll('.view-item')) {
 
     currentViewItemId = itemId;
 
-    // Show loading state immediately.
     viewItemLoading?.classList.remove('hidden');
     viewItemContent?.classList.add('hidden');
 
@@ -176,37 +189,64 @@ for (const item of document.querySelectorAll('.view-item')) {
 
     const asset = await response.json();
 
-    // Populate the current asset data.
     viewItemId.textContent = asset.id;
     viewItemName.textContent = asset.name;
     viewItemLocation.textContent = asset.location_name || 'No location';
 
-    // Replace loading state with the asset details.
     viewItemLoading?.classList.add('hidden');
     viewItemContent?.classList.remove('hidden');
   });
 }
 
+// ==================== End Open View Asset Modal ====================
 
-// Close View Asset modal.
+
+// ==================== Copy Asset ID from View Asset ====================
+
+viewItemCopy?.addEventListener('click', async () => {
+  if (!currentViewItemId) {
+    return;
+  }
+
+  await navigator.clipboard.writeText(currentViewItemId);
+
+  const icon = viewItemCopy.querySelector('i');
+
+  if (!icon) {
+    return;
+  }
+
+  icon.classList.remove('bi-copy');
+  icon.classList.add('bi-check-lg');
+
+  setTimeout(() => {
+    icon.classList.remove('bi-check-lg');
+    icon.classList.add('bi-copy');
+  }, 1500);
+});
+
+// ==================== End Copy Asset ID from View Asset ====================
+
+
+// ==================== Close View Asset Modal ====================
+
 document
   .getElementById('close-view-item-modal')
   ?.addEventListener('click', () => {
     viewItemModal?.close();
   });
 
-
-// Close View Asset modal when clicking the backdrop.
 viewItemModal?.addEventListener('click', (event) => {
   if (event.target === viewItemModal) {
     viewItemModal.close();
   }
 });
 
+// ==================== End Close View Asset Modal ====================
+
 
 // ==================== View → Edit ====================
 
-// Open the existing Edit Asset modal from View Asset.
 viewItemEdit?.addEventListener('click', () => {
   if (!currentViewItemId) {
     return;
@@ -220,3 +260,77 @@ viewItemEdit?.addEventListener('click', () => {
 
   editButton?.click();
 });
+
+// ==================== End View → Edit ====================
+
+
+// ==================== Archive Asset ====================
+
+const archiveItemModal = document.getElementById('archive-item-modal');
+const archiveItemButton = document.getElementById('archive-item-button');
+const cancelArchiveItem = document.getElementById('cancel-archive-item');
+const confirmArchiveItem = document.getElementById('confirm-archive-item');
+
+
+// ==================== Open Archive Confirmation ====================
+
+archiveItemButton?.addEventListener('click', () => {
+  if (!currentEditItemId) {
+    return;
+  }
+
+  archiveItemModal?.showModal();
+});
+
+// ==================== End Open Archive Confirmation ====================
+
+
+// ==================== Cancel Archive ====================
+
+cancelArchiveItem?.addEventListener('click', () => {
+  archiveItemModal?.close();
+});
+
+// ==================== End Cancel Archive ====================
+
+
+// ==================== Confirm Archive ====================
+
+confirmArchiveItem?.addEventListener('click', async () => {
+  if (!currentEditItemId) {
+    return;
+  }
+
+  const response = await fetch(
+    `/inventory/${currentEditItemId}/archive`,
+    {
+      method: 'POST'
+    }
+  );
+
+  if (!response.ok) {
+    archiveItemModal?.close();
+    return;
+  }
+
+  archiveItemModal?.close();
+  editItemModal?.close();
+
+  window.location.reload();
+});
+
+// ==================== End Confirm Archive ====================
+
+
+// ==================== Close Archive Confirmation ====================
+
+archiveItemModal?.addEventListener('click', (event) => {
+  if (event.target === archiveItemModal) {
+    archiveItemModal.close();
+  }
+});
+
+// ==================== End Close Archive Confirmation ====================
+
+
+// ==================== End Archive Asset ====================
