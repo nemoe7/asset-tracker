@@ -556,8 +556,14 @@
     <div class="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
 
       {# Asset ID #}
-      <p id="view-item-id" class="min-w-0 truncate font-mono text-sm text-zinc-500">
-      </p>
+      <div class="min-w-0">
+        <p id="view-item-id" class="truncate font-mono text-sm text-zinc-500">
+        </p>
+
+        <span id="view-item-archived" class="mt-1 hidden rounded bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
+          Archived
+        </span>
+      </div>
 
       {# Header Actions #}
       <div class="flex shrink-0 gap-1">
@@ -603,7 +609,7 @@
               Name
             </th>
 
-            <td id="view-item-name" class="px-4 py-3 text-zinc-100">
+            <td id="view-item-name" class="truncate px-4 py-3 text-zinc-100">
             </td>
           </tr>
 

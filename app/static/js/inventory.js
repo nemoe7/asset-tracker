@@ -452,6 +452,7 @@ const viewItemName = document.getElementById('view-item-name');
 const viewItemLocation = document.getElementById('view-item-location');
 const viewItemCopy = document.getElementById('view-item-copy');
 const viewItemEdit = document.getElementById('view-item-edit');
+const viewItemArchived = document.getElementById("view-item-archived");
 
 let currentViewItemId = null;
 
@@ -476,7 +477,9 @@ async function handleViewItem(event) {
 
   viewItemModal?.showModal();
 
-  const response = await fetch(`/inventory/${itemId}`);
+  const response = await fetch(
+    `/inventory/${itemId}?include_archived=true`
+  );
 
   if (!response.ok) {
     viewItemModal?.close();
@@ -486,6 +489,10 @@ async function handleViewItem(event) {
   const asset = await response.json();
 
   viewItemId.textContent = asset.id;
+  viewItemArchived.classList.toggle(
+    'hidden',
+    !asset.archived_at
+  );
   viewItemName.textContent = asset.name;
   viewItemLocation.textContent = asset.location_name || '—';
 
