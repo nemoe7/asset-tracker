@@ -156,10 +156,10 @@ def update(item_id):
 
   location_id = request.form.get("location_id")
 
-  if location_id is not None and location_id != "":
+  if location_id:
     location_id = int(location_id)
   else:
-    location_id = _UNSET
+    location_id = None
 
   try:
     update_item(

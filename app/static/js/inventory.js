@@ -358,6 +358,8 @@ async function handleEditItem(event) {
 
   const item = await response.json();
 
+  await loadLocations();
+
   editItemId.textContent = item.id;
   editItemName.value = item.name;
   editItemLocation.value = item.location_id ?? '';
