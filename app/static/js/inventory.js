@@ -198,7 +198,7 @@ async function loadLocations() {
       const selectedValue = select.value;
 
       select.replaceChildren(
-        new Option('No location', '')
+        new Option('—', '')
       );
 
       for (const location of locations) {
@@ -441,7 +441,7 @@ async function handleViewItem(event) {
 
   viewItemId.textContent = asset.id;
   viewItemName.textContent = asset.name;
-  viewItemLocation.textContent = asset.location_name || 'No location';
+  viewItemLocation.textContent = asset.location_name || '—';
 
   viewItemLoading?.classList.add('hidden');
   viewItemContent?.classList.remove('hidden');
