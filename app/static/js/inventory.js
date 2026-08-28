@@ -69,6 +69,51 @@ async function loadInventory(page = 1) {
     );
 
     if (!response.ok) {
+      if (response.status === 400) {
+        inventoryContent.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-12 text-center">
+            <p class="text-sm text-zinc-400">
+              Invalid inventory filters.
+            </p>
+            <button
+              type="button"
+              id="reset-inventory-filters"
+              class="mt-3 text-sm text-zinc-200 underline hover:text-white"
+            >
+              Reset filters
+            </button>
+          </div>
+        `;
+
+        document
+          .getElementById('reset-inventory-filters')
+          ?.addEventListener('click', () => {
+            resetInventoryFilters();
+            loadInventory(1);
+          });
+      } else {
+        inventoryContent.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-12 text-center">
+            <p class="text-sm text-zinc-400">
+              Failed to load inventory.
+            </p>
+            <button
+              type="button"
+              id="retry-inventory"
+              class="mt-3 text-sm text-zinc-200 underline hover:text-white"
+            >
+              Try again
+            </button>
+          </div>
+        `;
+
+        document
+          .getElementById('retry-inventory')
+          ?.addEventListener('click', () => {
+            loadInventory(currentInventoryPage);
+          });
+      }
+
       return;
     }
 
