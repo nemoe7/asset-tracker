@@ -173,6 +173,12 @@
     No items match "{{ search }}".
   </p>
 
+  {% elif request.args.getlist("location_id") %}
+
+  <p class="mt-2 text-sm text-zinc-400">
+    No inventory items found in the selected location.
+  </p>
+
   {% else %}
 
   <p class="mt-2 text-sm text-zinc-400">
@@ -189,5 +195,4 @@
 
 </section>
 {# ==================== End Empty Inventory State ==================== #}
-
 {% endif %}
