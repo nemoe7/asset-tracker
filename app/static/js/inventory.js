@@ -9,9 +9,15 @@ const includeArchived = document.querySelector(
   'input[name="include_archived"]'
 );
 
+const addItemLocation = document.getElementById('item-location');
+const editItemLocation = document.getElementById('edit-item-location');
+
 let inventorySearchTimeout = null;
 let inventoryRequest = null;
 let currentInventoryPage = 1;
+
+
+// ==================== End Inventory List ====================
 
 
 // ==================== Load Inventory ====================
@@ -148,16 +154,84 @@ async function handleCopyItemId(event) {
 
 // ==================== Filter & Sort Modal ====================
 
-const filterItemModal = document.getElementById('filter-item-modal');
 const filterItemButton = document.getElementById('filter-item-button');
-const closeFilterItemModal = document.getElementById(
-  'close-filter-item-modal'
-);
+const filterItemModal = document.getElementById('filter-item-modal');
+const closeFilterItemModal = document.getElementById('close-filter-item-modal');
 const clearFilterItem = document.getElementById('clear-filter-item');
+
+const locationFilterOptions = document.getElementById(
+  'location-filter-options'
+);
+
+
+// Load current locations.
+async function loadLocations() {
+  try {
+    const response = await fetch('/locations');
+
+    if (!response.ok) {
+      return;
+    }
+
+    const locations = await response.json();
+
+    const selectedLocationIds = new Set(
+      [...filterForm.querySelectorAll('input[name="location_id"]:checked')]
+        .map((input) => input.value)
+    );
+
+    if (locationFilterOptions) {
+      locationFilterOptions.replaceChildren();
+
+      for (const location of locations) {
+        const label = document.createElement('label');
+        label.className = 'flex items-center gap-3 text-sm text-zinc-300';
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.name = 'location_id';
+        input.value = location.id;
+        input.checked = selectedLocationIds.has(String(location.id));
+        input.className =
+          'h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-zinc-500';
+
+        const span = document.createElement('span');
+        span.className = 'min-w-0 truncate';
+        span.textContent = location.name;
+
+        label.append(input, span);
+        locationFilterOptions.append(label);
+      }
+    }
+
+    for (const select of [addItemLocation, editItemLocation]) {
+      if (!select) {
+        continue;
+      }
+
+      const selectedValue = select.value;
+
+      select.replaceChildren(
+        new Option('No location', '')
+      );
+
+      for (const location of locations) {
+        select.append(
+          new Option(location.name, location.id)
+        );
+      }
+
+      select.value = selectedValue;
+    }
+  } catch (error) {
+    console.error('Failed to load locations:', error);
+  }
+}
 
 
 // Open Filter & Sort modal.
 filterItemButton?.addEventListener('click', () => {
+  loadLocations();
   filterItemModal?.showModal();
 });
 
@@ -176,19 +250,20 @@ filterItemModal?.addEventListener('click', (event) => {
 });
 
 
-// Clear Filter & Sort options.
+// Clear filters.
 clearFilterItem?.addEventListener('click', () => {
   filterForm?.reset();
-  filterItemModal?.close();
+  resetInventoryFilters();
   loadInventory(1);
+  filterItemModal?.close();
 });
 
 
-// Apply Filter & Sort options.
+// Apply filters without navigating.
 filterForm?.addEventListener('submit', (event) => {
   event.preventDefault();
-  filterItemModal?.close();
   loadInventory(1);
+  filterItemModal?.close();
 });
 
 
@@ -252,7 +327,6 @@ const editItemForm = document.getElementById('edit-item-form');
 
 const editItemId = document.getElementById('edit-item-id');
 const editItemName = document.getElementById('edit-item-name');
-const editItemLocation = document.getElementById('edit-item-location');
 
 let currentEditItemId = null;
 
@@ -514,8 +588,6 @@ document
 
 // ==================== Initial Load ====================
 
-// ==================== Filter Defaults ====================
-
 function resetInventoryFilters() {
   if (filterSortBy) {
     filterSortBy.value = 'name';
@@ -533,13 +605,16 @@ function resetInventoryFilters() {
     includeArchived.checked = false;
   }
 
-  for (const checkbox of filterForm?.querySelectorAll(
-    'input[name="location_id"]'
-  ) || []) {
+  for (
+    const checkbox of
+    filterForm?.querySelectorAll('input[name="location_id"]') || []
+  ) {
     checkbox.checked = false;
   }
 }
 
+
+resetInventoryFilters();
 loadInventory();
 
 
