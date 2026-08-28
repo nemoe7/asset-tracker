@@ -304,3 +304,37 @@ def test_admin_cannot_use_invalid_sort_order(
 
   assert response.status_code == 400
   assert response.json["error"]
+
+
+def test_inventory_page_filters_by_location(
+  gen_test_admin_client,
+  gen_test_location,
+  gen_test_item,
+):
+  location_id = gen_test_location(name="Storage")
+
+  gen_test_item(name="Stored item", location_id=location_id)
+  gen_test_item(name="Other item")
+
+  response = gen_test_admin_client.get(f"/inventory?location_id={location_id}")
+
+  assert response.status_code == 200
+  assert b"Stored item" in response.data
+  assert b"Other item" not in response.data
+
+
+def test_inventory_page_sorts_items(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  gen_test_item(name="Zebra")
+  gen_test_item(name="Apple")
+
+  response = gen_test_admin_client.get("/inventory?sort_by=name&sort_order=desc")
+
+  assert response.status_code == 200
+
+  apple_position = response.data.index(b"Apple")
+  zebra_position = response.data.index(b"Zebra")
+
+  assert apple_position > zebra_position
