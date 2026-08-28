@@ -43,35 +43,7 @@ inventory = Blueprint(
 @inventory.route("", methods=["GET"])
 @login_required
 def index():
-  search = request.args.get("search")
-  location_id = request.args.get("location_id")
-  sort_by = request.args.get("sort_by", "name")
-  sort_order = request.args.get("sort_order", "asc")
-  include_archived = request.args.get("include_archived") == "true"
-  try:
-    if location_id == "__none__":
-      location_id = None
-    elif location_id:
-      location_id = int(location_id)
-    else:
-      location_id = _UNSET
-
-    page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 25))
-
-    result = get_items_paginated(
-      search=search,
-      location_id=location_id,
-      include_archived=include_archived,
-      sort_by=sort_by,
-      sort_order=sort_order,
-      page=page,
-      per_page=per_page,
-    )
-  except (InvalidInputError, ValueError) as error:
-    return jsonify({"error": str(error)}), 400
-
-  return jsonify(result)
+  return redirect(url_for("main.index"))
 
 
 @inventory.route("/fragment", methods=["GET"])

@@ -347,6 +347,8 @@ def get_items_paginated(
       (total + per_page - 1) // per_page,
     )
 
+    page = min(page, total_pages)
+
     offset = (page - 1) * per_page
 
     items = connection.execute(
