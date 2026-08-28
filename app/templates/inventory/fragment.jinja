@@ -34,11 +34,13 @@
           data-item-id="{{ item['id'] }}">
 
           <td class="px-5 py-4 font-medium text-zinc-100">
-            <div class="flex items-center gap-2">
-              <span>{{ item["name"] }}</span>
+            <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+              <span class="min-w-0 truncate" title="{{ item['name'] }}">
+                {{ item["name"] }}
+              </span>
 
               {% if item["archived_at"] %}
-              <span class="rounded bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
+              <span class="shrink-0 whitespace-nowrap rounded bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
                 Archived
               </span>
               {% endif %}
