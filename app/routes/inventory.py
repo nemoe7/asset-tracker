@@ -2,6 +2,7 @@ from flask import (
   Blueprint,
   jsonify,
   redirect,
+  render_template,
   request,
   url_for,
 )
@@ -15,7 +16,7 @@ from ..services.data.inventory import (
   archive_item,
   create_item,
   get_item,
-  get_items,
+  get_items_paginated,
   restore_item,
   update_item,
 )
@@ -43,20 +44,54 @@ def index():
   sort_by = request.args.get("sort_by", "name")
   sort_order = request.args.get("sort_order", "asc")
 
-  if location_id:
-    location_id = int(location_id)
-
   try:
-    items = get_items(
+    location_id = int(location_id) if location_id else None
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 25))
+
+    result = get_items_paginated(
       search=search,
       location_id=location_id,
       sort_by=sort_by,
       sort_order=sort_order,
+      page=page,
+      per_page=per_page,
     )
-  except InvalidInputError as error:
+  except (InvalidInputError, ValueError) as error:
     return jsonify({"error": str(error)}), 400
 
-  return jsonify(items)
+  return jsonify(result)
+
+
+@inventory.route("/fragment", methods=["GET"])
+@login_required
+def fragment():
+  search = request.args.get("search")
+  location_id = request.args.get("location_id")
+  sort_by = request.args.get("sort_by", "name")
+  sort_order = request.args.get("sort_order", "asc")
+
+  try:
+    location_id = int(location_id) if location_id else None
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 25))
+
+    result = get_items_paginated(
+      search=search,
+      location_id=location_id,
+      sort_by=sort_by,
+      sort_order=sort_order,
+      page=page,
+      per_page=per_page,
+    )
+  except (InvalidInputError, ValueError) as error:
+    return jsonify({"error": str(error)}), 400
+
+  return render_template(
+    "inventory/fragment.jinja",
+    search=search,
+    **result,
+  )
 
 
 @inventory.route("", methods=["POST"])
