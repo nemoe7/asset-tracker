@@ -58,6 +58,7 @@ async function loadInventory(page = 1) {
   }
 
   params.set('page', page);
+  // params.set('per_page', 2);
 
   try {
     const response = await fetch(
@@ -353,6 +354,26 @@ async function handleEditItem(event) {
   editItemLoading?.classList.add('hidden');
   editItemForm?.classList.remove('hidden');
 }
+
+// Submit Edit Asset without leaving the inventory page.
+editItemForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  const response = await fetch(
+    editItemForm.action,
+    {
+      method: 'POST',
+      body: new FormData(editItemForm)
+    }
+  );
+
+  if (!response.ok) {
+    return;
+  }
+
+  editItemModal?.close();
+  loadInventory(currentInventoryPage);
+});
 
 
 // Close Edit Asset modal.
