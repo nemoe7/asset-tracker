@@ -9,7 +9,6 @@ from flask import (
 from ..services.auth.authorization import check_permission
 from ..services.auth.context import get_current_user
 from ..services.data.inventory import get_items
-from ..services.data.locations import get_locations
 from ..services.data.users import get_user
 from .auth import login_required
 
