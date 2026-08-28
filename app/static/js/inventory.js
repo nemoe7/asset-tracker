@@ -1,3 +1,85 @@
+// ==================== Live Search ====================
+
+const searchForm = document.getElementById('search-form');
+const searchInput = document.getElementById('search');
+
+let searchTimeout = null;
+
+
+// Submit search after the user stops typing.
+searchInput?.addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+
+  searchTimeout = setTimeout(() => {
+    searchForm?.requestSubmit();
+  }, 300);
+});
+
+
+// Keep focus on the search input when a search is active.
+if (searchInput?.value) {
+  searchInput.focus();
+  searchInput.setSelectionRange(
+    searchInput.value.length,
+    searchInput.value.length
+  );
+}
+
+// ==================== End Live Search ====================
+
+// ==================== Filter & Sort Modal ====================
+
+const filterItemModal = document.getElementById('filter-item-modal');
+const filterItemForm = document.getElementById('filter-item-form');
+const filterItemButton = document.getElementById('filter-item-button');
+const closeFilterItemModal = document.getElementById('close-filter-item-modal');
+const clearFilterItemButton = document.getElementById('clear-filter-item');
+
+
+// Open Filter & Sort modal.
+filterItemButton?.addEventListener('click', () => {
+  filterItemModal?.showModal();
+});
+
+
+// Close Filter & Sort modal.
+closeFilterItemModal?.addEventListener('click', () => {
+  filterItemModal?.close();
+});
+
+
+// Close Filter & Sort modal when clicking the backdrop.
+filterItemModal?.addEventListener('click', (event) => {
+  if (event.target === filterItemModal) {
+    filterItemModal.close();
+  }
+});
+
+
+// Clear all filters and sorting options.
+clearFilterItemButton?.addEventListener('click', () => {
+  filterItemForm?.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+    input.checked = false;
+  });
+
+  const ascendingOption = filterItemForm?.querySelector(
+    'input[name="sort_order"][value="asc"]'
+  );
+
+  if (ascendingOption) {
+    ascendingOption.checked = true;
+  }
+
+  const sortBy = document.getElementById('filter-sort-by');
+
+  if (sortBy) {
+    sortBy.value = 'name';
+  }
+});
+
+
+// ==================== End Filter & Sort Modal ====================
+
 // ==================== Add Item Modal ====================
 
 const addItemModal = document.getElementById('add-item-modal');

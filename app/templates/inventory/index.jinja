@@ -51,26 +51,46 @@
   {# ==================== Inventory Content ==================== #}
   <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
-    {# ==================== Search + Add Item ==================== #}
+    {# ==================== Search + Filter + Add Item ==================== #}
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
 
-      <form method="get" action="{{ url_for('main.index') }}" class="w-full sm:flex-1">
+      {# ==================== Search ==================== #}
+      <form id="search-form" method="get" action="{{ url_for('main.index') }}" class="w-full sm:flex-1">
+
         <label for="search" class="sr-only">
           Search inventory
         </label>
 
         <input id="search" name="search" type="search" value="{{ search }}" placeholder="Search inventory..."
           class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
-      </form>
 
+      </form>
+      {# ==================== End Search ==================== #}
+
+
+      {# ==================== Filter Button ==================== #}
+      <button type="button" id="filter-item-button"
+        class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 sm:w-auto">
+
+        <i class="bi bi-sliders mr-1" aria-hidden="true"></i>
+        Filter
+
+      </button>
+      {# ==================== End Filter Button ==================== #}
+
+
+      {# ==================== Add Item Button ==================== #}
       <button type="button" id="add-item-button"
         class="w-full rounded-lg bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950 sm:w-auto">
+
         <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
         Add item
+
       </button>
+      {# ==================== End Add Item Button ==================== #}
 
     </div>
-    {# ==================== End Search + Add Item ==================== #}
+    {# ==================== End Search + Filter + Add Item ==================== #}
 
 
     {# ==================== Inventory Items ==================== #}
@@ -237,6 +257,183 @@
 </div>
 {# ==================== End Inventory Page ==================== #}
 
+{# ==================== Filter & Sort Modal ==================== #}
+<dialog id="filter-item-modal"
+  class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+
+  <form id="filter-item-form" method="get" action="{{ url_for('main.index') }}" class="p-6">
+
+    {# Preserve the current search query when applying filters. #}
+    <input type="hidden" name="search" value="{{ search }}">
+
+    {# ==================== Filter Modal Header ==================== #}
+    <div class="mb-6 flex items-center justify-between gap-4">
+
+      <h2 class="text-lg font-semibold">
+        Filter & Sort
+      </h2>
+
+      <button type="button" id="close-filter-item-modal"
+        class="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100" title="Close"
+        aria-label="Close">
+
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+
+      </button>
+
+    </div>
+    {# ==================== End Filter Modal Header ==================== #}
+
+
+    {# ==================== Status Filter ==================== #}
+    <fieldset>
+
+      <legend class="mb-3 text-sm font-medium text-zinc-300">
+        Status
+      </legend>
+
+      <div class="space-y-3">
+
+        <label class="flex items-center gap-3 text-sm text-zinc-300">
+          <input type="checkbox" name="status" value="active"
+            class="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-zinc-500">
+          Active
+        </label>
+
+        <label class="flex items-center gap-3 text-sm text-zinc-300">
+          <input type="checkbox" name="status" value="archived"
+            class="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-zinc-500">
+          Archived
+        </label>
+
+      </div>
+
+    </fieldset>
+    {# ==================== End Status Filter ==================== #}
+
+
+    {# ==================== Location Filter ==================== #}
+    <fieldset class="mt-6">
+
+      <legend class="mb-3 text-sm font-medium text-zinc-300">
+        Location
+      </legend>
+
+      <div class="max-h-48 space-y-3 overflow-y-auto">
+
+        {% for location in locations %}
+
+        <label class="flex items-center gap-3 text-sm text-zinc-300">
+
+          <input type="checkbox" name="location_id" value="{{ location['id'] }}"
+            class="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-zinc-500">
+
+          <span class="min-w-0 truncate">
+            {{ location['name'] }}
+          </span>
+
+        </label>
+
+        {% endfor %}
+
+      </div>
+
+    </fieldset>
+    {# ==================== End Location Filter ==================== #}
+
+
+    {# ==================== Sort Options ==================== #}
+    <div class="mt-6">
+
+      <label for="filter-sort-by" class="mb-2 block text-sm font-medium text-zinc-300">
+        Sort by
+      </label>
+
+      <div class="relative">
+
+        <select id="filter-sort-by" name="sort_by"
+          class="block w-full appearance-none rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 pr-10 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+
+          <option value="name">
+            Name
+          </option>
+
+          <option value="id">
+            ID
+          </option>
+
+          <option value="created_at">
+            Created date
+          </option>
+
+          <option value="updated_at">
+            Updated date
+          </option>
+
+        </select>
+
+        <i class="bi bi-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+          aria-hidden="true"></i>
+
+      </div>
+
+    </div>
+    {# ==================== End Sort Options ==================== #}
+
+
+    {# ==================== Sort Order ==================== #}
+    <fieldset class="mt-6">
+
+      <legend class="mb-3 text-sm font-medium text-zinc-300">
+        Order
+      </legend>
+
+      <div class="space-y-3">
+
+        <label class="flex items-center gap-3 text-sm text-zinc-300">
+
+          <input type="radio" name="sort_order" value="asc" checked
+            class="h-4 w-4 border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-zinc-500">
+
+          Ascending
+
+        </label>
+
+        <label class="flex items-center gap-3 text-sm text-zinc-300">
+
+          <input type="radio" name="sort_order" value="desc"
+            class="h-4 w-4 border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-zinc-500">
+
+          Descending
+
+        </label>
+
+      </div>
+
+    </fieldset>
+    {# ==================== End Sort Order ==================== #}
+
+
+    {# ==================== Filter Modal Actions ==================== #}
+    <div class="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+      <button type="button" id="clear-filter-item"
+        class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+        Clear
+      </button>
+
+      <button type="submit"
+        class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+        Apply
+      </button>
+
+    </div>
+    {# ==================== End Filter Modal Actions ==================== #}
+
+  </form>
+
+</dialog>
+{# ==================== End Filter & Sort Modal ==================== #}
 
 {# ==================== Add Item Modal ==================== #}
 <dialog id="add-item-modal"
