@@ -23,6 +23,8 @@ def index():
 
   search = request.args.get("search", "").strip()
   include_archived = request.args.get("include_archived") == "true"
+  sort_by = request.args.get("sort_by", "name")
+  sort_order = request.args.get("sort_order", "asc")
 
   items = get_items(
     search=search,
@@ -42,6 +44,8 @@ def index():
     total_pages=1,
     username=user["username"],
     can_manage_users=can_manage_users,
+    sort_by=sort_by,
+    sort_order=sort_order,
   )
 
 
