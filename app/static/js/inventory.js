@@ -202,6 +202,94 @@ async function handleCopyItemId(event) {
 // ==================== End Copy Asset ID ====================
 
 
+// ==================== Modal Manager ====================
+
+const modalManager = document.getElementById('modal-manager');
+const modalManagerContent = document.getElementById('modal-manager-content');
+
+let activeModal = null;
+let activeModalParent = null;
+let activeModalNextSibling = null;
+
+
+function openModal(modal) {
+  if (!modal || !modalManager || !modalManagerContent) {
+    return;
+  }
+
+  if (activeModal === modal) {
+    return;
+  }
+
+  if (activeModal) {
+    closeModalContent();
+  }
+
+  activeModal = modal;
+  activeModalParent = modal.parentElement;
+  activeModalNextSibling = modal.nextSibling;
+
+  modalManagerContent.appendChild(modal);
+  modal.classList.remove('hidden');
+
+  if (!modalManager.open) {
+    modalManager.showModal();
+  }
+}
+
+
+function closeModalContent() {
+  if (!activeModal || !activeModalParent) {
+    return;
+  }
+
+  activeModal.classList.add('hidden');
+
+  if (activeModalNextSibling) {
+    activeModalParent.insertBefore(activeModal, activeModalNextSibling);
+  } else {
+    activeModalParent.appendChild(activeModal);
+  }
+
+  activeModal = null;
+  activeModalParent = null;
+  activeModalNextSibling = null;
+}
+
+
+function closeModal() {
+  closeModalContent();
+
+  if (modalManager?.open) {
+    modalManager.close();
+  }
+}
+
+
+function switchModal(modal) {
+  if (!modal) {
+    return;
+  }
+
+  if (!activeModal) {
+    openModal(modal);
+    return;
+  }
+
+  closeModalContent();
+  openModal(modal);
+}
+
+
+modalManager?.addEventListener('click', (event) => {
+  if (event.target === modalManager) {
+    closeModal();
+  }
+});
+
+// ==================== End Modal Manager ====================
+
+
 // ==================== Filter & Sort Modal ====================
 
 const filterItemButton = document.getElementById('filter-item-button');
@@ -268,22 +356,23 @@ async function loadLocations() {
 // Open Filter & Sort modal.
 filterItemButton?.addEventListener('click', () => {
   loadLocations();
-  filterItemModal?.showModal();
+  openModal(filterItemModal);
 });
 
 
 // Close Filter & Sort modal.
 closeFilterItemModal?.addEventListener('click', () => {
-  filterItemModal?.close();
+  // filterItemModal?.close();
+  closeModal();
 });
 
 
 // Close Filter & Sort modal when clicking the backdrop.
-filterItemModal?.addEventListener('click', (event) => {
-  if (event.target === filterItemModal) {
-    filterItemModal.close();
-  }
-});
+// filterItemModal?.addEventListener('click', (event) => {
+//   if (event.target === filterItemModal) {
+//     filterItemModal.close();
+//   }
+// });
 
 
 // Clear filters.
@@ -291,7 +380,8 @@ clearFilterItem?.addEventListener('click', () => {
   filterForm?.reset();
   resetInventoryFilters();
   loadInventory(1);
-  filterItemModal?.close();
+  // filterItemModal?.close();
+  closeModal();
 });
 
 
@@ -299,7 +389,8 @@ clearFilterItem?.addEventListener('click', () => {
 filterForm?.addEventListener('submit', (event) => {
   event.preventDefault();
   loadInventory(1);
-  filterItemModal?.close();
+  // filterItemModal?.close();
+  closeModal();
 });
 
 
@@ -318,7 +409,7 @@ const openAddItemButtons = [
 // Open dynamically loaded Add Item button.
 document.addEventListener('click', (event) => {
   if (event.target.closest('#empty-add-item-button')) {
-    addItemModal?.showModal();
+    openModal(addItemModal);
   }
 });
 
@@ -326,7 +417,7 @@ document.addEventListener('click', (event) => {
 // Open Add Item modal.
 for (const button of openAddItemButtons) {
   button?.addEventListener('click', () => {
-    addItemModal?.showModal();
+    openModal(addItemModal);
   });
 }
 
@@ -339,17 +430,18 @@ const closeAddItemButtons = [
 
 for (const button of closeAddItemButtons) {
   button?.addEventListener('click', () => {
-    addItemModal?.close();
+    // addItemModal?.close();
+    closeModal();
   });
 }
 
 
 // Close Add Item modal when clicking the backdrop.
-addItemModal?.addEventListener('click', (event) => {
-  if (event.target === addItemModal) {
-    addItemModal.close();
-  }
-});
+// addItemModal?.addEventListener('click', (event) => {
+//   if (event.target === addItemModal) {
+//     addItemModal.close();
+//   }
+// });
 
 
 // ==================== End Add Item Modal ====================
@@ -383,12 +475,13 @@ async function handleEditItem(event) {
   editItemLoading?.classList.remove('hidden');
   editItemForm?.classList.add('hidden');
 
-  editItemModal?.showModal();
+  openModal(editItemModal);
 
   const response = await fetch(`/inventory/${itemId}`);
 
   if (!response.ok) {
-    editItemModal?.close();
+    // editItemModal?.close();
+    closeModal();
     return;
   }
 
@@ -421,7 +514,8 @@ editItemForm?.addEventListener('submit', async (event) => {
     return;
   }
 
-  editItemModal?.close();
+  // editItemModal?.close();
+  closeModal();
   loadInventory(currentInventoryPage);
 });
 
@@ -430,16 +524,17 @@ editItemForm?.addEventListener('submit', async (event) => {
 document
   .getElementById('close-edit-item-modal')
   ?.addEventListener('click', () => {
-    editItemModal?.close();
+    // editItemModal?.close();
+    closeModal();
   });
 
 
 // Close Edit Asset modal when clicking the backdrop.
-editItemModal?.addEventListener('click', (event) => {
-  if (event.target === editItemModal) {
-    editItemModal.close();
-  }
-});
+// editItemModal?.addEventListener('click', (event) => {
+//   if (event.target === editItemModal) {
+//     editItemModal.close();
+//   }
+// });
 
 
 // ==================== End Edit Asset Modal ====================
@@ -480,14 +575,15 @@ async function handleViewItem(event) {
   viewItemLoading?.classList.remove('hidden');
   viewItemContent?.classList.add('hidden');
 
-  viewItemModal?.showModal();
+  openModal(viewItemModal);
 
   const response = await fetch(
     `/inventory/${itemId}?include_archived=true`
   );
 
   if (!response.ok) {
-    viewItemModal?.close();
+    // viewItemModal?.close();
+    closeModal();
     return;
   }
 
@@ -539,16 +635,17 @@ viewItemCopy?.addEventListener('click', async () => {
 document
   .getElementById('close-view-item-modal')
   ?.addEventListener('click', () => {
-    viewItemModal?.close();
+    // viewItemModal?.close();
+    closeModal();
   });
 
 
 // Close View Asset modal when clicking the backdrop.
-viewItemModal?.addEventListener('click', (event) => {
-  if (event.target === viewItemModal) {
-    viewItemModal.close();
-  }
-});
+// viewItemModal?.addEventListener('click', (event) => {
+//   if (event.target === viewItemModal) {
+//     viewItemModal.close();
+//   }
+// });
 
 
 // ==================== End View Asset Modal ====================
@@ -561,7 +658,8 @@ viewItemEdit?.addEventListener('click', () => {
     return;
   }
 
-  viewItemModal?.close();
+  // viewItemModal?.close();
+  closeModal();
 
   const editButton = inventoryContent?.querySelector(
     `.edit-item[data-item-id="${CSS.escape(currentViewItemId)}"]`
@@ -573,8 +671,7 @@ viewItemEdit?.addEventListener('click', () => {
   }
 
   currentRestoreItemId = currentViewItemId;
-  viewItemModal?.close();
-  restoreItemModal?.showModal();
+  switchModal(restoreItemModal);
 });
 
   editButton?.click();
@@ -598,13 +695,14 @@ archiveItemButton?.addEventListener('click', () => {
     return;
   }
 
-  archiveItemModal?.showModal();
+  openModal(archiveItemModal);
 });
 
 
 // Cancel Archive.
 cancelArchiveItem?.addEventListener('click', () => {
-  archiveItemModal?.close();
+  // archiveItemModal?.close();
+  closeModal();
 });
 
 
@@ -622,23 +720,25 @@ confirmArchiveItem?.addEventListener('click', async () => {
   );
 
   if (!response.ok) {
-    archiveItemModal?.close();
+    // archiveItemModal?.close();
+    closeModal();
     return;
   }
 
-  archiveItemModal?.close();
-  editItemModal?.close();
+  // archiveItemModal?.close();
+  // editItemModal?.close();
+  closeModal();
 
   loadInventory(currentInventoryPage);
 });
 
 
 // Close Archive confirmation when clicking the backdrop.
-archiveItemModal?.addEventListener('click', (event) => {
-  if (event.target === archiveItemModal) {
-    archiveItemModal.close();
-  }
-});
+// archiveItemModal?.addEventListener('click', (event) => {
+//   if (event.target === archiveItemModal) {
+//     archiveItemModal.close();
+//   }
+// });
 
 
 // ==================== End Archive Asset ====================
@@ -666,13 +766,14 @@ function handleRestoreItem(event) {
 
   currentRestoreItemId = itemId;
 
-  restoreItemModal?.showModal();
+  openModal(restoreItemModal);
 }
 
 
 // Cancel Restore.
 cancelRestoreItem?.addEventListener('click', () => {
-  restoreItemModal?.close();
+  // restoreItemModal?.close();
+  closeModal();
 });
 
 
@@ -690,22 +791,24 @@ confirmRestoreItem?.addEventListener('click', async () => {
   );
 
   if (!response.ok) {
-    restoreItemModal?.close();
+    // restoreItemModal?.close();
+    closeModal();
     return;
   }
 
-  restoreItemModal?.close();
+  // restoreItemModal?.close();
+  closeModal();
 
   loadInventory(currentInventoryPage);
 });
 
 
 // Close Restore confirmation when clicking the backdrop.
-restoreItemModal?.addEventListener('click', (event) => {
-  if (event.target === restoreItemModal) {
-    restoreItemModal.close();
-  }
-});
+// restoreItemModal?.addEventListener('click', (event) => {
+//   if (event.target === restoreItemModal) {
+//     restoreItemModal.close();
+//   }
+// });
 
 
 // ==================== End Restore Asset ====================
