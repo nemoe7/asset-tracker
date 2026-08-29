@@ -62,12 +62,23 @@
                 <i class="bi bi-copy" aria-hidden="true"></i>
               </button>
 
+              {# ==================== Dynamic Edit/Restore ==================== #}
+              {% if item["archived_at"] %}
+              {# Restore Asset #}
+              <button type="button"
+                class="restore-item rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+                data-item-id="{{ item['id'] }}" title="Restore asset" aria-label="Restore asset">
+                <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+              </button>
+              {% else %}
               {# Edit Asset #}
               <button type="button"
                 class="edit-item rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                 data-item-id="{{ item['id'] }}" title="Edit asset" aria-label="Edit asset">
                 <i class="bi bi-pencil" aria-hidden="true"></i>
               </button>
+              {% endif %}
+              {# ==================== End Dynamic Edit/Restore ==================== #}
 
             </div>
           </td>
