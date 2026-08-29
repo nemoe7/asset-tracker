@@ -146,6 +146,10 @@ function bindInventoryActions() {
     button.addEventListener('click', handleEditItem);
   }
 
+  for (const button of inventoryContent.querySelectorAll('.restore-item')) {
+    button.addEventListener('click', handleRestoreItem);
+  }
+
   for (const item of inventoryContent.querySelectorAll('.view-item')) {
     item.addEventListener('click', handleViewItem);
   }
@@ -453,13 +457,14 @@ const viewItemLocation = document.getElementById('view-item-location');
 const viewItemCopy = document.getElementById('view-item-copy');
 const viewItemEdit = document.getElementById('view-item-edit');
 const viewItemArchived = document.getElementById("view-item-archived");
+const viewItemRestore = document.getElementById('view-item-restore');
 
 let currentViewItemId = null;
 
 
 // Handle View Asset.
 async function handleViewItem(event) {
-  if (event.target.closest('.copy-item-id, .edit-item')) {
+  if (event.target.closest('.copy-item-id, .edit-item, .restore-item')) {
     return;
   }
 
@@ -487,6 +492,11 @@ async function handleViewItem(event) {
   }
 
   const asset = await response.json();
+  const isArchived = Boolean(asset.archived_at);
+
+  viewItemArchived.classList.toggle('hidden', !isArchived);
+  viewItemEdit.classList.toggle('hidden', isArchived);
+  viewItemRestore.classList.toggle('hidden', !isArchived);
 
   viewItemId.textContent = asset.id;
   viewItemArchived.classList.toggle(
@@ -557,6 +567,16 @@ viewItemEdit?.addEventListener('click', () => {
     `.edit-item[data-item-id="${CSS.escape(currentViewItemId)}"]`
   );
 
+  viewItemRestore?.addEventListener('click', () => {
+  if (!currentViewItemId) {
+    return;
+  }
+
+  currentRestoreItemId = currentViewItemId;
+  viewItemModal?.close();
+  restoreItemModal?.showModal();
+});
+
   editButton?.click();
 });
 
@@ -622,6 +642,73 @@ archiveItemModal?.addEventListener('click', (event) => {
 
 
 // ==================== End Archive Asset ====================
+
+
+// ==================== Restore Asset ====================
+
+const restoreItemModal = document.getElementById('restore-item-modal');
+const cancelRestoreItem = document.getElementById('cancel-restore-item');
+const confirmRestoreItem = document.getElementById('confirm-restore-item');
+
+let currentRestoreItemId = null;
+
+
+// Handle Restore Asset.
+function handleRestoreItem(event) {
+  event.stopPropagation();
+
+  const button = event.currentTarget;
+  const itemId = button.dataset.itemId;
+
+  if (!itemId) {
+    return;
+  }
+
+  currentRestoreItemId = itemId;
+
+  restoreItemModal?.showModal();
+}
+
+
+// Cancel Restore.
+cancelRestoreItem?.addEventListener('click', () => {
+  restoreItemModal?.close();
+});
+
+
+// Confirm Restore.
+confirmRestoreItem?.addEventListener('click', async () => {
+  if (!currentRestoreItemId) {
+    return;
+  }
+
+  const response = await fetch(
+    `/inventory/${currentRestoreItemId}/restore`,
+    {
+      method: 'POST'
+    }
+  );
+
+  if (!response.ok) {
+    restoreItemModal?.close();
+    return;
+  }
+
+  restoreItemModal?.close();
+
+  loadInventory(currentInventoryPage);
+});
+
+
+// Close Restore confirmation when clicking the backdrop.
+restoreItemModal?.addEventListener('click', (event) => {
+  if (event.target === restoreItemModal) {
+    restoreItemModal.close();
+  }
+});
+
+
+// ==================== End Restore Asset ====================
 
 
 // ==================== Search ====================
