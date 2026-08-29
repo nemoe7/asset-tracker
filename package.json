@@ -1,9 +1,12 @@
 {
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
+    "bootstrap-icons": "^1.13.1",
+    "shx": "^0.4.0",
     "tailwindcss": "^4.3.3"
   },
-  "dependencies": {
-    "bootstrap-icons": "^1.13.1"
+  "scripts": {
+    "copy-icons": "shx mkdir -p app/static/css/fonts && shx cp node_modules/bootstrap-icons/font/bootstrap-icons.min.css app/static/css/ && shx cp node_modules/bootstrap-icons/font/fonts/* app/static/css/fonts/",
+    "tailwind": "tailwindcss -i ./app/static/src/input.css -o ./app/static/css/app.css --watch"
   }
 }
