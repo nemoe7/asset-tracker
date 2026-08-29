@@ -186,10 +186,10 @@ async function handleCopyItemId(event) {
   }
 
   icon.classList.remove('bi-copy');
-  icon.classList.add('bi-clipboard-check');
+  icon.classList.add('bi-check-lg');
 
   setTimeout(() => {
-    icon.classList.remove('bi-clipboard-check');
+    icon.classList.remove('bi-check-lg');
     icon.classList.add('bi-copy');
   }, 1500);
 }
@@ -516,10 +516,10 @@ viewItemCopy?.addEventListener('click', async () => {
   }
 
   icon.classList.remove('bi-copy');
-  icon.classList.add('bi-clipboard-check');
+  icon.classList.add('bi-check-lg');
 
   setTimeout(() => {
-    icon.classList.remove('bi-clipboard-check');
+    icon.classList.remove('bi-check-lg');
     icon.classList.add('bi-copy');
   }, 1500);
 });
