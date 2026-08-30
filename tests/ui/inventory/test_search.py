@@ -68,10 +68,10 @@ def test_inventory_search_shows_no_results(
 def test_inventory_search_can_be_cleared(
   page,
   live_server,
-  add_item,
+  create_item,
 ):
-  add_item("Test Asset")
-  add_item("Another Asset")
+  create_item("Test Asset")
+  create_item("Another Asset")
 
   page.goto(f"{live_server}/")
 
@@ -92,11 +92,11 @@ def test_inventory_search_can_be_cleared(
 def test_inventory_search_is_case_insensitive(
   page,
   live_server,
-  add_item,
+  create_item,
 ):
   page.goto(f"{live_server}/")
 
-  add_item("Test Asset")
+  create_item("Test Asset")
 
   page.locator("#search").fill("test asset")
 
@@ -107,9 +107,9 @@ def test_inventory_search_is_case_insensitive(
 def test_inventory_search_matches_partial_name(
   page,
   live_server,
-  add_item,
+  create_item,
 ):
-  add_item("Test Asset")
+  create_item("Test Asset")
 
   page.goto(f"{live_server}/")
 
@@ -122,9 +122,9 @@ def test_inventory_search_matches_partial_name(
 def test_inventory_search_updates_without_page_reload(
   page,
   live_server,
-  add_item,
+  create_item,
 ):
-  add_item("Test Asset")
+  create_item("Test Asset")
 
   page.goto(f"{live_server}/")
 
@@ -140,11 +140,11 @@ def test_inventory_search_updates_without_page_reload(
 def test_inventory_search_preserves_multiple_matching_items(
   page,
   live_server,
-  add_item,
+  create_item,
 ):
-  add_item("Test Asset")
-  add_item("Test Printer")
-  add_item("Other Asset")
+  create_item("Test Asset")
+  create_item("Test Printer")
+  create_item("Other Asset")
 
   page.goto(f"{live_server}/")
 
@@ -159,9 +159,9 @@ def test_inventory_search_preserves_multiple_matching_items(
 def test_inventory_search_trims_whitespace(
   page,
   live_server,
-  add_item,
+  create_item,
 ):
-  add_item("Test Asset")
+  create_item("Test Asset")
 
   page.goto(f"{live_server}/")
 
