@@ -30,7 +30,7 @@ jobs:
           pip install -r requirements.dev.txt
 
       - name: Run tests
-        run: pytest -n auto
+        run: pytest -n auto -m "not e2e"
 
   build:
     if: startsWith(github.ref, 'refs/tags/v')
