@@ -70,6 +70,130 @@ def _item_with_custom_fields(connection, item):
   return item
 
 
+def _build_item_query(
+  connection,
+  search,
+  location_id,
+  include_archived,
+  custom_fields,
+  sort_by,
+  sort_order,
+):
+  if sort_order not in ("asc", "desc"):
+    raise InvalidInputError("Invalid sort order")
+
+  conditions = []
+  parameters = []
+
+  if not include_archived:
+    conditions.append("inventory_items.archived_at IS NULL")
+
+  if search:
+    conditions.append("inventory_items.name LIKE ?")
+    parameters.append(f"%{search}%")
+
+  if location_id is not _UNSET:
+    if location_id is None:
+      conditions.append("inventory_items.location_id IS NULL")
+    else:
+      _validate_location(location_id)
+
+      conditions.append("inventory_items.location_id = ?")
+      parameters.append(location_id)
+
+  if custom_fields:
+    for field_id, value in custom_fields.items():
+      conditions.append(
+        """
+        EXISTS (
+          SELECT 1
+          FROM inventory_item_fields
+          WHERE inventory_item_fields.item_id = inventory_items.id
+            AND inventory_item_fields.field_id = ?
+            AND inventory_item_fields.value = ?
+        )
+        """
+      )
+      parameters.extend(
+        [
+          field_id,
+          str(value),
+        ]
+      )
+
+  where_clause = ""
+
+  if conditions:
+    where_clause = f"WHERE {' AND '.join(conditions)}"
+
+  if sort_by == "name":
+    sort_expression = "inventory_items.name"
+    sort_join = ""
+    sort_parameters = []
+    null_order = ""
+
+  else:
+    field = connection.execute(
+      """
+      SELECT
+        id,
+        field_type
+      FROM custom_fields
+      WHERE id = ?
+        AND archived_at IS NULL
+      """,
+      (sort_by,),
+    ).fetchone()
+
+    if field is None:
+      raise InvalidInputError("Invalid sort field")
+
+    if field["field_type"] in (
+      "integer",
+      "decimal",
+      "user",
+    ):
+      sort_expression = "CAST(inventory_item_fields.value AS NUMERIC)"
+    elif field["field_type"] == "boolean":
+      sort_expression = "CAST(inventory_item_fields.value AS INTEGER)"
+    else:
+      sort_expression = "inventory_item_fields.value"
+
+    sort_join = """
+      LEFT JOIN inventory_item_fields
+        ON inventory_item_fields.item_id = inventory_items.id
+        AND inventory_item_fields.field_id = ?
+    """
+
+    sort_parameters = [sort_by]
+
+    null_order = "CASE WHEN inventory_item_fields.value IS NULL THEN 0 ELSE 1 END,"
+
+  from_clause = f"""
+    FROM inventory_items
+    LEFT JOIN locations
+      ON locations.id = inventory_items.location_id
+    {sort_join}
+  """
+
+  order_clause = f"""
+    ORDER BY
+      {null_order}
+      {sort_expression} {sort_order.upper()},
+      inventory_items.id
+  """
+
+  return (
+    from_clause,
+    where_clause,
+    order_clause,
+    [
+      *sort_parameters,
+      *parameters,
+    ],
+  )
+
+
 def create_item(name, location_id=None):
   _validate_item_name(name)
 
@@ -80,15 +204,15 @@ def create_item(name, location_id=None):
 
     connection.execute(
       """
-        INSERT INTO inventory_items (
-          id,
-          name,
-          location_id,
-          created_at,
-          updated_at
-        )
-        VALUES (?, ?, ?, datetime('now'), datetime('now'))
-        """,
+      INSERT INTO inventory_items (
+        id,
+        name,
+        location_id,
+        created_at,
+        updated_at
+      )
+      VALUES (?, ?, ?, datetime('now'), datetime('now'))
+      """,
       (
         item_id,
         name,
@@ -140,114 +264,31 @@ def get_items(
   sort_by="name",
   sort_order="asc",
 ):
-  if sort_order not in ("asc", "desc"):
-    raise InvalidInputError("Invalid sort order")
-
   with db_connection() as connection:
-    conditions = []
-    parameters = []
-
-    if not include_archived:
-      conditions.append("inventory_items.archived_at IS NULL")
-
-    if search:
-      conditions.append("inventory_items.name LIKE ?")
-      parameters.append(f"%{search}%")
-
-    if location_id is not None:
-      _validate_location(location_id)
-
-      conditions.append("inventory_items.location_id = ?")
-      parameters.append(location_id)
-
-    if custom_fields:
-      for field_id, value in custom_fields.items():
-        conditions.append(
-          """
-          EXISTS (
-            SELECT 1
-            FROM inventory_item_fields
-            WHERE inventory_item_fields.item_id = inventory_items.id
-              AND inventory_item_fields.field_id = ?
-              AND inventory_item_fields.value = ?
-          )
-          """
-        )
-        parameters.extend(
-          [
-            field_id,
-            str(value),
-          ]
-        )
-
-    where_clause = ""
-
-    if conditions:
-      where_clause = f"WHERE {' AND '.join(conditions)}"
-
-    if sort_by == "name":
-      sort_expression = "inventory_items.name"
-
-      query = f"""
-        SELECT
-          inventory_items.*,
-          locations.name AS location_name
-        FROM inventory_items
-        LEFT JOIN locations
-          ON locations.id = inventory_items.location_id
-        {where_clause}
-        ORDER BY
-          {sort_expression} {sort_order.upper()},
-          inventory_items.id
-      """
-
-    else:
-      field = connection.execute(
-        """
-        SELECT
-          id,
-          field_type
-        FROM custom_fields
-        WHERE id = ?
-          AND archived_at IS NULL
-        """,
-        (sort_by,),
-      ).fetchone()
-
-      if field is None:
-        raise InvalidInputError("Invalid sort field")
-
-      if field["field_type"] in ("integer", "decimal", "user"):
-        sort_expression = "CAST(inventory_item_fields.value AS NUMERIC)"
-      elif field["field_type"] == "boolean":
-        sort_expression = "CAST(inventory_item_fields.value AS INTEGER)"
-      else:
-        sort_expression = "inventory_item_fields.value"
-
-      query = f"""
-        SELECT
-          inventory_items.*,
-          locations.name AS location_name
-        FROM inventory_items
-        LEFT JOIN locations
-          ON locations.id = inventory_items.location_id
-        LEFT JOIN inventory_item_fields
-          ON inventory_item_fields.item_id = inventory_items.id
-          AND inventory_item_fields.field_id = ?
-        {where_clause}
-        ORDER BY
-          CASE WHEN inventory_item_fields.value IS NULL THEN 0 ELSE 1 END,
-          {sort_expression} {sort_order.upper()},
-          inventory_items.id
-      """
-
-      parameters = [
-        sort_by,
-        *parameters,
-      ]
+    (
+      from_clause,
+      where_clause,
+      order_clause,
+      parameters,
+    ) = _build_item_query(
+      connection,
+      search,
+      location_id,
+      include_archived,
+      custom_fields,
+      sort_by,
+      sort_order,
+    )
 
     items = connection.execute(
-      query,
+      f"""
+      SELECT
+        inventory_items.*,
+        locations.name AS location_name
+      {from_clause}
+      {where_clause}
+      {order_clause}
+      """,
       parameters,
     ).fetchall()
 
@@ -258,6 +299,88 @@ def get_items(
       )
       for item in items
     ]
+
+
+def get_items_paginated(
+  search=None,
+  location_id=_UNSET,
+  include_archived=False,
+  custom_fields=None,
+  sort_by="name",
+  sort_order="asc",
+  page=1,
+  per_page=25,
+):
+  if page < 1:
+    raise InvalidInputError("Invalid page")
+
+  if per_page < 1:
+    raise InvalidInputError("Invalid per_page")
+
+  with db_connection() as connection:
+    (
+      from_clause,
+      where_clause,
+      order_clause,
+      parameters,
+    ) = _build_item_query(
+      connection,
+      search,
+      location_id,
+      include_archived,
+      custom_fields,
+      sort_by,
+      sort_order,
+    )
+
+    total = connection.execute(
+      f"""
+      SELECT COUNT(*)
+      {from_clause}
+      {where_clause}
+      """,
+      parameters,
+    ).fetchone()[0]
+
+    total_pages = max(
+      1,
+      (total + per_page - 1) // per_page,
+    )
+
+    page = min(page, total_pages)
+
+    offset = (page - 1) * per_page
+
+    items = connection.execute(
+      f"""
+      SELECT
+        inventory_items.*,
+        locations.name AS location_name
+      {from_clause}
+      {where_clause}
+      {order_clause}
+      LIMIT ? OFFSET ?
+      """,
+      [
+        *parameters,
+        per_page,
+        offset,
+      ],
+    ).fetchall()
+
+    return {
+      "items": [
+        _item_with_custom_fields(
+          connection,
+          item,
+        )
+        for item in items
+      ],
+      "page": page,
+      "per_page": per_page,
+      "total": total,
+      "total_pages": total_pages,
+    }
 
 
 def update_item(

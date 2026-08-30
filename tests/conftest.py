@@ -12,6 +12,7 @@ from app import create_app
 from app.services.auth.context import reset_current_user, set_current_user
 from app.services.data.db import init_db
 from app.services.data.inventory import create_item
+from app.services.data.locations import create_location
 from app.services.data.users import create_user, get_user_by_username
 
 
@@ -186,5 +187,16 @@ def gen_test_item(gen_test_admin):
     uuid = create_item(name, location_id)
     reset_current_user(token)
     return uuid
+
+  return _create
+
+
+@pytest.fixture
+def gen_test_location(gen_test_admin):
+  def _create(name="Test Location"):
+    token = set_current_user(gen_test_admin)
+    location_id = create_location(name)
+    reset_current_user(token)
+    return location_id
 
   return _create

@@ -15,6 +15,7 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+test-results/
 
 # App data
 .cache/
@@ -24,4 +25,8 @@ htmlcov/
 logs/
 
 # Misc.
-.diff
+**/.diff
+**/*.session.sql
+
+# Node
+node_modules/

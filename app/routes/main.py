@@ -2,15 +2,9 @@ from flask import (
   Blueprint,
   current_app,
   render_template,
-  request,
   send_from_directory,
 )
 
-from ..services.auth.authorization import check_permission
-from ..services.auth.context import get_current_user
-from ..services.data.inventory import get_items
-from ..services.data.locations import get_locations
-from ..services.data.users import get_user
 from .auth import login_required
 
 main = Blueprint("main", __name__)
@@ -19,34 +13,7 @@ main = Blueprint("main", __name__)
 @main.route("/")
 @login_required
 def index():
-  user_id = get_current_user()
-  user = get_user(user_id)
-
-  search = request.args.get("search", "").strip()
-  include_archived = request.args.get("include_archived") == "true"
-
-  items = get_items(
-    search=search,
-    include_archived=include_archived,
-  )
-
-  locations = get_locations()
-
-  can_manage_users = check_permission(
-    user_id,
-    "users.manage",
-  )
-
-  return render_template(
-    "inventory/index.jinja",
-    items=items,
-    locations=locations,
-    search=search,
-    page=1,
-    total_pages=1,
-    username=user["username"],
-    can_manage_users=can_manage_users,
-  )
+  return render_template("inventory/index.jinja")
 
 
 @main.route("/sw.js")

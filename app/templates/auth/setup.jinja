@@ -1,0 +1,67 @@
+{% extends "base.jinja" %}
+
+{% block title %}Set Up Inventory Management{% endblock %}
+
+{% block body %}
+
+<main class="flex min-h-screen items-center justify-center bg-zinc-950 px-4 py-8">
+  <section class="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-8 shadow-xl">
+    <div class="mb-8">
+      <h1 class="text-2xl font-semibold tracking-tight text-zinc-100">
+        Set up Inventory Management
+      </h1>
+      <p class="mt-2 text-sm text-zinc-400">
+        Create the initial administrator account to get started.
+      </p>
+    </div>
+
+    {% if error %}
+    <div class="mb-6 rounded-lg border border-red-900/50 bg-red-950/50 px-4 py-3 text-sm text-red-300" role="alert">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post" class="space-y-5">
+      <div>
+        <label for="username" class="mb-2 block text-sm font-medium text-zinc-300">
+          Username
+        </label>
+        <input id="username" name="username" type="text" value="{{ username or '' }}" autocomplete="username" required
+          autofocus
+          class="block w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+      </div>
+
+      <div>
+        <label for="display_name" class="mb-2 block text-sm font-medium text-zinc-300">
+          Display name
+        </label>
+        <input id="display_name" name="display_name" type="text" value="{{ display_name or '' }}" autocomplete="name"
+          required
+          class="block w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+      </div>
+
+      <div>
+        <label for="password" class="mb-2 block text-sm font-medium text-zinc-300">
+          Password
+        </label>
+        <input id="password" name="password" type="password" autocomplete="new-password" required
+          class="block w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+      </div>
+
+      <div>
+        <label for="confirm_password" class="mb-2 block text-sm font-medium text-zinc-300">
+          Confirm password
+        </label>
+        <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required
+          class="block w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+      </div>
+
+      <button type="submit"
+        class="w-full rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-900">
+        Create administrator
+      </button>
+    </form>
+
+  </section>
+</main>
+{% endblock %}
