@@ -34,7 +34,7 @@ def test_admin_can_view_created_asset(gen_test_admin_client):
 
   assert create_response.status_code == 302
 
-  response = gen_test_admin_client.get("/")
+  response = gen_test_admin_client.get("/inventory/fragment")
 
   assert response.status_code == 200
   assert b"Test Asset" in response.data
@@ -243,11 +243,12 @@ def test_admin_can_search_inventory(
   gen_test_item("Monitor")
 
   response = gen_test_admin_client.get(
-    "/inventory?search=Laptop",
+    "/inventory/fragment?search=Laptop",
   )
 
   assert response.status_code == 200
-  assert [item["name"] for item in response.json] == ["Laptop"]
+  assert b"Laptop" in response.data
+  assert b"Monitor" not in response.data
 
 
 def test_admin_can_filter_inventory_by_location(
@@ -268,11 +269,12 @@ def test_admin_can_filter_inventory_by_location(
   gen_test_item("Monitor")
 
   response = gen_test_admin_client.get(
-    f"/inventory?location_id={storage_id}",
+    f"/inventory/fragment?location_id={storage_id}",
   )
 
   assert response.status_code == 200
-  assert [item["name"] for item in response.json] == ["Laptop"]
+  assert b"Laptop" in response.data
+  assert b"Monitor" not in response.data
 
 
 def test_admin_can_sort_inventory(
@@ -284,22 +286,22 @@ def test_admin_can_sort_inventory(
   gen_test_item("Keyboard")
 
   response = gen_test_admin_client.get(
-    "/inventory?sort_by=name&sort_order=desc",
+    "/inventory/fragment?sort_by=name&sort_order=desc",
   )
 
   assert response.status_code == 200
-  assert [item["name"] for item in response.json] == [
-    "Monitor",
-    "Laptop",
-    "Keyboard",
-  ]
+  data_str = response.data.decode("utf-8")
+  monitor_index = data_str.index("Monitor")
+  laptop_index = data_str.index("Laptop")
+  keyboard_index = data_str.index("Keyboard")
+  assert monitor_index < laptop_index < keyboard_index
 
 
 def test_admin_cannot_use_invalid_sort_order(
   gen_test_admin_client,
 ):
   response = gen_test_admin_client.get(
-    "/inventory?sort_order=invalid",
+    "/inventory/fragment?sort_order=invalid",
   )
 
   assert response.status_code == 400
@@ -316,7 +318,7 @@ def test_inventory_page_filters_by_location(
   gen_test_item(name="Stored item", location_id=location_id)
   gen_test_item(name="Other item")
 
-  response = gen_test_admin_client.get(f"/inventory?location_id={location_id}")
+  response = gen_test_admin_client.get(f"/inventory/fragment?location_id={location_id}")
 
   assert response.status_code == 200
   assert b"Stored item" in response.data
@@ -330,7 +332,7 @@ def test_inventory_page_sorts_items(
   gen_test_item(name="Zebra")
   gen_test_item(name="Apple")
 
-  response = gen_test_admin_client.get("/inventory?sort_by=name&sort_order=desc")
+  response = gen_test_admin_client.get("/inventory/fragment?sort_by=name&sort_order=desc")
 
   assert response.status_code == 200
 

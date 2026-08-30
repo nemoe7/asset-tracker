@@ -167,7 +167,7 @@ def update(item_id):
           field["id"],
           value,
         )
-  except (InvalidInputError, ValueError) as error:
+  except (InvalidInputError, ValueError, LocationNotFoundError) as error:
     return jsonify({"error": str(error)}), 400
   except ItemNotFoundError as error:
     return jsonify({"error": str(error)}), 404
