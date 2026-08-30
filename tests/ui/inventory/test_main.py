@@ -131,3 +131,45 @@ def test_main_page_requires_authentication(page, live_server):
   page.wait_for_url(f"{live_server}/auth/login")
 
   expect(page.get_by_role("button", name="Log in")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_add_item_modal_requires_name(page, live_server):
+  page.goto(f"{live_server}/")
+
+  page.locator("#add-item-button").click()
+
+  modal = page.locator("#add-item-modal")
+  expect(modal).to_be_visible()
+
+  page.get_by_role("button", name="Add item", exact=True).last.click()
+
+  expect(modal).to_be_visible()
+  expect(page.locator("#item-name")).to_have_attribute("required", "")
+
+
+@pytest.mark.e2e
+def test_add_item_modal_shows_locations(
+  page,
+  live_server,
+  create_location,
+):
+  location_a = create_location("Location A")
+  location_b = create_location("Location B")
+
+  page.goto(f"{live_server}/")
+  page.locator("#add-item-button").click()
+
+  location_select = page.locator("#item-location")
+
+  expect(location_select).to_be_visible()
+
+  expect(
+    location_select.locator(f'option[value="{location_a["id"]}"]')
+  ).to_be_attached()
+
+  expect(
+    location_select.locator(f'option[value="{location_b["id"]}"]')
+  ).to_be_attached()
+
+  expect(location_select.locator('option[value=""]')).to_have_count(1)
