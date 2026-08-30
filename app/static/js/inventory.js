@@ -409,6 +409,7 @@ const openAddItemButtons = [
 // Open dynamically loaded Add Item button.
 document.addEventListener('click', (event) => {
   if (event.target.closest('#empty-add-item-button')) {
+    loadLocations();
     openModal(addItemModal);
   }
 });
@@ -417,6 +418,7 @@ document.addEventListener('click', (event) => {
 // Open Add Item modal.
 for (const button of openAddItemButtons) {
   button?.addEventListener('click', () => {
+    loadLocations();
     openModal(addItemModal);
   });
 }
