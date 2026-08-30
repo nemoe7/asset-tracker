@@ -90,4 +90,4 @@ def test_main_page_can_log_out(page, live_server):
 
   page.wait_for_url(f"{live_server}/auth/login")
 
-  assert page.get_by_role("button", name="Log in")
+  expect(page.get_by_role("button", name="Log in")).to_be_visible()
