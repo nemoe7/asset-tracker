@@ -2,24 +2,6 @@ import pytest
 from playwright.sync_api import expect
 
 
-@pytest.fixture(autouse=True)
-def e2e_admin(
-  page,
-  live_server,
-  gen_password,
-):
-  page.goto(f"{live_server}/auth/setup")
-
-  page.locator("#username").fill("test_admin")
-  page.locator("#display_name").fill("Test Admin")
-
-  password = gen_password("test_admin")
-  page.locator("#password").fill(password)
-  page.locator("#confirm_password").fill(password)
-
-  page.locator("button[type='submit']").click()
-
-
 @pytest.mark.e2e
 def test_main_page_loads(page, live_server):
   page.goto(f"{live_server}/")
