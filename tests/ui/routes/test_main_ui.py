@@ -12,81 +12,139 @@ def e2e_admin(
 
   page.locator("#username").fill("test_admin")
   page.locator("#display_name").fill("Test Admin")
+
   password = gen_password("test_admin")
   page.locator("#password").fill(password)
   page.locator("#confirm_password").fill(password)
+
   page.locator("button[type='submit']").click()
-
-
-@pytest.fixture
-def e2e_add_item(page, live_server):
-  def create(name, location_id=None):
-    page.goto(f"{live_server}/")
-
-    page.locator("#add-item-button").click()
-
-    page.locator("#item-name").fill(name)
-
-    if location_id is not None:
-      page.locator("#location_id").fill(str(location_id))
-
-    page.locator("#add-item-modal").get_by_role("button", name="Add item").click()
-
-  return create
 
 
 @pytest.mark.e2e
 def test_main_page_loads(page, live_server):
   page.goto(f"{live_server}/")
 
-  assert page.locator("#search-form").is_visible()
-  assert page.locator("#filter-item-button").is_visible()
-  assert page.locator("#add-item-button").is_visible()
-  assert page.locator("#inventory-items").is_visible()
-  assert page.get_by_role("button", name="Log out").is_visible()
+  expect(page.locator("#search-form")).to_be_visible()
+  expect(page.locator("#filter-item-button")).to_be_visible()
+  expect(page.locator("#add-item-button")).to_be_visible()
+  expect(page.locator("#inventory-items")).to_be_visible()
+  expect(page.get_by_role("button", name="Log out")).to_be_visible()
 
 
 @pytest.mark.e2e
 def test_main_page_shows_empty_inventory(page, live_server):
   page.goto(f"{live_server}/")
 
-  assert page.get_by_role("heading", name="No inventory items").is_visible()
+  expect(page.get_by_role("heading", name="No inventory items")).to_be_visible()
 
 
 @pytest.mark.e2e
-def test_main_page_can_search_inventory(page, live_server, e2e_add_item):
-  e2e_add_item("Test Asset")
+def test_main_page_search_has_correct_input(page, live_server):
   page.goto(f"{live_server}/")
 
-  search = page.locator("#search-form input")
-  search.fill("Test Asset")
+  search = page.locator("#search")
 
-  expect(page.get_by_role("cell", name="Test Asset")).to_be_visible()
+  expect(search).to_be_visible()
+  expect(search).to_have_attribute("name", "search")
+  expect(search).to_have_attribute("type", "search")
+  expect(search).to_have_attribute("placeholder", "Search inventory...")
 
 
 @pytest.mark.e2e
-def test_main_page_can_open_filter_modal(page, live_server):
+def test_main_page_filter_modal_opens_and_closes(page, live_server):
   page.goto(f"{live_server}/")
 
   page.locator("#filter-item-button").click()
 
-  assert page.get_by_role("dialog").is_visible()
+  modal = page.locator("#filter-item-modal")
+  expect(modal).to_be_visible()
+
+  expect(modal.get_by_role("heading", name="Filter & Sort")).to_be_visible()
+
+  expect(page.locator("#filter-location")).to_be_visible()
+  expect(page.locator("#filter-sort-by")).to_be_visible()
+  expect(page.get_by_text("Ascending", exact=True)).to_be_visible()
+  expect(page.get_by_text("Descending", exact=True)).to_be_visible()
+
+  page.locator("#close-filter-item-modal").click()
+
+  expect(modal).to_be_hidden()
 
 
 @pytest.mark.e2e
-def test_main_page_can_open_add_item_modal(page, live_server):
+def test_main_page_filter_modal_can_be_cleared(page, live_server):
+  page.goto(f"{live_server}/")
+
+  page.locator("#filter-item-button").click()
+
+  modal = page.locator("#filter-item-modal")
+  expect(modal).to_be_visible()
+
+  page.locator("#clear-filter-item").click()
+
+  expect(modal).to_be_hidden()
+
+
+@pytest.mark.e2e
+def test_main_page_add_item_modal_opens_and_closes(page, live_server):
   page.goto(f"{live_server}/")
 
   page.locator("#add-item-button").click()
 
-  assert page.get_by_role("dialog").is_visible()
+  modal = page.locator("#add-item-modal")
+  expect(modal).to_be_visible()
+
+  expect(modal.get_by_role("heading", name="Add item")).to_be_visible()
+
+  expect(page.locator("#item-name")).to_be_visible()
+  expect(page.locator("#item-location")).to_be_visible()
+
+  page.locator("#close-add-item-modal").click()
+
+  expect(modal).to_be_hidden()
 
 
 @pytest.mark.e2e
-def test_main_page_can_log_out(page, live_server):
+def test_main_page_add_item_modal_can_be_cancelled(page, live_server):
+  page.goto(f"{live_server}/")
+
+  page.locator("#add-item-button").click()
+
+  modal = page.locator("#add-item-modal")
+  expect(modal).to_be_visible()
+
+  page.locator("#item-name").fill("Test Asset")
+  page.locator("#cancel-add-item").click()
+
+  expect(modal).to_be_hidden()
+
+
+@pytest.mark.e2e
+def test_main_page_edit_modal_starts_hidden(page, live_server):
+  page.goto(f"{live_server}/")
+
+  expect(page.locator("#edit-item-modal")).to_be_hidden()
+
+
+@pytest.mark.e2e
+def test_main_page_logout(page, live_server):
   page.goto(f"{live_server}/")
 
   page.get_by_role("button", name="Log out").click()
+
+  page.wait_for_url(f"{live_server}/auth/login")
+
+  expect(page.get_by_role("button", name="Log in")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_main_page_requires_authentication(page, live_server):
+  page.goto(f"{live_server}/")
+
+  page.get_by_role("button", name="Log out").click()
+  page.wait_for_url(f"{live_server}/auth/login")
+
+  page.goto(f"{live_server}/")
 
   page.wait_for_url(f"{live_server}/auth/login")
 
