@@ -7,19 +7,17 @@ from werkzeug.serving import make_server
 
 import config
 from app import create_app
-from app.services.data.db import init_db
 
 
 @pytest.fixture(scope="session")
-def e2e_db():
+def e2e_db(worker_id):
   original_db_path = config.DB_PATH
 
-  with tempfile.TemporaryDirectory() as temp_dir:
+  with tempfile.TemporaryDirectory(prefix=f"inventory-e2e-{worker_id}-") as temp_dir:
     db_path = Path(temp_dir) / "e2e.db"
     config.DB_PATH = db_path
 
     try:
-      init_db()
       yield db_path
     finally:
       config.DB_PATH = original_db_path
@@ -52,3 +50,9 @@ def page(page):
   page.set_default_timeout(5_000)
   page.set_default_navigation_timeout(5_000)
   return page
+
+
+@pytest.fixture(autouse=True)
+def reset_e2e_db(e2e_db):
+  if e2e_db.exists():
+    e2e_db.unlink()
