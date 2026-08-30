@@ -10,6 +10,7 @@ from app.services.data.inventory import (
   create_item,
   get_item,
   get_items,
+  get_items_paginated,
   restore_item,
   update_item,
 )
@@ -950,6 +951,7 @@ def test_get_items_sort_by_boolean_custom_field(gen_test_data_admin):
     true_id,
   ]
 
+
 def test_get_items_sort_by_custom_field_descending_with_missing_values(
   gen_test_data_admin,
 ):
@@ -983,3 +985,133 @@ def test_get_items_sort_by_custom_field_descending_with_missing_values(
     it_id,
     hr_id,
   ]
+
+
+def test_get_items_paginated_returns_first_page(
+  gen_test_admin,
+  gen_test_item,
+):
+  gen_test_item(name="Apple")
+  gen_test_item(name="Banana")
+  gen_test_item(name="Cherry")
+
+  result = get_items_paginated(
+    page=1,
+    per_page=2,
+  )
+
+  assert result["items"][0]["name"] == "Apple"
+  assert result["items"][1]["name"] == "Banana"
+  assert result["page"] == 1
+  assert result["per_page"] == 2
+  assert result["total"] == 3
+  assert result["total_pages"] == 2
+
+
+def test_get_items_paginated_returns_second_page(
+  gen_test_admin,
+  gen_test_item,
+):
+  gen_test_item(name="Apple")
+  gen_test_item(name="Banana")
+  gen_test_item(name="Cherry")
+
+  result = get_items_paginated(
+    page=2,
+    per_page=2,
+  )
+
+  assert len(result["items"]) == 1
+  assert result["items"][0]["name"] == "Cherry"
+  assert result["page"] == 2
+  assert result["per_page"] == 2
+  assert result["total"] == 3
+  assert result["total_pages"] == 2
+
+
+def test_get_items_paginated_respects_search(
+  gen_test_admin,
+  gen_test_item,
+):
+  gen_test_item(name="Apple")
+  gen_test_item(name="Apple Keyboard")
+  gen_test_item(name="Banana")
+
+  result = get_items_paginated(
+    search="Apple",
+    page=1,
+    per_page=10,
+  )
+
+  assert [item["name"] for item in result["items"]] == [
+    "Apple",
+    "Apple Keyboard",
+  ]
+  assert result["total"] == 2
+  assert result["total_pages"] == 1
+
+
+def test_get_items_paginated_respects_location(
+  gen_test_admin,
+  gen_test_location,
+  gen_test_item,
+):
+  location = gen_test_location(name="Storage")
+
+  gen_test_item(
+    name="Stored 1",
+    location_id=location,
+  )
+  gen_test_item(
+    name="Stored 2",
+    location_id=location,
+  )
+  gen_test_item(name="Other")
+
+  result = get_items_paginated(
+    location_id=location,
+    page=1,
+    per_page=10,
+  )
+
+  assert [item["name"] for item in result["items"]] == [
+    "Stored 1",
+    "Stored 2",
+  ]
+  assert result["total"] == 2
+
+
+def test_get_items_paginated_respects_sorting(
+  gen_test_admin,
+  gen_test_item,
+):
+  gen_test_item(name="Apple")
+  gen_test_item(name="Banana")
+  gen_test_item(name="Cherry")
+
+  result = get_items_paginated(
+    sort_by="name",
+    sort_order="desc",
+    page=1,
+    per_page=10,
+  )
+
+  assert [item["name"] for item in result["items"]] == [
+    "Cherry",
+    "Banana",
+    "Apple",
+  ]
+
+
+def test_get_items_paginated_rejects_invalid_page(
+  gen_test_admin,
+):
+  with pytest.raises(InvalidInputError):
+    get_items_paginated(page=0)
+
+
+def test_get_items_paginated_rejects_invalid_per_page(
+  gen_test_admin,
+):
+  with pytest.raises(InvalidInputError):
+    get_items_paginated(per_page=0)

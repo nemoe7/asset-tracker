@@ -6,33 +6,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="manifest" crossorigin="use-credentials" href="{{ url_for('static', filename='manifest.json') }}">
-
-  <meta name="theme-color" content="#18181b">
-  <meta name="mobile-web-app-capable" content="yes">
-
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
-
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.min.css') }}">
 
   <title>{% block title %}Inventory Management{% endblock %}</title>
 
   {% block head %}{% endblock %}
 </head>
 
-<body class="h-screen overflow-hidden bg-zinc-900 text-zinc-100">
-
-  <div class="h-full px-6 py-6 lg:px-32 xl:px-48 2xl:px-64">
-    {% block content %}{% endblock %}
-  </div>
-
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js");
-    }
-  </script>
+<body>
+  {% block body %}{% endblock %}
 
   {% block scripts %}{% endblock %}
-
 </body>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js");
+  }
+</script>
 
 </html>
