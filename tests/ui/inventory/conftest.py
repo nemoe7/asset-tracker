@@ -33,10 +33,16 @@ def create_item(page, live_server):
         "name": name,
         "location_id": location_id or "",
       },
+      headers={
+        "Accept": "application/json",
+      },
       max_redirects=0,
     )
 
-    assert response.status == 302
+    assert response.status == 200
+    assert response.json()["id"]
+
+    return response.json()
 
   return _create
 
