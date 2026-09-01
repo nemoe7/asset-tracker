@@ -272,7 +272,11 @@ function closeModalContent() {
 }
 
 
-function closeModal() {
+async function closeModal() {
+  if (qrScannerRunning) {
+    await stopQrScanner();
+  }
+
   closeModalContent();
 
   if (modalManager?.open) {
@@ -303,6 +307,90 @@ modalManager?.addEventListener('click', (event) => {
 });
 
 // ==================== End Modal Manager ====================
+
+
+// ==================== QR Scanner ====================
+
+const qrScannerButton = document.getElementById('qr-scanner-button');
+const qrScannerModal = document.getElementById('qr-scanner-modal');
+const closeQrScannerModal = document.getElementById('close-qr-scanner-modal');
+const qrReader = document.getElementById('qr-reader');
+
+let qrScanner = null;
+let qrScannerRunning = false;
+
+
+// Initialize QR scanner.
+async function startQrScanner() {
+  if (!qrReader || qrScannerRunning) {
+    return;
+  }
+
+  qrScanner = new Html5Qrcode('qr-reader');
+
+  await qrScanner.start(
+    {
+      facingMode: 'environment'
+    },
+    {
+      fps: 10,
+      qrbox: {
+        width: 250,
+        height: 250
+      }
+    },
+    (decodedText) => {
+      console.log('QR code scanned:', decodedText);
+    },
+    () => {
+      // Ignore scan failures while looking for a QR code.
+    }
+  );
+
+  qrScannerRunning = true;
+}
+
+
+// Stop QR scanner.
+async function stopQrScanner() {
+  if (!qrScanner || !qrScannerRunning) {
+    return;
+  }
+
+  await qrScanner.stop();
+  qrScanner.clear();
+
+  qrScanner = null;
+  qrScannerRunning = false;
+}
+
+
+// Open QR scanner.
+qrScannerButton?.addEventListener('click', () => {
+  openModal(qrScannerModal, async () => {
+    qrScannerModal.classList.remove('hidden');
+
+    await new Promise((resolve) => {
+      requestAnimationFrame(resolve);
+    });
+
+    await startQrScanner();
+  });
+});
+
+
+// Close QR scanner.
+closeQrScannerModal?.addEventListener('click', async () => {
+  await stopQrScanner();
+  closeModal();
+});
+
+
+// Stop scanner when another modal replaces it.
+const originalCloseModalContent = closeModalContent;
+
+
+// ==================== End QR Scanner ====================
 
 
 // ==================== Filter & Sort Modal ====================
