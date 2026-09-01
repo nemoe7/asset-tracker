@@ -6,14 +6,11 @@
 {% endset %}
 
 {% set buttons %}
-<button type="submit" form="edit-item-form"
-  class="![font:initial] rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
-  title="Save changes" aria-label="Save changes">
+<button type="submit" form="edit-item-form" class="icon-button" title="Save changes" aria-label="Save changes">
   <i class="bi bi-floppy block size-4" aria-hidden="true"></i>
 </button>
 
-<button type="button" id="archive-item-button"
-  class="![font:initial] rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
+<button type="button" id="archive-item-button" class="icon-button text-red-400 hover:bg-red-950 hover:text-red-300"
   title="Archive asset" aria-label="Archive asset">
   <i class="bi bi-archive block size-4" aria-hidden="true"></i>
 </button>
@@ -37,8 +34,7 @@
           </th>
 
           <td class="px-4 py-3">
-            <input id="edit-item-name" name="name" type="text" required
-              class="block w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+            <input id="edit-item-name" name="name" type="text" required class="form-input">
           </td>
         </tr>
 
@@ -52,8 +48,7 @@
 
             <div class="relative">
 
-              <select id="edit-item-location" name="location_id"
-                class="block w-full appearance-none rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 pr-10 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+              <select id="edit-item-location" name="location_id" class="form-select">
 
                 <option value="">
                   —
