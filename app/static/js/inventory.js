@@ -3,7 +3,7 @@
 const inventoryContent = document.getElementById('inventory-content');
 const inventoryLoading = document.getElementById('inventory-loading');
 const searchInput = document.getElementById('search');
-const filterForm = document.getElementById('filter-item-form');
+const filterForm = document.getElementById('filter-form');
 const filterSortBy = document.getElementById('filter-sort-by');
 const includeArchived = document.querySelector(
   'input[name="include_archived"]'
@@ -21,7 +21,6 @@ let currentInventoryPage = 1;
 
 
 // ==================== Load Inventory ====================
-
 async function loadInventory(page = 1) {
   if (!inventoryContent) {
     return;
@@ -130,13 +129,10 @@ async function loadInventory(page = 1) {
     }
   }
 }
-
-
 // ==================== End Load Inventory ====================
 
 
 // ==================== Bind Inventory Actions ====================
-
 function bindInventoryActions() {
   for (const button of inventoryContent.querySelectorAll('.copy-item-id')) {
     button.addEventListener('click', handleCopyItemId);
@@ -164,13 +160,10 @@ function bindInventoryActions() {
     });
   }
 }
-
-
 // ==================== End Bind Inventory Actions ====================
 
 
 // ==================== Copy Asset ID ====================
-
 async function handleCopyItemId(event) {
   event.stopPropagation();
 
@@ -197,8 +190,6 @@ async function handleCopyItemId(event) {
     icon.classList.add('bi-copy');
   }, 1500);
 }
-
-
 // ==================== End Copy Asset ID ====================
 
 
@@ -207,6 +198,12 @@ async function handleCopyItemId(event) {
 const modalManager = document.getElementById('modal-manager');
 const modalManagerContent = document.getElementById('modal-manager-content');
 const modalManagerLoading = document.getElementById('modal-manager-loading');
+
+document.addEventListener('click', (event) => {
+  if (event.target.closest('.modal-close')) {
+    closeModal();
+  }
+});
 
 let activeModal = null;
 let activeModalParent = null;
@@ -299,11 +296,17 @@ function switchModal(modal) {
   openModal(modal);
 }
 
+let isBackgroundClick = false
+
+modalManager?.addEventListener('mousedown', (event) => {
+  isBackgroundClick = (event.target === modalManager);
+});
 
 modalManager?.addEventListener('click', (event) => {
-  if (event.target === modalManager) {
+  if (isBackgroundClick && event.target === modalManager) {
     closeModal();
   }
+  isBackgroundClick = false;
 });
 
 // ==================== End Modal Manager ====================
@@ -322,9 +325,12 @@ let qrScannerRunning = false;
 
 // Initialize QR scanner.
 async function startQrScanner() {
+  // await new Promise(() => {});
   if (!qrReader || qrScannerRunning) {
     return;
   }
+
+  const width = qrReader.clientWidth;
 
   qrScanner = new Html5Qrcode('qr-reader');
 
@@ -346,8 +352,16 @@ async function startQrScanner() {
       // Ignore scan failures while looking for a QR code.
     }
   );
+  const video = qrReader.querySelector('video');
+
+  if (video) {
+    video.classList.add('w-full', 'h-auto');
+    video.style.removeProperty('width');
+    video.style.removeProperty('height');
+  }
 
   qrScannerRunning = true;
+  qrReader.classList.remove('hidden')
 }
 
 
@@ -362,13 +376,14 @@ async function stopQrScanner() {
 
   qrScanner = null;
   qrScannerRunning = false;
+  qrReader.classList.add('hidden')
 }
 
 
 // Open QR scanner.
 qrScannerButton?.addEventListener('click', () => {
   openModal(qrScannerModal, async () => {
-    qrScannerModal.classList.remove('hidden');
+    // qrScannerModal.classList.remove('hidden');
 
     await new Promise((resolve) => {
       requestAnimationFrame(resolve);
@@ -397,7 +412,6 @@ const originalCloseModalContent = closeModalContent;
 
 const filterItemButton = document.getElementById('filter-item-button');
 const filterItemModal = document.getElementById('filter-item-modal');
-const closeFilterItemModal = document.getElementById('close-filter-item-modal');
 const clearFilterItem = document.getElementById('clear-filter-item');
 
 const filterLocation = document.getElementById('filter-location');
@@ -463,21 +477,6 @@ filterItemButton?.addEventListener('click', () => {
 });
 
 
-// Close Filter & Sort modal.
-closeFilterItemModal?.addEventListener('click', () => {
-  // filterItemModal?.close();
-  closeModal();
-});
-
-
-// Close Filter & Sort modal when clicking the backdrop.
-// filterItemModal?.addEventListener('click', (event) => {
-//   if (event.target === filterItemModal) {
-//     filterItemModal.close();
-//   }
-// });
-
-
 // Clear filters.
 clearFilterItem?.addEventListener('click', () => {
   filterForm?.reset();
@@ -526,27 +525,9 @@ for (const button of openAddItemButtons) {
   });
 }
 
-
-// Close Add Item modal.
-const closeAddItemButtons = [
-  document.getElementById('close-add-item-modal'),
-  document.getElementById('cancel-add-item')
-];
-
-for (const button of closeAddItemButtons) {
-  button?.addEventListener('click', () => {
-    // addItemModal?.close();
-    closeModal();
-  });
-}
-
-
-// Close Add Item modal when clicking the backdrop.
-// addItemModal?.addEventListener('click', (event) => {
-//   if (event.target === addItemModal) {
-//     addItemModal.close();
-//   }
-// });
+document.getElementById('cancel-add-item')?.addEventListener('click', () => {
+  closeModal();
+});
 
 
 // ==================== End Add Item Modal ====================
@@ -624,14 +605,6 @@ document
     // editItemModal?.close();
     closeModal();
   });
-
-
-// Close Edit Asset modal when clicking the backdrop.
-// editItemModal?.addEventListener('click', (event) => {
-//   if (event.target === editItemModal) {
-//     editItemModal.close();
-//   }
-// });
 
 
 // ==================== End Edit Asset Modal ====================
@@ -725,14 +698,6 @@ document
   });
 
 
-// Close View Asset modal when clicking the backdrop.
-// viewItemModal?.addEventListener('click', (event) => {
-//   if (event.target === viewItemModal) {
-//     viewItemModal.close();
-//   }
-// });
-
-
 // ==================== End View Asset Modal ====================
 
 
@@ -818,14 +783,6 @@ confirmArchiveItem?.addEventListener('click', async () => {
 });
 
 
-// Close Archive confirmation when clicking the backdrop.
-// archiveItemModal?.addEventListener('click', (event) => {
-//   if (event.target === archiveItemModal) {
-//     archiveItemModal.close();
-//   }
-// });
-
-
 // ==================== End Archive Asset ====================
 
 
@@ -886,14 +843,6 @@ confirmRestoreItem?.addEventListener('click', async () => {
 
   loadInventory(currentInventoryPage);
 });
-
-
-// Close Restore confirmation when clicking the backdrop.
-// restoreItemModal?.addEventListener('click', (event) => {
-//   if (event.target === restoreItemModal) {
-//     restoreItemModal.close();
-//   }
-// });
 
 
 // ==================== End Restore Asset ====================

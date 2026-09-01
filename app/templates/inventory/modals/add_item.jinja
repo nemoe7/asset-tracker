@@ -1,0 +1,65 @@
+{% from "inventory/modals/_modal.jinja" import modal %}
+
+{% call modal("add-item-modal", "Add Item") %}
+
+<form method="post" action="{{ url_for('inventory.create') }}">
+  {# ==================== Add Item Fields ==================== #}
+  <div class="space-y-5">
+
+    {# Item Name #}
+    <div>
+      <label for="item-name" class="mb-2 block text-sm font-medium text-zinc-300">
+        Name
+      </label>
+
+      <input id="item-name" name="name" type="text" required
+        class="block w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+    </div>
+
+    {# Item Location #}
+    <div>
+      <label for="item-location" class="mb-2 block text-sm font-medium text-zinc-300">
+        Location
+      </label>
+
+      <div class="relative">
+
+        <select id="item-location" name="location_id"
+          class="block w-full appearance-none rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 pr-10 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+
+          <option value="">
+            —
+          </option>
+
+        </select>
+
+        <i class="bi bi-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+          aria-hidden="true"></i>
+
+      </div>
+    </div>
+
+  </div>
+  {# ==================== End Add Item Fields ==================== #}
+
+
+  {# ==================== Add Item Actions ==================== #}
+  <div class="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+    <button type="button" id="cancel-add-item"
+      class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+      Cancel
+    </button>
+
+    <button type="submit"
+      class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-900">
+      <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
+      Add item
+    </button>
+
+  </div>
+  {# ==================== End Add Item Actions ==================== #}
+
+</form>
+
+{% endcall %}

@@ -1,0 +1,43 @@
+{% from "inventory/modals/_modal.jinja" import modal %}
+
+{% call modal("restore-item-modal", title=None) %}
+
+{# ==================== Restore Confirmation ==================== #}
+<div class="flex items-start gap-4">
+
+  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300">
+    <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+  </div>
+
+  <div>
+    <h2 class="text-lg font-semibold">
+      Restore asset?
+    </h2>
+
+    <p class="mt-1 text-sm text-zinc-400">
+      This will return the asset to the active inventory.
+    </p>
+  </div>
+
+</div>
+{# ==================== End Restore Confirmation ==================== #}
+
+
+{# ==================== Restore Confirmation Actions ==================== #}
+<div class="mt-6 flex justify-end gap-3">
+
+  <button type="button" id="cancel-restore-item"
+    class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+    Cancel
+  </button>
+
+  <button type="button" id="confirm-restore-item"
+    class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-400">
+    <i class="bi bi-arrow-counterclockwise mr-1" aria-hidden="true"></i>
+    Restore asset
+  </button>
+
+</div>
+{# ==================== End Restore Confirmation Actions ==================== #}
+
+{% endcall %}

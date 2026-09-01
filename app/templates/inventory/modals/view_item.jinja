@@ -1,0 +1,76 @@
+{% from "inventory/modals/_modal.jinja" import modal %}
+
+{% set subtitle %}
+<p id="view-item-id" class="min-w-0 max-w-full truncate font-mono text-xs text-zinc-500 sm:text-sm">
+</p>
+
+<span id="view-item-archived" class="mt-1 hidden rounded bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
+  Archived
+</span>
+{% endset %}
+
+{% set buttons %}
+{# Copy Asset ID #}
+<button type="button" id="view-item-copy"
+  class="![font:initial] rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100" title="Copy ID"
+  aria-label="Copy ID">
+  <i class="bi bi-copy block size-4" aria-hidden="true"></i>
+</button>
+
+{# Restore Asset #}
+<button type="button" id="view-item-restore"
+  class="![font:initial] hidden rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+  title="Restore asset" aria-label="Restore asset">
+  <i class="bi bi-arrow-counterclockwise block size-4" aria-hidden="true"></i>
+</button>
+
+{# Edit Asset #}
+<button type="button" id="view-item-edit"
+  class="![font:initial] rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+  title="Edit asset" aria-label="Edit asset">
+  <i class="bi bi-pencil block size-4" aria-hidden="true"></i>
+</button>
+{% endset %}
+
+{% call modal(
+"view-item-modal",
+"View Item",
+subtitle=subtitle,
+buttons=buttons
+) %}
+
+{# ==================== Asset Details ==================== #}
+<div class="overflow-hidden rounded-lg border border-zinc-800">
+
+  <table class="w-full text-left text-sm">
+
+    <tbody class="divide-y divide-zinc-800">
+
+      {# Name #}
+      <tr>
+        <th class="w-1/3 px-4 py-3 font-medium text-zinc-400">
+          Name
+        </th>
+
+        <td id="view-item-name" class="truncate px-4 py-3 text-zinc-100">
+        </td>
+      </tr>
+
+      {# Location #}
+      <tr>
+        <th class="w-1/3 px-4 py-3 font-medium text-zinc-400">
+          Location
+        </th>
+
+        <td id="view-item-location" class="px-4 py-3 text-zinc-100">
+        </td>
+      </tr>
+
+    </tbody>
+
+  </table>
+
+</div>
+{# ==================== End Asset Details ==================== #}
+
+{% endcall %}
