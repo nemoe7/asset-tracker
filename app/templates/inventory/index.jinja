@@ -364,25 +364,8 @@
   {# class="hidden m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-0 text-zinc-100
   shadow-2xl backdrop:bg-black/60"> #}
 
-  {# ==================== Edit Loading State ==================== #}
-  <div id="edit-item-loading" class="p-6">
-
-    <div class="flex min-h-48 flex-col items-center justify-center">
-
-      <i class="bi bi-arrow-repeat animate-spin text-2xl text-zinc-500" aria-hidden="true"></i>
-
-      <p class="mt-3 text-sm text-zinc-400">
-        Loading asset...
-      </p>
-
-    </div>
-
-  </div>
-  {# ==================== End Edit Loading State ==================== #}
-
-
   {# ==================== Edit Asset Form ==================== #}
-  <form id="edit-item-form" method="post" class="hidden p-6">
+  <form id="edit-item-form" method="post" class="p-6">
 
     {# ==================== Edit Asset Header ==================== #}
     <div class="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
@@ -587,25 +570,8 @@
   {# class="hidden m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-0 text-zinc-100
   shadow-2xl backdrop:bg-black/60"> #}
 
-  {# ==================== View Loading State ==================== #}
-  <div id="view-item-loading" class="p-6">
-
-    <div class="flex min-h-48 flex-col items-center justify-center">
-
-      <i class="bi bi-arrow-repeat animate-spin text-2xl text-zinc-500" aria-hidden="true"></i>
-
-      <p class="mt-3 text-sm text-zinc-400">
-        Loading asset...
-      </p>
-
-    </div>
-
-  </div>
-  {# ==================== End View Loading State ==================== #}
-
-
   {# ==================== View Asset Content ==================== #}
-  <div id="view-item-content" class="hidden p-6">
+  <div id="view-item-content" class="p-6">
 
     {# ==================== Asset Header ==================== #}
     <div class="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
@@ -701,6 +667,16 @@
 {# ==================== Modal Manager ==================== #}
 <dialog id="modal-manager"
   class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+  <div id="modal-manager-loading" class="hidden">
+    <div class="flex min-h-48 items-center justify-center">
+      <i class="bi bi-arrow-repeat animate-spin text-2xl text-zinc-500" aria-hidden="true"></i>
+
+      <p class="ml-3 text-sm text-zinc-400">
+        Loading...
+      </p>
+    </div>
+  </div>
+
   <div id="modal-manager-content"></div>
 </dialog>
 {# ==================== End Modal Manager ==================== #}
