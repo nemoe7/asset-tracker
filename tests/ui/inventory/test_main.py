@@ -173,3 +173,59 @@ def test_add_item_modal_shows_locations(
   ).to_be_attached()
 
   expect(location_select.locator('option[value=""]')).to_have_count(1)
+
+
+@pytest.mark.e2e
+def test_main_page_desktop_header_actions(page, live_server, setup_admin):
+  page.set_viewport_size({"width": 1280, "height": 720})
+  page.goto(f"{live_server}/")
+
+  expect(
+    page.locator("span").filter(has_text=f"@{setup_admin['username']}")
+  ).to_be_visible()
+  expect(page.locator("#qr-scanner-button")).to_be_visible()
+  expect(page.locator("form").first).to_be_visible()
+
+  expect(page.locator("details")).to_be_hidden()
+
+
+@pytest.mark.e2e
+def test_main_page_mobile_header_actions(
+  page,
+  live_server,
+  setup_admin,
+):
+  page.set_viewport_size({"width": 375, "height": 667})
+  page.goto(f"{live_server}/")
+
+  # Scan remains directly available.
+  expect(page.locator("#qr-scanner-button")).to_be_visible()
+
+  # Desktop actions are hidden.
+  expect(page.get_by_text("admin", exact=True)).to_be_hidden()
+  expect(page.get_by_role("link", name="Users")).to_be_hidden()
+
+  # Hamburger is visible.
+  menu = page.locator("details")
+  expect(menu).to_be_visible()
+
+  # Menu contents are initially hidden.
+  expect(menu.get_by_text(f"@{setup_admin['username']}", exact=True)).to_be_hidden()
+  expect(menu.locator('form[action="/auth/logout"]')).to_be_hidden()
+
+
+@pytest.mark.e2e
+def test_main_page_mobile_menu_contains_user_actions(
+  page,
+  live_server,
+  setup_admin,
+):
+  page.set_viewport_size({"width": 375, "height": 667})
+  page.goto(f"{live_server}/")
+
+  menu = page.locator("details")
+
+  menu.locator("summary").click()
+
+  expect(menu.get_by_text(f"@{setup_admin['username']}", exact=True)).to_be_visible()
+  expect(menu.locator('form[action="/auth/logout"]')).to_be_visible()
