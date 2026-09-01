@@ -206,13 +206,14 @@ async function handleCopyItemId(event) {
 
 const modalManager = document.getElementById('modal-manager');
 const modalManagerContent = document.getElementById('modal-manager-content');
+const modalManagerLoading = document.getElementById('modal-manager-loading');
 
 let activeModal = null;
 let activeModalParent = null;
 let activeModalNextSibling = null;
 
 
-function openModal(modal) {
+async function openModal(modal, load = null) {
   if (!modal || !modalManager || !modalManagerContent) {
     return;
   }
@@ -230,10 +231,24 @@ function openModal(modal) {
   activeModalNextSibling = modal.nextSibling;
 
   modalManagerContent.appendChild(modal);
-  modal.classList.remove('hidden');
+
+  modal.classList.add('hidden');
+  modalManagerLoading?.classList.toggle('hidden', !load);
 
   if (!modalManager.open) {
     modalManager.showModal();
+  }
+
+  try {
+    if (load) {
+      await load();
+    }
+  } finally {
+    modalManagerLoading?.classList.add('hidden');
+
+    if (activeModal === modal) {
+      modal.classList.remove('hidden');
+    }
   }
 }
 
@@ -452,7 +467,6 @@ for (const button of closeAddItemButtons) {
 // ==================== Edit Asset Modal ====================
 
 const editItemModal = document.getElementById('edit-item-modal');
-const editItemLoading = document.getElementById('edit-item-loading');
 const editItemForm = document.getElementById('edit-item-form');
 
 const editItemId = document.getElementById('edit-item-id');
@@ -474,30 +488,23 @@ async function handleEditItem(event) {
 
   currentEditItemId = itemId;
 
-  editItemLoading?.classList.remove('hidden');
-  editItemForm?.classList.add('hidden');
+  openModal(editItemModal, async () => {
+    const response = await fetch(`/inventory/${itemId}`);
 
-  openModal(editItemModal);
+    if (!response.ok) {
+      closeModal();
+      return;
+    }
 
-  const response = await fetch(`/inventory/${itemId}`);
+    const item = await response.json();
 
-  if (!response.ok) {
-    // editItemModal?.close();
-    closeModal();
-    return;
-  }
+    await loadLocations();
 
-  const item = await response.json();
-
-  await loadLocations();
-
-  editItemId.textContent = item.id;
-  editItemName.value = item.name;
-  editItemLocation.value = item.location_id ?? '';
-  editItemForm.action = `/inventory/${itemId}`;
-
-  editItemLoading?.classList.add('hidden');
-  editItemForm?.classList.remove('hidden');
+    editItemId.textContent = item.id;
+    editItemName.value = item.name;
+    editItemLocation.value = item.location_id ?? '';
+    editItemForm.action = `/inventory/${itemId}`;
+  });
 }
 
 // Submit Edit Asset without leaving the inventory page.
@@ -545,7 +552,6 @@ document
 // ==================== View Asset Modal ====================
 
 const viewItemModal = document.getElementById('view-item-modal');
-const viewItemLoading = document.getElementById('view-item-loading');
 const viewItemContent = document.getElementById('view-item-content');
 
 const viewItemId = document.getElementById('view-item-id');
@@ -574,38 +580,27 @@ async function handleViewItem(event) {
 
   currentViewItemId = itemId;
 
-  viewItemLoading?.classList.remove('hidden');
-  viewItemContent?.classList.add('hidden');
+  openModal(viewItemModal, async () => {
+    const response = await fetch(
+      `/inventory/${itemId}?include_archived=true`
+    );
 
-  openModal(viewItemModal);
+    if (!response.ok) {
+      closeModal();
+      return;
+    }
 
-  const response = await fetch(
-    `/inventory/${itemId}?include_archived=true`
-  );
+    const asset = await response.json();
+    const isArchived = Boolean(asset.archived_at);
 
-  if (!response.ok) {
-    // viewItemModal?.close();
-    closeModal();
-    return;
-  }
+    viewItemArchived.classList.toggle('hidden', !isArchived);
+    viewItemEdit.classList.toggle('hidden', isArchived);
+    viewItemRestore.classList.toggle('hidden', !isArchived);
 
-  const asset = await response.json();
-  const isArchived = Boolean(asset.archived_at);
-
-  viewItemArchived.classList.toggle('hidden', !isArchived);
-  viewItemEdit.classList.toggle('hidden', isArchived);
-  viewItemRestore.classList.toggle('hidden', !isArchived);
-
-  viewItemId.textContent = asset.id;
-  viewItemArchived.classList.toggle(
-    'hidden',
-    !asset.archived_at
-  );
-  viewItemName.textContent = asset.name;
-  viewItemLocation.textContent = asset.location_name || '—';
-
-  viewItemLoading?.classList.add('hidden');
-  viewItemContent?.classList.remove('hidden');
+    viewItemId.textContent = asset.id;
+    viewItemName.textContent = asset.name;
+    viewItemLocation.textContent = asset.location_name || '—';
+  });
 }
 
 
