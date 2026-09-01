@@ -23,33 +23,78 @@
 
       <div class="flex items-center gap-3">
 
-        <span class="hidden text-sm text-zinc-400 sm:block">
-          {{ username }}
-        </span>
 
-        {% if can_manage_users %}
-        <a href="{{ url_for('admin.users') }}"
-          class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
-          Users
-        </a>
-        {% endif %}
+
+        {# ==================== Desktop Actions ==================== #}
+        <div class="hidden items-center gap-3 sm:flex">
+          <span class="text-sm text-zinc-400">
+            @{{ username }}
+          </span>
+
+          {% if can_manage_users %}
+          <a href="{{ url_for('admin.users') }}"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+            Users
+          </a>
+          {% endif %}
+
+        </div>
+        {# ==================== End Desktop Actions ==================== #}
+
 
         {# ==================== QR Scanner Button ==================== #}
         <button type="button" id="qr-scanner-button"
           class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
           <i class="bi bi-qr-code-scan mr-1" aria-hidden="true"></i>
-          Scan
+          <span class="">Scan</span>
         </button>
         {# ==================== End QR Scanner Button ==================== #}
 
 
-        {# Logout is intentionally POST #}
-        <form method="post" action="{{ url_for('auth.logout') }}">
+        {# ==================== Desktop Logout ==================== #}
+        <form method="post" action="{{ url_for('auth.logout') }}" class="hidden sm:block">
           <button type="submit"
             class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
             Log out
           </button>
         </form>
+        {# ==================== End Desktop Logout ==================== #}
+
+
+        {# ==================== Mobile Menu ==================== #}
+        <details class="relative sm:hidden">
+
+          <summary
+            class="flex cursor-pointer list-none rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100">
+            <i class="bi bi-list block text-xl" aria-hidden="true"></i>
+            <span class="sr-only">Open menu</span>
+          </summary>
+
+          <div
+            class="absolute right-0 top-full z-50 mt-2 min-w-40 rounded-lg border border-zinc-800 bg-zinc-900 p-1 shadow-xl">
+
+            <div class="px-3 py-2 text-sm text-zinc-400">
+              @{{ username }}
+            </div>
+
+            {% if can_manage_users %}
+            <a href="{{ url_for('admin.users') }}"
+              class="block rounded-md px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
+              Users
+            </a>
+            {% endif %}
+
+            <form method="post" action="{{ url_for('auth.logout') }}">
+              <button type="submit"
+                class="block w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
+                Log out
+              </button>
+            </form>
+
+          </div>
+
+        </details>
+        {# ==================== End Mobile Menu ==================== #}
 
       </div>
     </div>

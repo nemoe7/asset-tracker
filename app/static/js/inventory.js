@@ -318,7 +318,7 @@ modalManager?.addEventListener('click', (event) => {
 
 // ==================== QR Scanner ====================
 
-const qrScannerButton = document.getElementById('qr-scanner-button');
+// const qrScannerButton = document.getElementById('qr-scanner-button');
 const qrScannerModal = document.getElementById('qr-scanner-modal');
 const qrReader = document.getElementById('qr-reader');
 
@@ -385,13 +385,15 @@ async function stopQrScanner() {
 
 // Open QR scanner.
 
-qrScannerButton?.addEventListener('click', () => {
-  openModal(qrScannerModal, async () => {
-    await new Promise((resolve) => {
-      requestAnimationFrame(resolve);
-    });
+document.querySelectorAll('.qr-scanner-button').forEach((button) => {
+  button.addEventListener('click', () => {
+    openModal(qrScannerModal, async () => {
+      await new Promise((resolve) => {
+        requestAnimationFrame(resolve);
+      });
 
-    await startQrScanner();
+      await startQrScanner();
+    });
   });
 });
 
