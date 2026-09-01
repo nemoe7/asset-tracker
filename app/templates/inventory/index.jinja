@@ -34,6 +34,15 @@
         </a>
         {% endif %}
 
+        {# ==================== QR Scanner Button ==================== #}
+        <button type="button" id="qr-scanner-button"
+          class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+          <i class="bi bi-qr-code-scan mr-1" aria-hidden="true"></i>
+          Scan
+        </button>
+        {# ==================== End QR Scanner Button ==================== #}
+
+
         {# Logout is intentionally POST #}
         <form method="post" action="{{ url_for('auth.logout') }}">
           <button type="submit"
@@ -120,6 +129,47 @@
   </main>
 </div>
 {# ==================== End Inventory Page ==================== #}
+
+
+{# ==================== QR Scanner Modal ==================== #}
+<div id="qr-scanner-modal" class="hidden">
+
+  <div class="p-6">
+
+    {# ==================== QR Scanner Header ==================== #}
+    <div class="mb-4 flex items-center justify-between gap-4">
+
+      <div>
+        <h2 class="text-lg font-semibold">
+          Scan QR code
+        </h2>
+
+        <p class="mt-1 text-sm text-zinc-400">
+          Scan an inventory item QR code.
+        </p>
+      </div>
+
+      <button type="button" id="close-qr-scanner-modal"
+        class="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100" title="Close"
+        aria-label="Close">
+
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+
+      </button>
+
+    </div>
+    {# ==================== End QR Scanner Header ==================== #}
+
+
+    {# ==================== QR Scanner ==================== #}
+    <div id="qr-reader" class="min-h-64 overflow-hidden rounded-lg">
+    </div>
+    {# ==================== End QR Scanner ==================== #}
+
+  </div>
+
+</div>
+{# ==================== End QR Scanner Modal ==================== #}
 
 
 {# ==================== Filter & Sort Modal ==================== #}
@@ -667,6 +717,7 @@
 {# ==================== Modal Manager ==================== #}
 <dialog id="modal-manager"
   class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+  <div id="modal-manager-content"></div>
   <div id="modal-manager-loading" class="hidden">
     <div class="flex min-h-48 items-center justify-center">
       <i class="bi bi-arrow-repeat animate-spin text-2xl text-zinc-500" aria-hidden="true"></i>
@@ -677,7 +728,6 @@
     </div>
   </div>
 
-  <div id="modal-manager-content"></div>
 </dialog>
 {# ==================== End Modal Manager ==================== #}
 
@@ -686,6 +736,7 @@
 
 
 {% block scripts %}
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script src="{{ url_for('static', filename='js/inventory.js') }}"></script>
 {% endblock %}
 {# ==================== End Scripts Block ==================== #}
