@@ -21,6 +21,7 @@ let currentInventoryPage = 1;
 
 
 // ==================== Load Inventory ====================
+
 async function loadInventory(page = 1) {
   if (!inventoryContent) {
     return;
@@ -35,7 +36,6 @@ async function loadInventory(page = 1) {
   inventoryRequest = new AbortController();
 
   const params = new URLSearchParams();
-
   const search = searchInput?.value.trim();
 
   if (search) {
@@ -74,6 +74,7 @@ async function loadInventory(page = 1) {
             <p class="text-sm text-zinc-400">
               Invalid inventory filters.
             </p>
+
             <button
               type="button"
               id="reset-inventory-filters"
@@ -96,6 +97,7 @@ async function loadInventory(page = 1) {
             <p class="text-sm text-zinc-400">
               Failed to load inventory.
             </p>
+
             <button
               type="button"
               id="retry-inventory"
@@ -129,10 +131,12 @@ async function loadInventory(page = 1) {
     }
   }
 }
+
 // ==================== End Load Inventory ====================
 
 
 // ==================== Bind Inventory Actions ====================
+
 function bindInventoryActions() {
   for (const button of inventoryContent.querySelectorAll('.copy-item-id')) {
     button.addEventListener('click', handleCopyItemId);
@@ -160,10 +164,12 @@ function bindInventoryActions() {
     });
   }
 }
+
 // ==================== End Bind Inventory Actions ====================
 
 
 // ==================== Copy Asset ID ====================
+
 async function handleCopyItemId(event) {
   event.stopPropagation();
 
@@ -190,6 +196,7 @@ async function handleCopyItemId(event) {
     icon.classList.add('bi-copy');
   }, 1500);
 }
+
 // ==================== End Copy Asset ID ====================
 
 
@@ -199,16 +206,15 @@ const modalManager = document.getElementById('modal-manager');
 const modalManagerContent = document.getElementById('modal-manager-content');
 const modalManagerLoading = document.getElementById('modal-manager-loading');
 
+let activeModal = null;
+let activeModalParent = null;
+let activeModalNextSibling = null;
+
 document.addEventListener('click', (event) => {
   if (event.target.closest('.modal-close')) {
     closeModal();
   }
 });
-
-let activeModal = null;
-let activeModalParent = null;
-let activeModalNextSibling = null;
-
 
 async function openModal(modal, load = null) {
   if (!modal || !modalManager || !modalManagerContent) {
@@ -249,7 +255,6 @@ async function openModal(modal, load = null) {
   }
 }
 
-
 function closeModalContent() {
   if (!activeModal || !activeModalParent) {
     return;
@@ -268,7 +273,6 @@ function closeModalContent() {
   activeModalNextSibling = null;
 }
 
-
 async function closeModal() {
   if (qrScannerRunning) {
     await stopQrScanner();
@@ -280,7 +284,6 @@ async function closeModal() {
     modalManager.close();
   }
 }
-
 
 function switchModal(modal) {
   if (!modal) {
@@ -296,16 +299,17 @@ function switchModal(modal) {
   openModal(modal);
 }
 
-let isBackgroundClick = false
+let isBackgroundClick = false;
 
 modalManager?.addEventListener('mousedown', (event) => {
-  isBackgroundClick = (event.target === modalManager);
+  isBackgroundClick = event.target === modalManager;
 });
 
 modalManager?.addEventListener('click', (event) => {
   if (isBackgroundClick && event.target === modalManager) {
     closeModal();
   }
+
   isBackgroundClick = false;
 });
 
@@ -316,7 +320,6 @@ modalManager?.addEventListener('click', (event) => {
 
 const qrScannerButton = document.getElementById('qr-scanner-button');
 const qrScannerModal = document.getElementById('qr-scanner-modal');
-const closeQrScannerModal = document.getElementById('close-qr-scanner-modal');
 const qrReader = document.getElementById('qr-reader');
 
 let qrScanner = null;
@@ -324,13 +327,11 @@ let qrScannerRunning = false;
 
 
 // Initialize QR scanner.
+
 async function startQrScanner() {
-  // await new Promise(() => {});
   if (!qrReader || qrScannerRunning) {
     return;
   }
-
-  const width = qrReader.clientWidth;
 
   qrScanner = new Html5Qrcode('qr-reader');
 
@@ -352,6 +353,7 @@ async function startQrScanner() {
       // Ignore scan failures while looking for a QR code.
     }
   );
+
   const video = qrReader.querySelector('video');
 
   if (video) {
@@ -361,11 +363,12 @@ async function startQrScanner() {
   }
 
   qrScannerRunning = true;
-  qrReader.classList.remove('hidden')
+  qrReader.classList.remove('hidden');
 }
 
 
 // Stop QR scanner.
+
 async function stopQrScanner() {
   if (!qrScanner || !qrScannerRunning) {
     return;
@@ -376,15 +379,14 @@ async function stopQrScanner() {
 
   qrScanner = null;
   qrScannerRunning = false;
-  qrReader.classList.add('hidden')
+  qrReader.classList.add('hidden');
 }
 
 
 // Open QR scanner.
+
 qrScannerButton?.addEventListener('click', () => {
   openModal(qrScannerModal, async () => {
-    // qrScannerModal.classList.remove('hidden');
-
     await new Promise((resolve) => {
       requestAnimationFrame(resolve);
     });
@@ -392,18 +394,6 @@ qrScannerButton?.addEventListener('click', () => {
     await startQrScanner();
   });
 });
-
-
-// Close QR scanner.
-closeQrScannerModal?.addEventListener('click', async () => {
-  await stopQrScanner();
-  closeModal();
-});
-
-
-// Stop scanner when another modal replaces it.
-const originalCloseModalContent = closeModalContent;
-
 
 // ==================== End QR Scanner ====================
 
@@ -418,6 +408,7 @@ const filterLocation = document.getElementById('filter-location');
 
 
 // Load current locations.
+
 async function loadLocations() {
   try {
     const response = await fetch('/locations');
@@ -471,6 +462,7 @@ async function loadLocations() {
 
 
 // Open Filter & Sort modal.
+
 filterItemButton?.addEventListener('click', () => {
   loadLocations();
   openModal(filterItemModal);
@@ -478,23 +470,22 @@ filterItemButton?.addEventListener('click', () => {
 
 
 // Clear filters.
+
 clearFilterItem?.addEventListener('click', () => {
   filterForm?.reset();
   resetInventoryFilters();
   loadInventory(1);
-  // filterItemModal?.close();
   closeModal();
 });
 
 
 // Apply filters without navigating.
+
 filterForm?.addEventListener('submit', (event) => {
   event.preventDefault();
   loadInventory(1);
-  // filterItemModal?.close();
   closeModal();
 });
-
 
 // ==================== End Filter & Sort Modal ====================
 
@@ -503,12 +494,9 @@ filterForm?.addEventListener('submit', (event) => {
 
 const addItemModal = document.getElementById('add-item-modal');
 
-const openAddItemButtons = [
-  document.getElementById('add-item-button')
-];
-
 
 // Open dynamically loaded Add Item button.
+
 document.addEventListener('click', (event) => {
   if (event.target.closest('#empty-add-item-button')) {
     loadLocations();
@@ -518,17 +506,19 @@ document.addEventListener('click', (event) => {
 
 
 // Open Add Item modal.
-for (const button of openAddItemButtons) {
-  button?.addEventListener('click', () => {
+
+document
+  .getElementById('add-item-button')
+  ?.addEventListener('click', () => {
     loadLocations();
     openModal(addItemModal);
   });
-}
 
-document.getElementById('cancel-add-item')?.addEventListener('click', () => {
-  closeModal();
-});
-
+document
+  .getElementById('cancel-add-item')
+  ?.addEventListener('click', () => {
+    closeModal();
+  });
 
 // ==================== End Add Item Modal ====================
 
@@ -545,6 +535,7 @@ let currentEditItemId = null;
 
 
 // Handle Edit Asset.
+
 async function handleEditItem(event) {
   event.stopPropagation();
 
@@ -576,7 +567,9 @@ async function handleEditItem(event) {
   });
 }
 
+
 // Submit Edit Asset without leaving the inventory page.
+
 editItemForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
 
@@ -592,20 +585,9 @@ editItemForm?.addEventListener('submit', async (event) => {
     return;
   }
 
-  // editItemModal?.close();
   closeModal();
   loadInventory(currentInventoryPage);
 });
-
-
-// Close Edit Asset modal.
-document
-  .getElementById('close-edit-item-modal')
-  ?.addEventListener('click', () => {
-    // editItemModal?.close();
-    closeModal();
-  });
-
 
 // ==================== End Edit Asset Modal ====================
 
@@ -613,20 +595,20 @@ document
 // ==================== View Asset Modal ====================
 
 const viewItemModal = document.getElementById('view-item-modal');
-const viewItemContent = document.getElementById('view-item-content');
 
 const viewItemId = document.getElementById('view-item-id');
 const viewItemName = document.getElementById('view-item-name');
 const viewItemLocation = document.getElementById('view-item-location');
 const viewItemCopy = document.getElementById('view-item-copy');
 const viewItemEdit = document.getElementById('view-item-edit');
-const viewItemArchived = document.getElementById("view-item-archived");
+const viewItemArchived = document.getElementById('view-item-archived');
 const viewItemRestore = document.getElementById('view-item-restore');
 
 let currentViewItemId = null;
 
 
 // Handle View Asset.
+
 async function handleViewItem(event) {
   if (event.target.closest('.copy-item-id, .edit-item, .restore-item')) {
     return;
@@ -666,6 +648,7 @@ async function handleViewItem(event) {
 
 
 // Copy Asset ID from View Asset modal.
+
 viewItemCopy?.addEventListener('click', async () => {
   if (!currentViewItemId) {
     return;
@@ -689,33 +672,28 @@ viewItemCopy?.addEventListener('click', async () => {
 });
 
 
-// Close View Asset modal.
-document
-  .getElementById('close-view-item-modal')
-  ?.addEventListener('click', () => {
-    // viewItemModal?.close();
-    closeModal();
-  });
-
-
-// ==================== End View Asset Modal ====================
-
-
-// ==================== View → Edit ====================
+// View → Edit.
 
 viewItemEdit?.addEventListener('click', () => {
   if (!currentViewItemId) {
     return;
   }
 
-  // viewItemModal?.close();
+  const itemId = currentViewItemId;
+
   closeModal();
 
   const editButton = inventoryContent?.querySelector(
-    `.edit-item[data-item-id="${CSS.escape(currentViewItemId)}"]`
+    `.edit-item[data-item-id="${CSS.escape(itemId)}"]`
   );
 
-  viewItemRestore?.addEventListener('click', () => {
+  editButton?.click();
+});
+
+
+// View → Restore.
+
+viewItemRestore?.addEventListener('click', () => {
   if (!currentViewItemId) {
     return;
   }
@@ -724,11 +702,7 @@ viewItemEdit?.addEventListener('click', () => {
   switchModal(restoreItemModal);
 });
 
-  editButton?.click();
-});
-
-
-// ==================== End View → Edit ====================
+// ==================== End View Asset Modal ====================
 
 
 // ==================== Archive Asset ====================
@@ -740,6 +714,7 @@ const confirmArchiveItem = document.getElementById('confirm-archive-item');
 
 
 // Open Archive confirmation.
+
 archiveItemButton?.addEventListener('click', () => {
   if (!currentEditItemId) {
     return;
@@ -750,13 +725,14 @@ archiveItemButton?.addEventListener('click', () => {
 
 
 // Cancel Archive.
+
 cancelArchiveItem?.addEventListener('click', () => {
-  // archiveItemModal?.close();
   closeModal();
 });
 
 
 // Confirm Archive.
+
 confirmArchiveItem?.addEventListener('click', async () => {
   if (!currentEditItemId) {
     return;
@@ -770,18 +746,13 @@ confirmArchiveItem?.addEventListener('click', async () => {
   );
 
   if (!response.ok) {
-    // archiveItemModal?.close();
     closeModal();
     return;
   }
 
-  // archiveItemModal?.close();
-  // editItemModal?.close();
   closeModal();
-
   loadInventory(currentInventoryPage);
 });
-
 
 // ==================== End Archive Asset ====================
 
@@ -796,6 +767,7 @@ let currentRestoreItemId = null;
 
 
 // Handle Restore Asset.
+
 function handleRestoreItem(event) {
   event.stopPropagation();
 
@@ -813,13 +785,14 @@ function handleRestoreItem(event) {
 
 
 // Cancel Restore.
+
 cancelRestoreItem?.addEventListener('click', () => {
-  // restoreItemModal?.close();
   closeModal();
 });
 
 
 // Confirm Restore.
+
 confirmRestoreItem?.addEventListener('click', async () => {
   if (!currentRestoreItemId) {
     return;
@@ -833,17 +806,13 @@ confirmRestoreItem?.addEventListener('click', async () => {
   );
 
   if (!response.ok) {
-    // restoreItemModal?.close();
     closeModal();
     return;
   }
 
-  // restoreItemModal?.close();
   closeModal();
-
   loadInventory(currentInventoryPage);
 });
-
 
 // ==================== End Restore Asset ====================
 
@@ -860,13 +829,13 @@ searchInput?.addEventListener('input', () => {
 
 
 // Prevent search form navigation.
+
 document
   .getElementById('search-form')
   ?.addEventListener('submit', (event) => {
     event.preventDefault();
     loadInventory(1);
   });
-
 
 // ==================== End Search ====================
 
@@ -895,9 +864,7 @@ function resetInventoryFilters() {
   }
 }
 
-
 resetInventoryFilters();
 loadInventory();
-
 
 // ==================== End Initial Load ====================
