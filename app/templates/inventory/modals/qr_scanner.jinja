@@ -1,0 +1,10 @@
+{% from "inventory/modals/_modal.jinja" import modal %}
+
+{% call modal("qr-scanner-modal", "Scan QR code", "Scan an inventory item QR code.") %}
+
+{# ==================== QR Scanner ==================== #}
+<div id="qr-reader" class="hidden min-h-64 overflow-hidden rounded-lg">
+</div>
+{# ==================== End QR Scanner ==================== #}
+
+{% endcall %}

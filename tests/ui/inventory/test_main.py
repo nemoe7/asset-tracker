@@ -48,7 +48,7 @@ def test_main_page_filter_modal_opens_and_closes(page, live_server):
   expect(page.get_by_text("Ascending", exact=True)).to_be_visible()
   expect(page.get_by_text("Descending", exact=True)).to_be_visible()
 
-  page.locator("#close-filter-item-modal").click()
+  modal.locator(".modal-close").click()
 
   expect(modal).to_be_hidden()
 
@@ -81,7 +81,7 @@ def test_main_page_add_item_modal_opens_and_closes(page, live_server):
   expect(page.locator("#item-name")).to_be_visible()
   expect(page.locator("#item-location")).to_be_visible()
 
-  page.locator("#close-add-item-modal").click()
+  modal.locator(".modal-close").click()
 
   expect(modal).to_be_hidden()
 
@@ -96,7 +96,7 @@ def test_main_page_add_item_modal_can_be_cancelled(page, live_server):
   expect(modal).to_be_visible()
 
   page.locator("#item-name").fill("Test Asset")
-  page.locator("#cancel-add-item").click()
+  modal.locator(".modal-close").click()
 
   expect(modal).to_be_hidden()
 

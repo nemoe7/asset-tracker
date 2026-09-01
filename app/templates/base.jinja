@@ -17,6 +17,27 @@
 <body>
   {% block body %}{% endblock %}
 
+  {# ==================== Modal Manager ==================== #}
+  <dialog id="modal-manager"
+    class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-0 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+
+    <div id="modal-manager-content">
+    </div>
+    <div id="modal-manager-loading" class="hidden">
+      <div class="flex min-h-48 items-center justify-center">
+        <span class="size-5 animate-spin rounded-full border-2 border-zinc-700 border-t-zinc-400" aria-hidden="true">
+        </span>
+
+        <p class="ml-3 text-sm text-zinc-400">
+          Loading...
+        </p>
+      </div>
+    </div>
+
+
+  </dialog>
+  {# ==================== End Modal Manager ==================== #}
+
   {% block scripts %}{% endblock %}
 </body>
 <script>
