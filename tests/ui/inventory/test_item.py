@@ -24,6 +24,28 @@ def test_item_can_be_viewed(
 
 
 @pytest.mark.e2e
+def test_view_modal_edit_opens_edit_modal(
+  page,
+  live_server,
+  create_item,
+):
+  item = create_item("Test Asset")
+
+  page.goto(f"{live_server}/")
+
+  page.locator(f'tr.view-item[data-item-id="{item["id"]}"]').click()
+
+  expect(page.locator("#view-item-modal")).to_be_visible()
+
+  page.locator("#view-item-edit").click()
+
+  expect(page.locator("#edit-item-modal")).to_be_visible()
+  expect(page.locator("#view-item-modal")).not_to_be_visible()
+  expect(page.locator("#edit-item-id")).to_have_text(item["id"])
+  expect(page.locator("#edit-item-name")).to_have_value("Test Asset")
+
+
+@pytest.mark.e2e
 def test_item_edit_modal_loads_existing_values(
   page,
   live_server,
