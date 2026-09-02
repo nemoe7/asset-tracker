@@ -720,6 +720,9 @@
   .text-zinc-900 {
     color: var(--color-zinc-900);
   }
+  .lowercase {
+    text-transform: lowercase;
+  }
   .underline {
     text-decoration-line: underline;
   }
