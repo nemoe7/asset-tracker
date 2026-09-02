@@ -32,6 +32,7 @@ Table inventory_items {
   id text [pk]
   name text [not null]
   location_id integer
+  description text
   created_at text [not null]
   updated_at text [not null]
   archived_at text
