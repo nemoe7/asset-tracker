@@ -321,10 +321,11 @@ modalManager?.addEventListener('click', (event) => {
 const qrScannerButton = document.getElementById('qr-scanner-button');
 const qrScannerModal = document.getElementById('qr-scanner-modal');
 const qrReader = document.getElementById('qr-reader');
+const qrScannerError = document.getElementById('qr-scanner-error');
 
 let qrScanner = null;
 let qrScannerRunning = false;
-
+let qrScannerProcessing = false;
 
 // Initialize QR scanner.
 
@@ -334,6 +335,8 @@ async function startQrScanner() {
   }
 
   qrScanner = new Html5Qrcode('qr-reader');
+  qrScannerProcessing = false;
+
 
   await qrScanner.start(
     {
@@ -347,9 +350,17 @@ async function startQrScanner() {
       }
     },
     async (decodedText) => {
+      if (qrScannerProcessing) {
+        return;
+      }
+
+      qrScannerProcessing = true;
+
+      qrScannerError.classList.add('hidden');
       const itemId = decodedText.trim();
 
       if (!itemId) {
+        qrScannerProcessing = false;
         return;
       }
 
@@ -362,7 +373,9 @@ async function startQrScanner() {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        console.error('Failed to check scanned item:', data.error);
+        qrScannerError.textContent = data.error;
+        qrScannerError.classList.remove('hidden');
+        qrScannerProcessing = false;
         return;
       }
 

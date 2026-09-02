@@ -9,6 +9,8 @@
 - **Related** — requirements that overlap in implementation or behavior.
 - **Notes** — implementation details, gaps, or verification notes.
 
+### P1
+
 | ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
 | ----- | :---: | ----- | :---: | ----- | ----- | -------- |
 | AST-001 | P1 | Authorized users can create assets. | 🟢 | FLD-001, AUT-003 | AUD-001 | |
@@ -30,17 +32,17 @@
 | QRC-001 | P1 | Associate each asset with a unique Asset ID. | 🟢 | AST-005 | QRC-003 | |
 | QRC-002 | P1 | Encode Asset ID in the QR code. | 🟢 | QRC-001 | QRC-006 | QR generation to be handled externally |
 | QRC-003 | P1 | Asset ID uniquely identifies its asset. | 🟢 | AST-005, AST-008 | QRC-001, CHK-002 | |
-| QRC-004 | P1 | Support QR scanning on mobile devices. | 🟡 | — | CHK-001, CMP-003, USE-003 | Need frontend |
-| QRC-005 | P1 | Scanning opens the corresponding asset record. | 🟡 | QRC-004, CHK-002 | PER-003 | |
+| QRC-004 | P1 | Support QR scanning on mobile devices. | 🟢 | — | CHK-001, CMP-003, USE-003 | |
+| QRC-005 | P1 | Scanning opens the corresponding asset record. | 🟢 | QRC-004, CHK-002 | PER-003 | |
 | QRC-006 | P1 | Provide information needed for an asset identification sticker. | 🟢 | QRC-001 | QRC-002 | Only Asset ID is the QR payload |
-| CHK-001 | P1 | Checker can scan an asset QR code on mobile. | 🟡 | QRC-004 | USE-003 | |
-| CHK-002 | P1 | Identify asset from scanned Asset ID. | 🟡 | QRC-001, QRC-003 | QRC-005 | Need frontend |
-| CHK-003 | P1 | Record scan events. | 🟡 | CHK-002 | AUD-004 | |
-| CHK-004 | P1 | Record the user performing the scan. | 🟡 | CHK-003 | AUD-008 | |
-| CHK-005 | P1 | Record scan date/time. | 🟡 | CHK-003 | AUD-009 | |
-| CHK-006 | P1 | Indicate when scanned Asset ID does not exist. | 🟡 | CHK-002 | QRC-003 | Need frontend |
-| CHK-007 | P1 | Checker can update permitted information after scanning. | 🟡 | CHK-002, AUT-003 | AST-003, FLD-013 | |
-| CHK-008 | P1 | Record changes resulting from an asset check. | 🟡 | CHK-007 | AUD-002, AUD-010 | |
+| CHK-001 | P1 | Checker can scan an asset QR code on mobile. | 🟢 | QRC-004 | USE-003 | |
+| CHK-002 | P1 | Identify asset from scanned Asset ID. | 🟢 | QRC-001, QRC-003 | QRC-005 | |
+| CHK-003 | P1 | Record scan events. | 🟢 | CHK-002 | AUD-004 | |
+| CHK-004 | P1 | Record the user performing the scan. | 🟢 | CHK-003 | AUD-008 | |
+| CHK-005 | P1 | Record scan date/time. | 🟢 | CHK-003 | AUD-009 | |
+| CHK-006 | P1 | Indicate when scanned Asset ID does not exist. | 🟢 | CHK-002 | QRC-003 | |
+| CHK-007 | P1 | Checker can update permitted information after scanning. | 🟢 | CHK-002, AUT-003 | AST-003, FLD-013 | |
+| CHK-008 | P1 | Record changes resulting from an asset check. | 🟢 | CHK-007 | AUD-002, AUD-010 | |
 | CHK-009 | P1 | Handle archived assets according to status/permissions. | 🟢 | AST-009, AUT-004 | AST-010 | |
 | SRH-001 | P1 | Users can search assets. | 🟢 | AST-002 | SRH-004 | |
 | SRH-002 | P1 | Users can filter assets using available fields. | 🟢 | AST-002 | SRH-006 | |
@@ -51,7 +53,7 @@
 | AUD-001 | P1 | Record asset creation events. | 🟢 | AST-001 | AUD-009 | |
 | AUD-002 | P1 | Record asset modification events. | 🟢 | AST-003 | CHK-008 | |
 | AUD-003 | P1 | Record asset archival/restoration events. | 🟢 | AST-004, AST-012 | USE-005 | |
-| AUD-004 | P1 | Record asset QR scan events. | 🟡 | CHK-003 | CHK-004, CHK-005 | |
+| AUD-004 | P1 | Record asset QR scan events. | 🟢 | CHK-003 | CHK-004, CHK-005 | |
 | AUD-009 | P1 | Record date/time for each audit event. | 🟢 | AUD-001–004 | CHK-005 | |
 | EXP-001 | P1 | Authorized users can export inventory. | 🔴 | AUT-003 | EXP-002 | |
 | EXP-002 | P1 | Provide Excel-compatible export. | 🔴 | EXP-001 | — | |
@@ -67,7 +69,12 @@
 | REL-004 | P1 | Valid backup is sufficient to restore required data. | 🔴 | BKP-010, BKP-012 | REL-005 | |
 | REL-005 | P1 | Never report backup success before successful completion. | 🔴 | BKP-011 | BKP-015 | |
 | USE-002 | P1 | Provide a desktop-oriented management experience. | 🟢 | — | USE-003 | |
-| USE-003 | P1 | Provide a mobile-oriented checking/scanning experience. | 🟡 | QRC-004, CHK-001 | CMP-002, CMP-003 | |
+| USE-003 | P1 | Provide a mobile-oriented checking/scanning experience. | 🟢 | QRC-004, CHK-001 | CMP-002, CMP-003 | |
+
+### P3
+
+| ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
+| ----- | :---: | ----- | :---: | ----- | ----- | -------- |
 | AUD-005 | P3 | Record custom-field creation/modification/deactivation. | 🔴 | FLD-002, FLD-009, FLD-010 | FLD-015 | |
 | AUD-006 | P3 | Record user/role/permission changes. | 🔴 | USR-001–007 | USR-013 | |
 | AUD-007 | P3 | Record backup/restoration events. | 🔴 | BKP-011, BKP-012 | BKP-014 | |
@@ -80,14 +87,14 @@
 | BKP-014 | P3 | Record backup/restoration events. | 🔴 | BKP-011, BKP-012 | AUD-007 | |
 | CMP-001 | P3 | Support current common desktop browsers. | 🟡 | USE-001 | — | Test browser compatibility |
 | CMP-002 | P3 | Support modern mobile browsers. | 🟡 | USE-003 | QRC-004 | Test mobile browser compatibility |
-| CMP-003 | P3 | QR scanning works through supported mobile cameras/browser functionality. | 🟡 | QRC-004 | CHK-001 | Finish decoded-value flow |
+| CMP-003 | P3 | QR scanning works through supported mobile cameras/browser functionality. | 🟢 | QRC-004 | CHK-001 | |
 | FLD-006 | P3 | Admins can define Enum values. | 🔴 | FLD-004, FLD-005 | FLD-002 | |
 | FLD-008 | P3 | Admins can mark custom fields required. | 🔴 | FLD-002, FLD-004 | FLD-012 | |
 | FLD-011 | P3 | Deactivating a field preserves existing values. | 🔴 | FLD-010 | — | |
 | FLD-015 | P3 | Record changes to custom-field definitions. | 🔴 | FLD-002, FLD-009, FLD-010 | AUD-005 | |
 | PER-001 | P3 | Normal inventory operations respond reasonably. | 🟡 | — | PER-002, PER-003 | No explicit performance target/test established |
 | PER-002 | P3 | Search/filtering does not require manual reload. | 🟢 | SRH-001, SRH-002 | — | |
-| PER-003 | P3 | QR scanning opens the asset without unnecessary steps. | 🟡 | QRC-005 | CHK-001 | |
+| PER-003 | P3 | QR scanning opens the asset without unnecessary steps. | 🟢 | QRC-005 | CHK-001 | |
 | SEC-001 | P3 | Protected functions require authentication. | 🟢 | AUT-006 | — | |
 | SEC-002 | P3 | Enforce role/per-user access control. | 🟡 | AUT-003 | AUT-005, SEC-003 | |
 | SEC-003 | P3 | Users only access permitted information/functions. | 🟡 | AUT-003, AUT-004 | SEC-002 | |
@@ -101,6 +108,11 @@
 | USE-004 | P3 | Common asset operations require minimal navigation. | 🟡 | AST-001–004, QRC-005 | PER-003 | |
 | REL-003 | P3 | Maintain data integrity when creating/modifying records. | 🟢 | AST-007 | REL-001 | |
 | REL-006 | P3 | Retain information identifying most recent successful backup. | 🔴 | BKP-015 | BKP-009 | |
+
+### P4
+
+| ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
+| ----- | :---: | ----- | :---: | ----- | ----- | -------- |
 | AUT-001 | P4 | Users can log in with assigned credentials. | 🟢 | — | SEC-004 | |
 | AUT-002 | P4 | Users can log out. | 🟢 | AUT-001 | — | |
 | AUT-006 | P4 | Unauthenticated users cannot access protected functionality. | 🟢 | — | SEC-001 | |
@@ -126,6 +138,11 @@
 | IMP-006 | P4 | Report rejected records without corrupting inventory. | 🔴 | IMP-001, REL-001 | — | |
 | IMP-007 | P4 | Record imports in the audit log. | 🔴 | IMP-001 | AUD-006 | |
 | REL-001 | P4 | Invalid input does not corrupt inventory data. | 🟢 | AST-007 | IMP-006, REL-003 | |
+
+### P5
+
+| ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
+| ----- | :---: | ----- | :---: | ----- | ----- | -------- |
 | AUT-003 | P5 | Restrict functionality according to roles/permissions. | 🟡 | — | SEC-002 | |
 | AUT-004 | P5 | Restrict asset information according to permissions. | 🟡 | AUT-003 | SEC-003, FLD-013 | |
 | AUT-005 | P5 | Same permission rules on desktop/mobile. | 🟡 | AUT-003, AUT-004 | SEC-003, USE-003 | |
