@@ -88,17 +88,20 @@ def fragment():
 @login_required
 def create():
   name = request.form.get("name", "").strip()
+  description = request.form.get("description") or None
   location_id = request.form.get("location_id")
 
   try:
     if location_id:
       item_id = create_item(
         name=name,
+        description=description,
         location_id=int(location_id),
       )
     else:
       item_id = create_item(
         name=name,
+        description=description,
       )
   except InvalidInputError as error:
     return jsonify({"error": str(error)}), 400
@@ -110,6 +113,8 @@ def create():
       {
         "id": item_id,
         "name": name,
+        "description": description,
+        "location_id": location_id,
       }
     )
 
@@ -136,11 +141,15 @@ def get(item_id):
 @login_required
 def update(item_id):
   name = request.form.get("name", "").strip()
+  description = request.form.get("description")
 
   if not name:
     name = _UNSET
 
   location_id = request.form.get("location_id")
+
+  if description == "":
+    description = None
 
   try:
     if location_id:
@@ -151,6 +160,7 @@ def update(item_id):
     update_item(
       item_id,
       name=name,
+      description=description,
       location_id=location_id,
     )
 
