@@ -56,6 +56,11 @@
             </a>
             {% endif %}
 
+            <a href="{{ url_for('inventory.export', **({'search': search} if search else {})) }}" id="export-button"
+              class="block rounded-md px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
+              Export CSV
+            </a>
+
             <form method="post" action="{{ url_for('auth.logout') }}">
               <button type="submit"
                 class="block w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
