@@ -17,25 +17,13 @@ let inventoryRequest = null;
 let currentInventoryPage = 1;
 
 
-// ==================== End Inventory List ====================
 
 
-// ==================== Load Inventory ====================
+// ==================== Inventory Query Params ====================
 
-async function loadInventory(page = 1) {
-  if (!inventoryContent) {
-    return;
-  }
-
-  currentInventoryPage = page;
-
-  inventoryLoading?.classList.remove('hidden');
-  inventoryContent.classList.add('hidden');
-
-  inventoryRequest?.abort();
-  inventoryRequest = new AbortController();
-
+function getInventoryParams() {
   const params = new URLSearchParams();
+
   const search = searchInput?.value.trim();
 
   if (search) {
@@ -56,7 +44,51 @@ async function loadInventory(page = 1) {
     }
   }
 
+  return params;
+}
+
+function updateExportHref() {
+  const exportButton = document.getElementById('export-button');
+
+  if (!exportButton) {
+    return;
+  }
+
+  const params = getInventoryParams();
+
+  const queryString = params.toString();
+
+  exportButton.href = queryString
+    ? `/inventory/export?${queryString}`
+    : '/inventory/export';
+}
+
+// ==================== End Inventory Query Params ====================
+
+
+// ==================== End Inventory List ====================
+
+
+// ==================== Load Inventory ====================
+
+async function loadInventory(page = 1) {
+  if (!inventoryContent) {
+    return;
+  }
+
+  currentInventoryPage = page;
+
+  inventoryLoading?.classList.remove('hidden');
+  inventoryContent.classList.add('hidden');
+
+  inventoryRequest?.abort();
+  inventoryRequest = new AbortController();
+
+  const params = getInventoryParams();
+
   params.set('page', page);
+
+  updateExportHref();
   // params.set('per_page', 2);
 
   try {

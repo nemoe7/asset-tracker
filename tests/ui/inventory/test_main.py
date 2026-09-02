@@ -274,3 +274,59 @@ def test_main_page_mobile_menu_contains_user_actions(
 
   expect(menu.get_by_text(f"@{setup_admin['username']}", exact=True)).to_be_visible()
   expect(menu.locator('form[action="/auth/logout"]')).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_main_page_export_button_reflects_search(page, live_server, setup_admin):
+  page.goto(f"{live_server}/")
+
+  page.locator("#search").fill("Alpha")
+
+  menu = page.locator("details")
+
+  menu.locator("summary").click()
+
+  expect(menu.locator("#export-button")).to_have_attribute(
+    "href", "/inventory/export?search=Alpha&sort_by=name&sort_order=asc"
+  )
+
+
+@pytest.mark.e2e
+def test_main_page_export_button_reflects_filters(page, live_server, setup_admin):
+  page.goto(f"{live_server}/")
+
+  page.locator("#filter-item-button").click()
+
+  modal = page.locator("#filter-item-modal")
+  expect(modal).to_be_visible()
+
+  page.locator("#filter-include-archived").check()
+
+  modal.get_by_role("button", name="Apply").click()
+
+  menu = page.locator("details")
+
+  menu.locator("summary").click()
+
+  expect(menu.locator("#export-button")).to_have_attribute(
+    "href",
+    "/inventory/export?include_archived=true&sort_by=name&sort_order=asc",
+  )
+
+
+
+@pytest.mark.e2e
+def test_main_page_menu_contains_export_button(page, live_server, setup_admin):
+  page.goto(f"{live_server}/")
+
+  menu = page.locator("details")
+
+  menu.locator("summary").click()
+
+  export_link = menu.get_by_role("link", name="Export CSV")
+
+  expect(export_link).to_be_visible()
+  expect(export_link).to_have_attribute(
+    "href", "/inventory/export?sort_by=name&sort_order=asc"
+  )
+
