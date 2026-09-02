@@ -29,9 +29,21 @@ def test_create_item(gen_test_data_admin):
 
   assert item["id"] == item_id
   assert item["name"] == "Laptop"
+  assert item["description"] is None
   assert item["location_id"] is None
   assert item["archived_at"] is None
   assert item["custom_fields"] == {}
+
+
+def test_create_item_with_description(gen_test_data_admin):
+  item_id = create_item(
+    "Laptop",
+    description="Development laptop",
+  )
+
+  item = get_item(item_id)
+
+  assert item["description"] == "Development laptop"
 
 
 def test_create_item_with_location(gen_test_data_admin):
@@ -153,6 +165,44 @@ def test_update_item_name(gen_test_data_admin):
   assert item["name"] == "Desktop"
 
 
+def test_update_item_description(gen_test_data_admin):
+  item_id = create_item(
+    "Laptop",
+    description="Old description",
+  )
+
+  assert (
+    update_item(
+      item_id,
+      description="New description",
+    )
+    is True
+  )
+
+  item = get_item(item_id)
+
+  assert item["description"] == "New description"
+
+
+def test_update_item_description_to_none(gen_test_data_admin):
+  item_id = create_item(
+    "Laptop",
+    description="Description",
+  )
+
+  assert (
+    update_item(
+      item_id,
+      description=None,
+    )
+    is True
+  )
+
+  item = get_item(item_id)
+
+  assert item["description"] is None
+
+
 def test_update_item_location(gen_test_data_admin):
   old_location = create_location("Storage")
   new_location = create_location("Office")
@@ -268,6 +318,31 @@ def test_update_item_with_same_name_creates_no_audit_log(gen_test_data_admin):
   assert logs[0]["action"] == "created"
 
 
+def test_update_item_with_same_description_creates_no_audit_log(
+  gen_test_data_admin,
+):
+  item_id = create_item(
+    "Laptop",
+    description="Description",
+  )
+
+  assert (
+    update_item(
+      item_id,
+      description="Description",
+    )
+    is True
+  )
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 1
+  assert logs[0]["action"] == "created"
+
+
 def test_update_item_with_same_location_creates_no_audit_log(
   gen_test_data_admin,
 ):
@@ -321,6 +396,39 @@ def test_update_item_creates_audit_log(gen_test_data_admin):
     "name": {
       "old": "Laptop",
       "new": "Desktop",
+    },
+  }
+
+
+def test_update_item_creates_audit_log_for_description_change(
+  gen_test_data_admin,
+):
+  item_id = create_item(
+    "Laptop",
+    description="Old description",
+  )
+
+  assert (
+    update_item(
+      item_id,
+      description="New description",
+    )
+    is True
+  )
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert len(logs) == 2
+  assert logs[0]["action"] == "created"
+  assert logs[1]["action"] == "updated"
+
+  assert logs[1]["details"] == {
+    "description": {
+      "old": "Old description",
+      "new": "New description",
     },
   }
 
@@ -494,13 +602,11 @@ def test_update_item_creates_one_audit_log_for_multiple_changes(
     location_id=old_location,
   )
 
-  assert (
-    update_item(
-      item_id,
-      name="Desktop",
-      location_id=new_location,
-    )
-    is True
+  assert update_item(
+    item_id,
+    name="Desktop",
+    description="Updated description",
+    location_id=new_location,
   )
 
   logs = get_audit_logs(
@@ -516,6 +622,10 @@ def test_update_item_creates_one_audit_log_for_multiple_changes(
     "name": {
       "old": "Laptop",
       "new": "Desktop",
+    },
+    "description": {
+      "old": None,
+      "new": "Updated description",
     },
     "location_id": {
       "old": old_location,
