@@ -104,82 +104,182 @@
     {% if can_manage_locations %}
     <section id="tab-locations" data-tab-panel="locations" class="{{ 'hidden' if active_tab != 'locations' }}">
 
-      {# ==================== Add Location Form ==================== #}
-      <form method="post" action="{{ url_for('admin.create_location_route') }}"
-        class="mb-6 space-y-4 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-
-        <h2 class="text-lg font-semibold">
+      {# ==================== Add Location ==================== #}
+      <div class="mb-6 flex justify-end">
+        <button type="button" id="add-location-button"
+          class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
+          <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
           Add location
-        </h2>
+        </button>
+      </div>
 
-        <div>
-          <label for="add-location-name" class="mb-2 block text-sm font-medium text-zinc-300">
-            Name
-          </label>
+      <div id="add-location-dialog" class="hidden p-6">
 
-          <input id="add-location-name" name="name" type="text" required value="{{ location_name }}"
-            class="form-input">
-        </div>
+        <form method="post" action="{{ url_for('admin.create_location_route') }}">
+          <h2 class="text-lg font-semibold">Add location</h2>
 
-        <div>
-          <label for="add-location-description" class="mb-2 block text-sm font-medium text-zinc-300">
-            Description
-          </label>
+          <div class="mt-4">
+            <label for="add-location-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
+            <input id="add-location-name" name="name" type="text" required value="{{ location_name or '' }}"
+              class="form-input">
+          </div>
 
-          <textarea id="add-location-description" name="description" rows="2"
-            class="form-input !resize-none overflow-hidden min-h-10">{{ location_description or '' }}</textarea>
-        </div>
+          <div class="mt-4">
+            <label for="add-location-description" class="mb-2 block text-sm font-medium text-zinc-300">Description</label>
+            <input id="add-location-description" name="description" type="text"
+              value="{{ location_description or '' }}" class="form-input">
+          </div>
 
-        <div class="flex justify-end">
-          <button type="submit"
-            class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-900">
-            <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
-            Add location
-          </button>
-        </div>
+          <div class="mt-6 flex justify-end gap-3">
+            <button type="button" id="cancel-add-location"
+              class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+              Cancel
+            </button>
+            <button type="submit"
+              class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+              <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
+              Add location
+            </button>
+          </div>
+        </form>
+      </div>
+      {# ==================== End Add Location ==================== #}
 
-      </form>
-      {# ==================== End Add Location Form ==================== #}
+
+      {# ==================== Edit Location ==================== #}
+      <div id="edit-location-dialog" class="hidden p-6">
+
+        <form method="post" action="">
+          <h2 class="text-lg font-semibold">Edit location</h2>
+
+          <div class="mt-4">
+            <label for="edit-location-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
+            <input id="edit-location-name" name="name" type="text" required class="form-input">
+          </div>
+
+          <div class="mt-4">
+            <label for="edit-location-description" class="mb-2 block text-sm font-medium text-zinc-300">Description</label>
+            <input id="edit-location-description" name="description" type="text" class="form-input">
+          </div>
+
+          <div class="mt-6 flex justify-end gap-3">
+            <button type="button" id="cancel-edit-location"
+              class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+              Cancel
+            </button>
+            <button type="submit"
+              class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+              <i class="bi bi-pencil mr-1" aria-hidden="true"></i>
+              Save changes
+            </button>
+          </div>
+        </form>
+      </div>
+      {# ==================== End Edit Location ==================== #}
 
 
       {# ==================== Locations List ==================== #}
-      <div class="space-y-2">
+      {% if locations %}
+      <section class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
 
-        {% for location in locations %}
-        <div class="flex items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-
-          <div class="min-w-0">
-            <p class="truncate text-sm font-medium text-zinc-100">
-              {{ location.name }}
-            </p>
-
-            {% if location.description %}
-            <p class="truncate text-xs text-zinc-400">
-              {{ location.description }}
-            </p>
-            {% endif %}
-          </div>
-
-          <form method="post" action="{{ url_for('admin.delete_location_route', location_id=location.id) }}"
-            data-delete-location>
-            <input type="hidden" name="confirm" value="true">
-
-            <button type="submit"
-              class="rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-950 hover:text-red-300">
-              <i class="bi bi-trash mr-1" aria-hidden="true"></i>
-              Delete
-            </button>
-
-          </form>
-
+        {# Desktop Table #}
+        <div class="hidden overflow-x-auto md:block">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-zinc-800">
+              <tr>
+                <th class="px-5 py-3 font-medium text-zinc-400">Name</th>
+                <th class="px-5 py-3 font-medium text-zinc-400">Description</th>
+                <th class="w-px whitespace-nowrap px-5 py-3 text-center font-medium text-zinc-400">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-800">
+              {% for location in locations %}
+              <tr>
+                <td class="px-5 py-4 font-medium text-zinc-100">
+                  <div class="flex items-center gap-3">
+                    <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400">
+                      <i class="bi bi-geo-alt text-sm" aria-hidden="true"></i>
+                    </div>
+                    <span class="truncate" title="{{ location.name }}">{{ location.name }}</span>
+                  </div>
+                </td>
+                <td class="px-5 py-4 text-zinc-400">
+                  {{ location.description or '—' }}
+                </td>
+                <td class="px-5 py-4">
+                  <div class="flex justify-end gap-1">
+                    <button type="button" class="edit-location rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+                      data-location-id="{{ location.id }}" data-location-name="{{ location.name }}"
+                      data-location-description="{{ location.description or '' }}"
+                      data-update-url="{{ url_for('admin.update_location_route', location_id=location.id) }}"
+                      title="Edit location" aria-label="Edit location">
+                      <i class="bi bi-pencil" aria-hidden="true"></i>
+                    </button>
+                    <form method="post" action="{{ url_for('admin.delete_location_route', location_id=location.id) }}"
+                      data-delete-location>
+                      <input type="hidden" name="confirm" value="true">
+                      <button type="submit" class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
+                        title="Delete location" aria-label="Delete location">
+                        <i class="bi bi-trash" aria-hidden="true"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-        {% else %}
-        <p class="py-2 text-sm text-zinc-400">
-          No locations yet.
-        </p>
-        {% endfor %}
 
-      </div>
+        {# Mobile Cards #}
+        <div class="divide-y divide-zinc-800 md:hidden">
+          {% for location in locations %}
+          <div class="flex items-center justify-between gap-3 px-4 py-3">
+            <div class="flex min-w-0 items-center gap-3">
+              <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400">
+                <i class="bi bi-geo-alt text-sm" aria-hidden="true"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="truncate text-sm font-medium text-zinc-100">{{ location.name }}</p>
+                {% if location.description %}
+                <p class="truncate text-xs text-zinc-400">{{ location.description }}</p>
+                {% endif %}
+              </div>
+            </div>
+            <div class="flex shrink-0 gap-1">
+              <button type="button" class="edit-location rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+                data-location-id="{{ location.id }}" data-location-name="{{ location.name }}"
+                data-location-description="{{ location.description or '' }}"
+                data-update-url="{{ url_for('admin.update_location_route', location_id=location.id) }}"
+                title="Edit location" aria-label="Edit location">
+                <i class="bi bi-pencil" aria-hidden="true"></i>
+              </button>
+              <form method="post" action="{{ url_for('admin.delete_location_route', location_id=location.id) }}"
+                data-delete-location>
+                <input type="hidden" name="confirm" value="true">
+                <button type="submit" class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
+                  title="Delete location" aria-label="Delete location">
+                  <i class="bi bi-trash" aria-hidden="true"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+      </section>
+      {% else %}
+      <section class="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/50 px-6 py-16 text-center">
+        <i class="bi bi-geo-alt text-3xl text-zinc-600" aria-hidden="true"></i>
+        <h2 class="mt-4 text-lg font-medium text-zinc-200">No locations</h2>
+        <p class="mt-2 text-sm text-zinc-400">Add your first location to get started.</p>
+        <button type="button" id="empty-add-location-button"
+          class="mt-6 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+          <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
+          Add location
+        </button>
+      </section>
+      {% endif %}
       {# ==================== End Locations List ==================== #}
 
     </section>
@@ -213,15 +313,47 @@
             Type
           </label>
 
-          <select id="add-field-type" name="field_type" class="form-input">
-            <option value="text">Text</option>
-            <option value="integer">Integer</option>
-            <option value="decimal">Decimal</option>
-            <option value="boolean">Boolean</option>
-            <option value="date">Date</option>
-            <option value="enum">Enum</option>
-            <option value="user">User</option>
+          <select id="add-field-type" name="field_type" data-enum-toggle class="form-input">
+            <option value="text" {{ 'selected' if field_type == 'text' }}>Text</option>
+            <option value="integer" {{ 'selected' if field_type == 'integer' }}>Integer</option>
+            <option value="decimal" {{ 'selected' if field_type == 'decimal' }}>Decimal</option>
+            <option value="boolean" {{ 'selected' if field_type == 'boolean' }}>Boolean</option>
+            <option value="date" {{ 'selected' if field_type == 'date' }}>Date</option>
+            <option value="enum" {{ 'selected' if field_type == 'enum' }}>Enum</option>
+            <option value="user" {{ 'selected' if field_type == 'user' }}>User</option>
           </select>
+        </div>
+
+        <div>
+          <label for="add-field-description" class="mb-2 block text-sm font-medium text-zinc-300">
+            Description
+          </label>
+
+          <input id="add-field-description" name="description" type="text" value="{{ field_description }}"
+            class="form-input">
+        </div>
+
+        <div class="flex items-center gap-3">
+          <input id="add-field-required" name="required" type="checkbox" value="true"
+            {{ 'checked' if field_required }}
+            class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500">
+
+          <label for="add-field-required" class="text-sm font-medium text-zinc-300">
+            Required
+          </label>
+        </div>
+
+        <div data-enum-values>
+          <label for="add-field-enum-values" class="mb-2 block text-sm font-medium text-zinc-300">
+            Enum values
+          </label>
+
+          <textarea id="add-field-enum-values" name="enum_values" rows="4" placeholder="One value per line"
+            class="form-input !resize-y">{{ field_enum_values or '' }}</textarea>
+
+          <p class="mt-1 text-xs text-zinc-500">
+            Define the allowed values for this Enum field, one per line.
+          </p>
         </div>
 
         <div class="flex justify-end">
@@ -237,41 +369,152 @@
 
 
       {# ==================== Custom Fields List ==================== #}
-      <div class="space-y-2">
+      {% if custom_fields %}
+      <div class="space-y-3">
 
         {% for field in custom_fields %}
-        <div class="flex items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+        <div class="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
 
           <form method="post" action="{{ url_for('admin.update_custom_field_route', field_id=field.id) }}"
-            class="flex min-w-0 flex-1 items-center gap-2">
+            class="space-y-4">
 
-            <label for="field-name-{{ field.id }}" class="sr-only">
-              Name for {{ field.name }}
-            </label>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label for="field-name-{{ field.id }}" class="mb-1 block text-xs font-medium text-zinc-400">
+                  Name
+                </label>
 
-            <input id="field-name-{{ field.id }}" name="name" type="text" required value="{{ field.name }}"
-              class="form-input !py-1.5 max-w-56 text-sm">
+                <input id="field-name-{{ field.id }}" name="name" type="text" required value="{{ field.name }}"
+                  class="form-input !py-1.5 text-sm">
+              </div>
 
-            <span class="shrink-0 rounded-md border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400">
-              {{ field.field_type }}
-            </span>
+              <div>
+                <label for="field-type-{{ field.id }}" class="mb-1 block text-xs font-medium text-zinc-400">
+                  Type
+                </label>
 
-            <button type="submit"
-              class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
-              Save
-            </button>
+                <select id="field-type-{{ field.id }}" name="field_type" data-enum-toggle class="form-input !py-1.5 text-sm">
+                  <option value="text" {{ 'selected' if field.field_type == 'text' }}>Text</option>
+                  <option value="integer" {{ 'selected' if field.field_type == 'integer' }}>Integer</option>
+                  <option value="decimal" {{ 'selected' if field.field_type == 'decimal' }}>Decimal</option>
+                  <option value="boolean" {{ 'selected' if field.field_type == 'boolean' }}>Boolean</option>
+                  <option value="date" {{ 'selected' if field.field_type == 'date' }}>Date</option>
+                  <option value="enum" {{ 'selected' if field.field_type == 'enum' }}>Enum</option>
+                  <option value="user" {{ 'selected' if field.field_type == 'user' }}>User</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="field-description-{{ field.id }}" class="mb-1 block text-xs font-medium text-zinc-400">
+                Description
+              </label>
+
+              <input id="field-description-{{ field.id }}" name="description" type="text"
+                value="{{ field.description or '' }}" class="form-input !py-1.5 text-sm">
+            </div>
+
+            <div class="flex items-center gap-3">
+              <input id="field-required-{{ field.id }}" name="required" type="checkbox" value="true"
+                {{ 'checked' if field.required }}
+                class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500">
+
+              <label for="field-required-{{ field.id }}" class="text-sm font-medium text-zinc-300">
+                Required
+              </label>
+            </div>
+
+            <div data-enum-values>
+              <label for="field-enum-values-{{ field.id }}" class="mb-1 block text-xs font-medium text-zinc-400">
+                Enum values
+              </label>
+
+              <textarea id="field-enum-values-{{ field.id }}" name="enum_values" rows="3"
+                placeholder="One value per line" class="form-input !py-1.5 !resize-y text-sm">{{ field.enum_values | join('\n') if field.enum_values else '' }}</textarea>
+            </div>
+
+            {% if field.field_type == 'enum' and field.enum_values %}
+            <div class="flex flex-wrap gap-1.5">
+              {% for value in field.enum_values %}
+              <span class="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300">
+                {{ value }}
+              </span>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="flex items-center justify-between">
+              <button type="submit" formaction="{{ url_for('admin.archive_custom_field_route', field_id=field.id) }}"
+                class="rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-950 hover:text-red-300">
+                <i class="bi bi-archive mr-1" aria-hidden="true"></i>
+                Archive
+              </button>
+
+              <button type="submit"
+                class="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+                Save
+              </button>
+            </div>
 
           </form>
 
         </div>
-        {% else %}
-        <p class="py-2 text-sm text-zinc-400">
-          No custom fields yet.
-        </p>
         {% endfor %}
 
       </div>
+      {% else %}
+      <section class="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/50 px-6 py-16 text-center">
+        <i class="bi bi-input-cursor-text text-3xl text-zinc-600" aria-hidden="true"></i>
+        <h2 class="mt-4 text-lg font-medium text-zinc-200">No custom fields</h2>
+        <p class="mt-2 text-sm text-zinc-400">Add your first custom field to get started.</p>
+      </section>
+      {% endif %}
       {# ==================== End Custom Fields List ==================== #}
+
+      {# ==================== Archived Custom Fields ==================== #}
+      {% set archived_fields = archived_custom_fields | selectattr('archived_at') | list %}
+      {% if archived_fields %}
+      <div class="mt-8">
+        <details class="group">
+          <summary class="flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-500 transition hover:text-zinc-300">
+            <i class="bi bi-chevron-right text-xs transition group-open:rotate-90" aria-hidden="true"></i>
+            Archived fields ({{ archived_fields | length }})
+          </summary>
+
+          <div class="mt-3 space-y-2">
+            {% for field in archived_fields %}
+            <div class="flex items-center justify-between gap-3 rounded-lg border border-zinc-800/60 bg-zinc-900/40 px-4 py-3">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <p class="truncate text-sm font-medium text-zinc-400 line-through">
+                    {{ field.name }}
+                  </p>
+                  <span class="shrink-0 rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-500">
+                    {{ field.field_type }}
+                  </span>
+                </div>
+
+                {% if field.description %}
+                <p class="mt-0.5 truncate text-xs text-zinc-600">
+                  {{ field.description }}
+                </p>
+                {% endif %}
+              </div>
+
+              <form method="post" action="{{ url_for('admin.restore_custom_field_route', field_id=field.id) }}">
+                <button type="submit"
+                  class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200">
+                  <i class="bi bi-arrow-counterclockwise mr-1" aria-hidden="true"></i>
+                  Restore
+                </button>
+              </form>
+            </div>
+            {% endfor %}
+          </div>
+        </details>
+      </div>
+      {% endif %}
+      {# ==================== End Archived Custom Fields ==================== #}
 
     </section>
     {% endif %}
@@ -279,8 +522,7 @@
 
 
     {# ==================== Delete Location Confirmation ==================== #}
-    <dialog id="delete-location-dialog"
-      class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+    <div id="delete-location-dialog" class="hidden p-6">
 
       <div class="flex items-start gap-4">
 
@@ -313,7 +555,7 @@
         </button>
       </div>
 
-    </dialog>
+    </div>
     {# ==================== End Delete Location Confirmation ==================== #}
 
   </main>
@@ -325,72 +567,7 @@
 
 
 {% block scripts %}
-<script>
-  // ==================== Tabs ====================
-
-  const tabButtons = document.querySelectorAll('[data-tab-button]');
-  const tabPanels = document.querySelectorAll('[data-tab-panel]');
-
-  function activateTab(name) {
-    for (const button of tabButtons) {
-      const active = button.dataset.tabButton === name;
-      button.classList.toggle('bg-zinc-800', active);
-      button.classList.toggle('text-zinc-100', active);
-    }
-
-    for (const panel of tabPanels) {
-      panel.classList.toggle('hidden', panel.dataset.tabPanel !== name);
-    }
-  }
-
-  for (const button of tabButtons) {
-    button.addEventListener('click', () => {
-      activateTab(button.dataset.tabButton);
-    });
-  }
-
-  const initialTab =
-    [...tabPanels].find((panel) => !panel.classList.contains('hidden'))
-      ?.dataset.tabPanel ?? tabButtons[0]?.dataset.tabButton;
-
-  if (initialTab) {
-    activateTab(initialTab);
-  }
-
-  // ==================== Delete Location Confirmation ====================
-
-  const deleteLocationDialog = document.getElementById('delete-location-dialog');
-  const cancelDeleteLocation = document.getElementById('cancel-delete-location');
-  let pendingDeleteLocationForm = null;
-
-  document.querySelectorAll('[data-delete-location]').forEach((form) => {
-    form.addEventListener('submit', (event) => {
-      if (form.dataset.confirmed === 'true') {
-        return;
-      }
-
-      event.preventDefault();
-      pendingDeleteLocationForm = form;
-      deleteLocationDialog.showModal();
-    });
-  });
-
-  deleteLocationDialog.addEventListener('close', () => {
-    if (pendingDeleteLocationForm) {
-      pendingDeleteLocationForm.dataset.confirmed = 'true';
-      pendingDeleteLocationForm.submit();
-      pendingDeleteLocationForm = null;
-    }
-  });
-
-  cancelDeleteLocation.addEventListener('click', () => {
-    pendingDeleteLocationForm = null;
-    deleteLocationDialog.close();
-  });
-
-  document.getElementById('confirm-delete-location').addEventListener('click', () => {
-    deleteLocationDialog.close();
-  });
-</script>
+<script src="{{ url_for('static', filename='js/modal-manager.js') }}"></script>
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 {% endblock %}
 {# ==================== End Scripts Block ==================== #}
