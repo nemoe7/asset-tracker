@@ -346,8 +346,30 @@ async function startQrScanner() {
         height: 250
       }
     },
-    (decodedText) => {
-      console.log('QR code scanned:', decodedText);
+    async (decodedText) => {
+      const itemId = decodedText.trim();
+
+      if (!itemId) {
+        return;
+      }
+
+      const response = await fetch(
+        `/inventory/${encodeURIComponent(itemId)}/check`,
+        {
+          method: 'POST'
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        console.error('Failed to check scanned item:', data.error);
+        return;
+      }
+
+      const item = await response.json();
+
+      await stopQrScanner();
+      openViewItem(item.id);
     },
     () => {
       // Ignore scan failures while looking for a QR code.
@@ -607,16 +629,9 @@ const viewItemRestore = document.getElementById('view-item-restore');
 let currentViewItemId = null;
 
 
-// Handle View Asset.
+// Open View Asset modal.
 
-async function handleViewItem(event) {
-  if (event.target.closest('.copy-item-id, .edit-item, .restore-item')) {
-    return;
-  }
-
-  const item = event.currentTarget;
-  const itemId = item.dataset.itemId;
-
+async function openViewItem(itemId) {
   if (!itemId) {
     return;
   }
@@ -625,7 +640,7 @@ async function handleViewItem(event) {
 
   openModal(viewItemModal, async () => {
     const response = await fetch(
-      `/inventory/${itemId}?include_archived=true`
+      `/inventory/${encodeURIComponent(itemId)}?include_archived=true`
     );
 
     if (!response.ok) {
@@ -644,6 +659,17 @@ async function handleViewItem(event) {
     viewItemName.textContent = asset.name;
     viewItemLocation.textContent = asset.location_name || '—';
   });
+}
+
+
+// Handle View Asset.
+
+function handleViewItem(event) {
+  if (event.target.closest('.copy-item-id, .edit-item, .restore-item')) {
+    return;
+  }
+
+  openViewItem(event.currentTarget.dataset.itemId);
 }
 
 
