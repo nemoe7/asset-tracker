@@ -11,9 +11,12 @@ from app.services.data.permissions import (
   create_permission,
   get_permission_by_name,
 )
+from app.services.data.role_permissions import set_role_permission
+from app.services.data.roles import create_role
 from app.services.data.user_permissions import (
   set_user_permission,
 )
+from app.services.data.user_roles import set_user_role
 from app.services.data.users import archive_user
 from app.services.exceptions.auth.orization import (
   PermissionDeniedError,
@@ -370,6 +373,64 @@ def test_unknown_read_permission_defaults_to_allow(
     check_permission(
       gen_test_data_admin,
       "inventory.read",
+    )
+    is True
+  )
+
+
+def test_unregistered_non_read_permission_defaults_to_deny(
+  gen_test_data_admin,
+):
+  assert (
+    check_permission(
+      gen_test_data_admin,
+      "locations.manage",
+    )
+    is False
+  )
+
+
+def test_unregistered_permission_allowed_by_direct_global_wildcard(
+  gen_test_data_admin,
+):
+  wildcard_id = get_permission_by_name(name="*")["id"]
+
+  set_user_permission(
+    gen_test_data_admin,
+    wildcard_id,
+    True,
+  )
+
+  assert (
+    check_permission(
+      gen_test_data_admin,
+      "locations.manage",
+    )
+    is True
+  )
+
+
+def test_unregistered_permission_allowed_by_role_global_wildcard(
+  gen_test_data_admin,
+):
+  wildcard_id = get_permission_by_name(name="*")["id"]
+
+  role_id = create_role(name="Wildcard Role")
+  set_role_permission(role_id, wildcard_id, True)
+  set_user_role(gen_test_data_admin, role_id)
+
+  assert (
+    check_permission(
+      gen_test_data_admin,
+      "locations.manage",
+    )
+    is True
+  )
+
+  assert (
+    check_permission(
+      gen_test_data_admin,
+      "users.manage",
     )
     is True
   )

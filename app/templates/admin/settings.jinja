@@ -1,0 +1,396 @@
+{% extends "base.jinja" %}
+
+{% block title %}Admin{% endblock %}
+
+{% block body %}
+
+{# ==================== Admin Page ==================== #}
+<div class="min-h-screen bg-zinc-950 text-zinc-100">
+
+  {# ==================== Header ==================== #}
+  <header class="border-b border-zinc-800 bg-zinc-900">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+
+      <div class="flex items-center gap-4">
+
+        <a href="{{ url_for('main.index') }}"
+          class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+          <i class="bi bi-arrow-left mr-1" aria-hidden="true"></i>
+          Inventory
+        </a>
+
+        <h1 class="text-xl font-semibold tracking-tight">
+          Admin
+        </h1>
+
+      </div>
+
+      <div class="flex items-center gap-3">
+
+        {# ==================== Menu ==================== #}
+        <details class="relative">
+
+          <summary class="icon-button cursor-pointer list-none">
+            <i class="bi bi-list block text-xl" aria-hidden="true"></i>
+            <span class="sr-only">Open menu</span>
+          </summary>
+
+          <div
+            class="absolute right-0 top-full z-50 mt-2 min-w-40 rounded-lg border border-zinc-800 bg-zinc-900 p-1 shadow-xl">
+
+            <div class="px-3 py-2 text-sm text-zinc-400">
+              @{{ session.username }}
+            </div>
+
+            {% if can_manage_locations or can_manage_custom_fields %}
+            <a href="{{ url_for('admin.settings') }}"
+              class="block rounded-md px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
+              Admin Panel
+            </a>
+            {% endif %}
+
+            <form method="post" action="{{ url_for('auth.logout') }}">
+              <button type="submit"
+                class="block w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
+                Log out
+              </button>
+            </form>
+
+          </div>
+
+        </details>
+        {# ==================== End Menu ==================== #}
+
+      </div>
+
+    </div>
+  </header>
+  {# ==================== End Header ==================== #}
+
+
+  <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+
+    {# ==================== Error ==================== #}
+    {% if error %}
+    <p class="mb-6 rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-sm text-red-300">
+      {{ error }}
+    </p>
+    {% endif %}
+    {# ==================== End Error ==================== #}
+
+
+    {# ==================== Tabs ==================== #}
+    <div id="admin-tabs" class="mb-6 flex gap-1">
+
+      {% if can_manage_locations %}
+      <button type="button" data-tab-button="locations"
+        class="admin-tab rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100">
+        Locations
+      </button>
+      {% endif %}
+
+      {% if can_manage_custom_fields %}
+      <button type="button" data-tab-button="custom-fields"
+        class="admin-tab rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100">
+        Custom fields
+      </button>
+      {% endif %}
+
+    </div>
+    {# ==================== End Tabs ==================== #}
+
+
+    {# ==================== Locations Panel ==================== #}
+    {% if can_manage_locations %}
+    <section id="tab-locations" data-tab-panel="locations" class="{{ 'hidden' if active_tab != 'locations' }}">
+
+      {# ==================== Add Location Form ==================== #}
+      <form method="post" action="{{ url_for('admin.create_location_route') }}"
+        class="mb-6 space-y-4 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+
+        <h2 class="text-lg font-semibold">
+          Add location
+        </h2>
+
+        <div>
+          <label for="add-location-name" class="mb-2 block text-sm font-medium text-zinc-300">
+            Name
+          </label>
+
+          <input id="add-location-name" name="name" type="text" required value="{{ location_name }}"
+            class="form-input">
+        </div>
+
+        <div>
+          <label for="add-location-description" class="mb-2 block text-sm font-medium text-zinc-300">
+            Description
+          </label>
+
+          <textarea id="add-location-description" name="description" rows="2"
+            class="form-input !resize-none overflow-hidden min-h-10">{{ location_description or '' }}</textarea>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit"
+            class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-900">
+            <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
+            Add location
+          </button>
+        </div>
+
+      </form>
+      {# ==================== End Add Location Form ==================== #}
+
+
+      {# ==================== Locations List ==================== #}
+      <div class="space-y-2">
+
+        {% for location in locations %}
+        <div class="flex items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+
+          <div class="min-w-0">
+            <p class="truncate text-sm font-medium text-zinc-100">
+              {{ location.name }}
+            </p>
+
+            {% if location.description %}
+            <p class="truncate text-xs text-zinc-400">
+              {{ location.description }}
+            </p>
+            {% endif %}
+          </div>
+
+          <form method="post" action="{{ url_for('admin.delete_location_route', location_id=location.id) }}"
+            data-delete-location>
+            <input type="hidden" name="confirm" value="true">
+
+            <button type="submit"
+              class="rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-950 hover:text-red-300">
+              <i class="bi bi-trash mr-1" aria-hidden="true"></i>
+              Delete
+            </button>
+
+          </form>
+
+        </div>
+        {% else %}
+        <p class="py-2 text-sm text-zinc-400">
+          No locations yet.
+        </p>
+        {% endfor %}
+
+      </div>
+      {# ==================== End Locations List ==================== #}
+
+    </section>
+    {% endif %}
+    {# ==================== End Locations Panel ==================== #}
+
+
+    {# ==================== Custom Fields Panel ==================== #}
+    {% if can_manage_custom_fields %}
+    <section id="tab-custom-fields" data-tab-panel="custom-fields" class="{{ 'hidden' if active_tab != 'custom-fields' }}">
+
+      {# ==================== Add Custom Field Form ==================== #}
+      <form method="post" action="{{ url_for('admin.create_custom_field_route') }}"
+        class="mb-6 space-y-4 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+
+        <h2 class="text-lg font-semibold">
+          Add custom field
+        </h2>
+
+        <div>
+          <label for="add-field-name" class="mb-2 block text-sm font-medium text-zinc-300">
+            Name
+          </label>
+
+          <input id="add-field-name" name="name" type="text" required value="{{ field_name }}"
+            class="form-input">
+        </div>
+
+        <div>
+          <label for="add-field-type" class="mb-2 block text-sm font-medium text-zinc-300">
+            Type
+          </label>
+
+          <select id="add-field-type" name="field_type" class="form-input">
+            <option value="text">Text</option>
+            <option value="integer">Integer</option>
+            <option value="decimal">Decimal</option>
+            <option value="boolean">Boolean</option>
+            <option value="date">Date</option>
+            <option value="enum">Enum</option>
+            <option value="user">User</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit"
+            class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-900">
+            <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
+            Add field
+          </button>
+        </div>
+
+      </form>
+      {# ==================== End Add Custom Field Form ==================== #}
+
+
+      {# ==================== Custom Fields List ==================== #}
+      <div class="space-y-2">
+
+        {% for field in custom_fields %}
+        <div class="flex items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+
+          <form method="post" action="{{ url_for('admin.update_custom_field_route', field_id=field.id) }}"
+            class="flex min-w-0 flex-1 items-center gap-2">
+
+            <label for="field-name-{{ field.id }}" class="sr-only">
+              Name for {{ field.name }}
+            </label>
+
+            <input id="field-name-{{ field.id }}" name="name" type="text" required value="{{ field.name }}"
+              class="form-input !py-1.5 max-w-56 text-sm">
+
+            <span class="shrink-0 rounded-md border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400">
+              {{ field.field_type }}
+            </span>
+
+            <button type="submit"
+              class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+              Save
+            </button>
+
+          </form>
+
+        </div>
+        {% else %}
+        <p class="py-2 text-sm text-zinc-400">
+          No custom fields yet.
+        </p>
+        {% endfor %}
+
+      </div>
+      {# ==================== End Custom Fields List ==================== #}
+
+    </section>
+    {% endif %}
+    {# ==================== End Custom Fields Panel ==================== #}
+
+
+    {# ==================== Delete Location Confirmation ==================== #}
+    <dialog id="delete-location-dialog"
+      class="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-100 shadow-2xl backdrop:bg-black/60">
+
+      <div class="flex items-start gap-4">
+
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-950 text-red-400">
+          <i class="bi bi-trash" aria-hidden="true"></i>
+        </div>
+
+        <div>
+          <h2 class="text-lg font-semibold">
+            Delete location?
+          </h2>
+
+          <p class="mt-1 text-sm text-zinc-400">
+            Inventory items at this location will be set to no location.
+          </p>
+        </div>
+
+      </div>
+
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" id="cancel-delete-location"
+          class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+          Cancel
+        </button>
+
+        <button type="button" id="confirm-delete-location"
+          class="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-500">
+          <i class="bi bi-trash mr-1" aria-hidden="true"></i>
+          Delete location
+        </button>
+      </div>
+
+    </dialog>
+    {# ==================== End Delete Location Confirmation ==================== #}
+
+  </main>
+</div>
+{# ==================== End Admin Page ==================== #}
+
+{% endblock %}
+{# ==================== End Body Block ==================== #}
+
+
+{% block scripts %}
+<script>
+  // ==================== Tabs ====================
+
+  const tabButtons = document.querySelectorAll('[data-tab-button]');
+  const tabPanels = document.querySelectorAll('[data-tab-panel]');
+
+  function activateTab(name) {
+    for (const button of tabButtons) {
+      const active = button.dataset.tabButton === name;
+      button.classList.toggle('bg-zinc-800', active);
+      button.classList.toggle('text-zinc-100', active);
+    }
+
+    for (const panel of tabPanels) {
+      panel.classList.toggle('hidden', panel.dataset.tabPanel !== name);
+    }
+  }
+
+  for (const button of tabButtons) {
+    button.addEventListener('click', () => {
+      activateTab(button.dataset.tabButton);
+    });
+  }
+
+  const initialTab =
+    [...tabPanels].find((panel) => !panel.classList.contains('hidden'))
+      ?.dataset.tabPanel ?? tabButtons[0]?.dataset.tabButton;
+
+  if (initialTab) {
+    activateTab(initialTab);
+  }
+
+  // ==================== Delete Location Confirmation ====================
+
+  const deleteLocationDialog = document.getElementById('delete-location-dialog');
+  const cancelDeleteLocation = document.getElementById('cancel-delete-location');
+  let pendingDeleteLocationForm = null;
+
+  document.querySelectorAll('[data-delete-location]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      if (form.dataset.confirmed === 'true') {
+        return;
+      }
+
+      event.preventDefault();
+      pendingDeleteLocationForm = form;
+      deleteLocationDialog.showModal();
+    });
+  });
+
+  deleteLocationDialog.addEventListener('close', () => {
+    if (pendingDeleteLocationForm) {
+      pendingDeleteLocationForm.dataset.confirmed = 'true';
+      pendingDeleteLocationForm.submit();
+      pendingDeleteLocationForm = null;
+    }
+  });
+
+  cancelDeleteLocation.addEventListener('click', () => {
+    pendingDeleteLocationForm = null;
+    deleteLocationDialog.close();
+  });
+
+  document.getElementById('confirm-delete-location').addEventListener('click', () => {
+    deleteLocationDialog.close();
+  });
+</script>
+{% endblock %}
+{# ==================== End Scripts Block ==================== #}

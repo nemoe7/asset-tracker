@@ -1,4 +1,5 @@
 import pytest
+from playwright.sync_api import expect
 
 
 @pytest.mark.e2e
@@ -26,4 +27,7 @@ def test_setup_creates_first_admin(
   assert page.locator("#add-item-button").is_visible()
   assert page.locator("#inventory-items").is_visible()
 
-  assert page.get_by_role("button", name="Log out").is_visible()
+  menu = page.locator("details")
+  menu.locator("summary").click()
+
+  expect(page.get_by_role("button", name="Log out")).to_be_visible()

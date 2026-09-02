@@ -303,9 +303,6 @@
   .hidden {
     display: none;
   }
-  .inline {
-    display: inline;
-  }
   .table {
     display: table;
   }
@@ -361,6 +358,9 @@
   }
   .max-w-7xl {
     max-width: var(--container-7xl);
+  }
+  .max-w-56 {
+    max-width: calc(var(--spacing) * 56);
   }
   .max-w-full {
     max-width: 100%;
@@ -615,6 +615,9 @@
   .py-1 {
     padding-block: var(--spacing);
   }
+  .py-1\.5 {
+    padding-block: calc(var(--spacing) * 1.5);
+  }
   .py-2 {
     padding-block: calc(var(--spacing) * 2);
   }
@@ -830,15 +833,6 @@
     outline-style: none;
   }
   @media (width >= 40rem) {
-    .sm\:block {
-      display: block;
-    }
-    .sm\:flex {
-      display: flex;
-    }
-    .sm\:hidden {
-      display: none;
-    }
     .sm\:w-auto {
       width: auto;
     }
