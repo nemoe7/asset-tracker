@@ -386,3 +386,66 @@ def test_admin_cannot_delete_nonexistent_location(
 
   assert response.status_code == 404
   assert response.json["error"]
+
+
+def test_admin_can_update_location_with_json_response(
+  gen_test_admin_client,
+):
+  create_response = gen_test_admin_client.post(
+    "/locations",
+    data={
+      "name": "Warehouse",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  location_id = create_response.json["id"]
+
+  response = gen_test_admin_client.post(
+    f"/locations/{location_id}",
+    data={
+      "name": "Main Warehouse",
+      "description": "Updated description",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 200
+  assert response.json["id"] == location_id
+  assert response.json["name"] == "Main Warehouse"
+  assert response.json["description"] == "Updated description"
+
+
+def test_admin_can_delete_location_with_json_response(
+  gen_test_admin_client,
+):
+  create_response = gen_test_admin_client.post(
+    "/locations",
+    data={
+      "name": "Warehouse",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  location_id = create_response.json["id"]
+
+  response = gen_test_admin_client.post(
+    f"/locations/{location_id}/delete",
+    data={
+      "confirm": "true",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 200
+  assert response.json["deleted"] is True
+  assert response.json["id"] == location_id
+  assert get_location(location_id) is None

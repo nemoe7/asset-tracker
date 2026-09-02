@@ -96,6 +96,10 @@ def update(location_id):
   except LocationNotFoundError as error:
     return jsonify({"error": str(error)}), 404
 
+  if request.headers.get("Accept") == "application/json":
+    updated = get_location(location_id)
+    return jsonify(dict(updated))
+
   return redirect(url_for("main.index"))
 
 
@@ -114,5 +118,8 @@ def delete(location_id):
     )
   except LocationDeletionConfirmationRequired as error:
     return jsonify({"error": str(error)}), 400
+
+  if request.headers.get("Accept") == "application/json":
+    return jsonify({"deleted": True, "id": location_id})
 
   return redirect(url_for("main.index"))
