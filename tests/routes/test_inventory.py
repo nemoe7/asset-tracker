@@ -6,10 +6,14 @@ def test_admin_can_create_asset(
     data={
       "name": "Test Asset",
     },
+    headers={
+      "Accept": "application/json",
+    },
   )
 
-  assert response.status_code == 302
-  assert response.location.endswith("/")
+  assert response.status_code == 200
+  assert response.json["description"] is None
+  assert response.json["location_id"] is None
 
 
 def test_admin_cannot_create_asset_without_name(gen_test_admin_client):
@@ -22,6 +26,25 @@ def test_admin_cannot_create_asset_without_name(gen_test_admin_client):
 
   assert response.status_code == 400
   assert response.json["error"]
+
+
+def test_admin_can_create_asset_with_description(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/inventory",
+    data={
+      "name": "Test Asset",
+      "description": "Test description",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 200
+  assert response.json["name"] == "Test Asset"
+  assert response.json["description"] == "Test description"
 
 
 def test_admin_can_view_created_asset(gen_test_admin_client):
@@ -59,6 +82,59 @@ def test_admin_can_edit_asset(
 
   assert response.status_code == 200
   assert response.json["name"] == "Updated Asset"
+
+
+def test_admin_can_edit_asset_description(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  item_id = gen_test_item(name="Test Asset")
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "description": "Updated description",
+    },
+  )
+
+  assert response.status_code == 302
+
+  response = gen_test_admin_client.get(
+    f"/inventory/{item_id}",
+  )
+
+  assert response.status_code == 200
+  assert response.json["description"] == "Updated description"
+
+
+def test_admin_can_clear_asset_description(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  item_id = gen_test_item(name="Test Asset")
+
+  gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "description": "Test description",
+    },
+  )
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "description": "",
+    },
+  )
+
+  assert response.status_code == 302
+
+  response = gen_test_admin_client.get(
+    f"/inventory/{item_id}",
+  )
+
+  assert response.status_code == 200
+  assert response.json["description"] is None
 
 
 def test_admin_can_archive_asset(
@@ -332,7 +408,9 @@ def test_inventory_page_sorts_items(
   gen_test_item(name="Zebra")
   gen_test_item(name="Apple")
 
-  response = gen_test_admin_client.get("/inventory/fragment?sort_by=name&sort_order=desc")
+  response = gen_test_admin_client.get(
+    "/inventory/fragment?sort_by=name&sort_order=desc"
+  )
 
   assert response.status_code == 200
 
