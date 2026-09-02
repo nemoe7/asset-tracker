@@ -1,5 +1,7 @@
 {% extends "base.jinja" %}
 
+{% from "shared/_modal.jinja" import modal %}
+
 {% block title %}Admin{% endblock %}
 
 {% block body %}
@@ -113,11 +115,8 @@
         </button>
       </div>
 
-      <div id="add-location-dialog" class="hidden p-6">
-
+      {% call modal("add-location-dialog", "Add location") %}
         <form method="post" action="{{ url_for('admin.create_location_route') }}">
-          <h2 class="text-lg font-semibold">Add location</h2>
-
           <div class="mt-4">
             <label for="add-location-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
             <input id="add-location-name" name="name" type="text" required value="{{ location_name or '' }}"
@@ -142,35 +141,12 @@
             </button>
           </div>
         </form>
-      </div>
+      {% endcall %}
       {# ==================== End Add Location ==================== #}
 
 
       {# ==================== Edit Location ==================== #}
-      <div id="edit-location-dialog" class="hidden p-6">
-
-        {# ==================== Modal Header ==================== #}
-        <div class="flex items-center justify-between gap-4">
-
-          <div class="min-w-0">
-            <h2 class="text-lg font-semibold">
-              Edit location
-            </h2>
-          </div>
-
-          <div class="flex shrink-0 gap-1">
-            <button type="button" class="icon-button modal-close" title="Close" aria-label="Close">
-              <i class="bi bi-x-lg block size-4" aria-hidden="true"></i>
-            </button>
-          </div>
-
-        </div>
-
-        <div class="py-4">
-          <hr class="border-zinc-800">
-        </div>
-        {# ==================== End Modal Header ==================== #}
-
+      {% call modal("edit-location-dialog", "Edit location") %}
         <form method="post" action="">
           <div>
             <label for="edit-location-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
@@ -194,7 +170,7 @@
             </button>
           </div>
         </form>
-      </div>
+      {% endcall %}
       {# ==================== End Edit Location ==================== #}
 
 
