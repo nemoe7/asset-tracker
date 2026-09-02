@@ -194,28 +194,28 @@ def _build_item_query(
   )
 
 
-def create_item(name, location_id=None):
+def create_item(name, description=None, location_id=None):
   _validate_item_name(name)
+  _validate_location(location_id)
+  item_id = str(uuid.uuid4())
 
   with db_transaction() as connection:
-    _validate_location(location_id)
-
-    item_id = str(uuid.uuid4())
-
     connection.execute(
       """
       INSERT INTO inventory_items (
         id,
         name,
+        description,
         location_id,
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, datetime('now'), datetime('now'))
+      VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
       """,
       (
         item_id,
         name,
+        description,
         location_id,
       ),
     )
@@ -386,9 +386,10 @@ def get_items_paginated(
 def update_item(
   item_id,
   name=_UNSET,
+  description=_UNSET,
   location_id=_UNSET,
 ):
-  if name is _UNSET and location_id is _UNSET:
+  if name is _UNSET and description is _UNSET and location_id is _UNSET:
     raise InvalidInputError("No fields to update")
 
   with db_transaction() as connection:
@@ -422,6 +423,15 @@ def update_item(
           "old": existing["name"],
           "new": name,
         }
+
+    if description is not _UNSET and existing["description"] != description:
+      updates.append("description = ?")
+      values.append(description)
+
+      details["description"] = {
+        "old": existing["description"],
+        "new": description,
+      }
 
     if location_id is not _UNSET:
       _validate_location(location_id)
