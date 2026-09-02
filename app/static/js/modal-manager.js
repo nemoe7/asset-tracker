@@ -95,18 +95,18 @@ async function closeModal() {
   }
 }
 
-function switchModal(modal) {
+function switchModal(modal, load = null) {
   if (!modal) {
     return;
   }
 
   if (!activeModal) {
-    openModal(modal);
+    openModal(modal, load);
     return;
   }
 
   closeModalContent();
-  openModal(modal);
+  openModal(modal, load);
 }
 
 let isBackgroundClick = false;

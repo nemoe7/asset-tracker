@@ -477,6 +477,29 @@ const editItemDescription = document.getElementById('edit-item-description');
 let currentEditItemId = null;
 
 
+// Load an asset into the Edit Asset modal.
+
+async function loadEditItem(itemId) {
+  const response = await fetch(`/inventory/${itemId}`);
+
+  if (!response.ok) {
+    closeModal();
+    return;
+  }
+
+  const item = await response.json();
+
+  await loadLocations();
+
+  editItemId.textContent = item.id;
+  editItemName.value = item.name;
+  editItemDescription.value = item.description ?? '';
+  autoResize(editItemDescription);
+  editItemLocation.value = item.location_id ?? '';
+  editItemForm.action = `/inventory/${itemId}`;
+}
+
+
 // Handle Edit Asset.
 
 async function handleEditItem(event) {
@@ -491,25 +514,7 @@ async function handleEditItem(event) {
 
   currentEditItemId = itemId;
 
-  openModal(editItemModal, async () => {
-    const response = await fetch(`/inventory/${itemId}`);
-
-    if (!response.ok) {
-      closeModal();
-      return;
-    }
-
-    const item = await response.json();
-
-    await loadLocations();
-
-    editItemId.textContent = item.id;
-    editItemName.value = item.name;
-    editItemDescription.value = item.description ?? '';
-    autoResize(editItemDescription);
-    editItemLocation.value = item.location_id ?? '';
-    editItemForm.action = `/inventory/${itemId}`;
-  });
+  await openModal(editItemModal, () => loadEditItem(itemId));
 }
 
 
@@ -630,15 +635,9 @@ viewItemEdit?.addEventListener('click', () => {
     return;
   }
 
-  const itemId = currentViewItemId;
+  currentEditItemId = currentViewItemId;
 
-  closeModal();
-
-  const editButton = inventoryContent?.querySelector(
-    `.edit-item[data-item-id="${CSS.escape(itemId)}"]`
-  );
-
-  editButton?.click();
+  switchModal(editItemModal, () => loadEditItem(currentEditItemId));
 });
 
 
