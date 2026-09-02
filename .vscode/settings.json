@@ -1,5 +1,5 @@
 {
-  "python.testing.pytestArgs": ["tests", "-n", "auto"],
+  "python.testing.pytestArgs": ["tests"],
   "python.testing.pytestEnabled": true,
   "sqltools.connections": [
     {

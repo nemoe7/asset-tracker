@@ -110,6 +110,76 @@ def test_admin_can_delete_location_from_admin_page(
   assert get_location(location_id) is None
 
 
+def test_admin_can_update_location_from_admin_page(
+  gen_test_admin_client,
+  gen_test_location,
+):
+  location_id = gen_test_location()
+
+  response = gen_test_admin_client.post(
+    f"/admin/locations/{location_id}",
+    data={
+      "name": "Main Warehouse",
+      "description": "Updated description",
+    },
+  )
+
+  assert response.status_code == 302
+
+  location = get_location(location_id)
+
+  assert location["name"] == "Main Warehouse"
+  assert location["description"] == "Updated description"
+
+
+def test_admin_cannot_update_location_to_duplicate_name(
+  gen_test_admin_client,
+  gen_test_location,
+):
+  gen_test_location("Warehouse")
+  location_id = gen_test_location("Office")
+
+  response = gen_test_admin_client.post(
+    f"/admin/locations/{location_id}",
+    data={
+      "name": "Warehouse",
+    },
+  )
+
+  assert response.status_code == 200
+  assert "Location already exists" in response.data.decode()
+
+
+def test_admin_cannot_update_location_with_empty_name(
+  gen_test_admin_client,
+  gen_test_location,
+):
+  location_id = gen_test_location()
+
+  response = gen_test_admin_client.post(
+    f"/admin/locations/{location_id}",
+    data={
+      "name": "   ",
+    },
+  )
+
+  assert response.status_code == 200
+  assert "Location name cannot be empty" in response.data.decode()
+
+
+def test_admin_cannot_update_nonexistent_location(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/locations/999",
+    data={
+      "name": "Warehouse",
+    },
+  )
+
+  assert response.status_code == 404
+
+
 # ==================== Custom Fields Tab ====================
 
 
@@ -267,3 +337,121 @@ def test_admin_cannot_rename_custom_field_to_duplicate_name(
 
   assert response.status_code == 200
   assert "Custom field already exists" in response.data.decode()
+
+
+def test_admin_can_create_enum_custom_field_from_admin_page(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/custom-fields",
+    data={
+      "name": "Category",
+      "field_type": "enum",
+      "enum_values": "IT\nHR\nFinance",
+    },
+  )
+
+  assert response.status_code == 302
+
+  field = next(field for field in get_custom_fields() if field["name"] == "Category")
+
+  assert field["field_type"] == "enum"
+  assert field["enum_values"] == ["IT", "HR", "Finance"]
+
+
+def test_admin_cannot_create_enum_custom_field_without_values(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/custom-fields",
+    data={
+      "name": "Category",
+      "field_type": "enum",
+    },
+  )
+
+  assert response.status_code == 200
+  assert "Enum values must be a non-empty list" in response.data.decode()
+
+
+def test_admin_can_create_custom_field_with_description_and_required(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/custom-fields",
+    data={
+      "name": "Serial Number",
+      "field_type": "text",
+      "description": "Manufacturer serial number",
+      "required": "true",
+    },
+  )
+
+  assert response.status_code == 302
+
+  field = next(
+    field for field in get_custom_fields() if field["name"] == "Serial Number"
+  )
+
+  assert field["description"] == "Manufacturer serial number"
+  assert field["required"] == 1
+
+
+def test_admin_can_update_enum_custom_field_values(
+  gen_test_admin_client,
+):
+  gen_test_admin_client.post(
+    "/admin/custom-fields",
+    data={
+      "name": "Category",
+      "field_type": "enum",
+      "enum_values": "IT\nHR",
+    },
+  )
+
+  field = next(field for field in get_custom_fields() if field["name"] == "Category")
+
+  response = gen_test_admin_client.post(
+    f"/admin/custom-fields/{field['id']}",
+    data={
+      "name": "Category",
+      "field_type": "enum",
+      "enum_values": "IT\nHR\nFinance",
+    },
+  )
+
+  assert response.status_code == 302
+  assert get_custom_field(field["id"])["enum_values"] == ["IT", "HR", "Finance"]
+
+
+def test_admin_can_update_custom_field_description_and_required(
+  gen_test_admin_client,
+):
+  gen_test_admin_client.post(
+    "/admin/custom-fields",
+    data={
+      "name": "Serial Number",
+      "field_type": "text",
+    },
+  )
+
+  field = next(
+    field for field in get_custom_fields() if field["name"] == "Serial Number"
+  )
+
+  response = gen_test_admin_client.post(
+    f"/admin/custom-fields/{field['id']}",
+    data={
+      "name": "Serial Number",
+      "field_type": "text",
+      "description": "Manufacturer serial number",
+      "required": "true",
+    },
+  )
+
+  assert response.status_code == 302
+
+  updated = get_custom_field(field["id"])
+
+  assert updated["description"] == "Manufacturer serial number"
+  assert updated["required"] == 1

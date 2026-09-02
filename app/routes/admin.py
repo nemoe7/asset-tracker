@@ -13,8 +13,11 @@ from ..services.auth.authorization import (
   permission_required,
 )
 from ..services.data.custom_fields import (
+  archive_custom_field,
   create_custom_field,
+  get_custom_field,
   get_custom_fields,
+  restore_custom_field,
   update_custom_field,
 )
 from ..services.data.locations import (
@@ -22,6 +25,7 @@ from ..services.data.locations import (
   delete_location,
   get_location,
   get_locations,
+  update_location,
 )
 from ..services.data.users import (
   archive_user,
@@ -32,9 +36,13 @@ from ..services.data.users import (
   update_user,
 )
 from ..services.exceptions.data.common import InvalidInputError
-from ..services.exceptions.data.custom_fields import CustomFieldNotFoundError
+from ..services.exceptions.data.custom_fields import (
+  CustomFieldInUseError,
+  CustomFieldNotFoundError,
+)
 from ..services.exceptions.data.locations import (
   LocationAlreadyExistsError,
+  LocationNotFoundError,
 )
 from ..services.exceptions.data.users import (
   InvalidPasswordError,
@@ -68,6 +76,7 @@ def _render_settings(
     "admin/settings.jinja",
     locations=get_locations(),
     custom_fields=get_custom_fields(),
+    archived_custom_fields=get_custom_fields(include_archived=True),
     active_tab=active_tab,
     error=error,
     can_manage_locations=check_permission(user_id, "locations.manage"),
@@ -83,6 +92,18 @@ def _get_active_tab():
     return _LOCATION_TAB
 
   return tab
+
+
+def _parse_enum_values(raw):
+  if raw is None:
+    return None
+
+  values = [value.strip() for value in raw.split("\n") if value.strip()]
+
+  if not values:
+    return None
+
+  return values
 
 
 @admin.route("", methods=["GET"])
@@ -127,6 +148,30 @@ def create_location_route():
   return redirect(url_for("admin.settings", tab=_LOCATION_TAB))
 
 
+@admin.route("/locations/<int:location_id>", methods=["POST"])
+@login_required
+@permission_required("locations.manage")
+def update_location_route(location_id):
+  name = request.form.get("name", "").strip()
+  description = request.form.get("description") or None
+
+  try:
+    update_location(
+      location_id,
+      name=name,
+      description=description,
+    )
+  except (InvalidInputError, LocationAlreadyExistsError) as error:
+    return _render_settings(
+      _LOCATION_TAB,
+      error=str(error),
+    )
+  except LocationNotFoundError:
+    abort(404)
+
+  return redirect(url_for("admin.settings", tab=_LOCATION_TAB))
+
+
 @admin.route("/locations/<int:location_id>/delete", methods=["POST"])
 @login_required
 @permission_required("locations.manage")
@@ -145,17 +190,27 @@ def delete_location_route(location_id):
 def create_custom_field_route():
   name = request.form.get("name", "").strip()
   field_type = request.form.get("field_type", "")
+  description = request.form.get("description", "").strip() or None
+  required = request.form.get("required") == "true"
+  enum_values = _parse_enum_values(request.form.get("enum_values"))
 
   try:
     create_custom_field(
       name=name,
       field_type=field_type,
+      description=description,
+      required=required,
+      enum_values=enum_values,
     )
   except InvalidInputError as error:
     return _render_settings(
       _CUSTOM_FIELDS_TAB,
       error=str(error),
       field_name=name,
+      field_type=field_type,
+      field_description=request.form.get("description"),
+      field_required=required,
+      field_enum_values="\n".join(enum_values) if enum_values else "",
     )
 
   return redirect(url_for("admin.settings", tab=_CUSTOM_FIELDS_TAB))
@@ -166,14 +221,60 @@ def create_custom_field_route():
 @permission_required("custom_fields.manage")
 def update_custom_field_route(field_id):
   name = request.form.get("name", "").strip()
+  field_type = request.form.get("field_type")
+  description = request.form.get("description")
+  required = request.form.get("required") == "true"
+  enum_values = _parse_enum_values(request.form.get("enum_values"))
+
+  kwargs = {
+    "name": name,
+  }
+
+  if field_type is not None:
+    kwargs["field_type"] = field_type
+
+  if description is not None:
+    kwargs["description"] = description.strip() or None
+
+  kwargs["required"] = required
+  kwargs["enum_values"] = enum_values
 
   try:
-    update_custom_field(field_id, name=name)
+    update_custom_field(field_id, **kwargs)
+  except CustomFieldInUseError:
+    return _render_settings(
+      _CUSTOM_FIELDS_TAB,
+      error="Cannot change the type of a field that already has values.",
+    )
   except InvalidInputError as error:
     return _render_settings(
       _CUSTOM_FIELDS_TAB,
       error=str(error),
     )
+  except CustomFieldNotFoundError:
+    abort(404)
+
+  return redirect(url_for("admin.settings", tab=_CUSTOM_FIELDS_TAB))
+
+
+@admin.route("/custom-fields/<int:field_id>/archive", methods=["POST"])
+@login_required
+@permission_required("custom_fields.manage")
+def archive_custom_field_route(field_id):
+  try:
+    archive_custom_field(field_id)
+  except CustomFieldNotFoundError:
+    abort(404)
+
+  return redirect(url_for("admin.settings", tab=_CUSTOM_FIELDS_TAB))
+
+
+@admin.route("/custom-fields/<int:field_id>/restore", methods=["POST"])
+@login_required
+@permission_required("custom_fields.manage")
+def restore_custom_field_route(field_id):
+  try:
+    restore_custom_field(field_id)
   except CustomFieldNotFoundError:
     abort(404)
 

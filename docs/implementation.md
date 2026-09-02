@@ -88,8 +88,8 @@
 | CMP-001 | P3 | Support current common desktop browsers. | 🟡 | USE-001 | — | Test browser compatibility |
 | CMP-002 | P3 | Support modern mobile browsers. | 🟡 | USE-003 | QRC-004 | Test mobile browser compatibility |
 | CMP-003 | P3 | QR scanning works through supported mobile cameras/browser functionality. | 🟢 | QRC-004 | CHK-001 | |
-| FLD-006 | P3 | Admins can define Enum values. | 🟡 | FLD-004, FLD-005 | FLD-002 | Frontend pending |
-| FLD-008 | P3 | Admins can mark custom fields required. | 🟡 | FLD-002, FLD-004 | FLD-012 | Frontend pending |
+| FLD-006 | P3 | Admins can define Enum values. | 🟢 | FLD-004, FLD-005 | FLD-002 | |
+| FLD-008 | P3 | Admins can mark custom fields required. | 🟢 | FLD-002, FLD-004 | FLD-012 | |
 | FLD-011 | P3 | Deactivating a field preserves existing values. | 🔴 | FLD-010 | — | |
 | FLD-015 | P3 | Record changes to custom-field definitions. | 🔴 | FLD-002, FLD-009, FLD-010 | AUD-005 | |
 | PER-001 | P3 | Normal inventory operations respond reasonably. | 🟡 | — | PER-002, PER-003 | No explicit performance target/test established |
@@ -125,9 +125,9 @@
 | USR-007 | P4 | Admins can configure per-user overrides. | 🔴 | USR-001 | USR-008, AUT-013 | |
 | USR-012 | P4 | Admins can configure audit-log visibility. | 🔴 | USR-004 | AUD-011, AUD-012 | |
 | USR-013 | P4 | Record user/role/permission changes. | 🔴 | USR-001–007 | AUD-006 | |
-| FLD-004 | P4 | Admins can specify custom-field data type. | 🟡 | FLD-002, FLD-003 | FLD-005 | Frontend pending |
-| FLD-005 | P4 | Support Text, Integer, Decimal, Boolean, Date, Enum, User. | 🟡 | FLD-004 | FLD-006, FLD-007, FLD-012 | Frontend pending |
-| FLD-009 | P4 | Admins can modify custom-field configuration. | 🟡 | FLD-002 | FLD-015 | Frontend pending |
+| FLD-004 | P4 | Admins can specify custom-field data type. | 🟢 | FLD-002, FLD-003 | FLD-005 | |
+| FLD-005 | P4 | Support Text, Integer, Decimal, Boolean, Date, Enum, User. | 🟢 | FLD-004 | FLD-006, FLD-007, FLD-012 | |
+| FLD-009 | P4 | Admins can modify custom-field configuration. | 🟢 | FLD-002 | FLD-015 | |
 | FLD-010 | P4 | Admins can deactivate custom fields. | 🟡 | FLD-002 | FLD-011, FLD-015 | Frontend pending |
 | FLD-014 | P4 | Custom fields available for search/filter/export. | 🔴 | FLD-002, FLD-004 | SRH-007, EXP-003 | |
 | EXP-005 | P4 | Authorized users can create saved export templates. | 🔴 | EXP-001 | EXP-006, EXP-007 | |
