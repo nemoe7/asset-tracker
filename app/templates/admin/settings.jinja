@@ -149,10 +149,30 @@
       {# ==================== Edit Location ==================== #}
       <div id="edit-location-dialog" class="hidden p-6">
 
-        <form method="post" action="">
-          <h2 class="text-lg font-semibold">Edit location</h2>
+        {# ==================== Modal Header ==================== #}
+        <div class="flex items-center justify-between gap-4">
 
-          <div class="mt-4">
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold">
+              Edit location
+            </h2>
+          </div>
+
+          <div class="flex shrink-0 gap-1">
+            <button type="button" class="icon-button modal-close" title="Close" aria-label="Close">
+              <i class="bi bi-x-lg block size-4" aria-hidden="true"></i>
+            </button>
+          </div>
+
+        </div>
+
+        <div class="py-4">
+          <hr class="border-zinc-800">
+        </div>
+        {# ==================== End Modal Header ==================== #}
+
+        <form method="post" action="">
+          <div>
             <label for="edit-location-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
             <input id="edit-location-name" name="name" type="text" required class="form-input">
           </div>
