@@ -184,7 +184,7 @@ def gen_test_admin_client(gen_test_admin, gen_test_client, gen_password):
 def gen_test_item(gen_test_admin):
   def _create(name="Test Asset", location_id=None):
     token = set_current_user(gen_test_admin)
-    uuid = create_item(name, location_id)
+    uuid = create_item(name, location_id=location_id)
     reset_current_user(token)
     return uuid
 
