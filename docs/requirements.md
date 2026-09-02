@@ -318,6 +318,8 @@ The system shall allow inventory information to be exported.
 - **EXP-008** `[P4]`: Export templates shall support configured custom fields.
 - **EXP-009** `[P5]`: Exported data shall reflect the information available to the user generating the export.
 
+Note: only CSV export is supported.
+
 ### 3.10 Import
 
 The system shall support importing existing inventory data.

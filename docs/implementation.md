@@ -49,16 +49,16 @@
 | SRH-003 | P1 | Users can sort asset results. | 🟢 | AST-002 | SRH-004 | |
 | SRH-004 | P1 | Display assets in a tabular/equivalent inventory view. | 🟢 | AST-002 | SRH-001, SRH-003 | |
 | SRH-005 | P1 | Open an individual asset from the inventory view. | 🟢 | AST-002 | QRC-005 | |
-| SRH-006 | P1 | Filters affect displayed results and applicable exports. | 🟡 | SRH-002 | EXP-004 | Implement export |
+| SRH-006 | P1 | Filters affect displayed results and applicable exports. | 🟡 | SRH-002 | EXP-004 | Custom-field filters pending in export |
 | AUD-001 | P1 | Record asset creation events. | 🟢 | AST-001 | AUD-009 | |
 | AUD-002 | P1 | Record asset modification events. | 🟢 | AST-003 | CHK-008 | |
 | AUD-003 | P1 | Record asset archival/restoration events. | 🟢 | AST-004, AST-012 | USE-005 | |
 | AUD-004 | P1 | Record asset QR scan events. | 🟢 | CHK-003 | CHK-004, CHK-005 | |
 | AUD-009 | P1 | Record date/time for each audit event. | 🟢 | AUD-001–004 | CHK-005 | |
-| EXP-001 | P1 | Authorized users can export inventory. | 🔴 | AUT-003 | EXP-002 | |
-| EXP-002 | P1 | Provide Excel-compatible export. | 🔴 | EXP-001 | — | |
-| EXP-003 | P1 | Allow field selection for exports. | 🔴 | EXP-001 | FLD-014 | |
-| EXP-004 | P1 | Allow filtered inventory exports. | 🔴 | EXP-001, SRH-006 | SRH-002 | |
+| EXP-001 | P1 | Authorized users can export inventory. | 🟡 | AUT-003 | EXP-002 | Backend only; frontend pending |
+| EXP-002 | P1 | Provide Excel-compatible export. | 🟡 | EXP-001 | — | Backend CSV only; frontend pending |
+| EXP-003 | P1 | Allow field selection for exports. | 🟡 | EXP-001 | FLD-014 | Backend only; frontend pending |
+| EXP-004 | P1 | Allow filtered inventory exports. | 🟡 | EXP-001, SRH-006 | SRH-002 | Backend only; frontend pending |
 | IMP-001 | P1 | Authorized users can import asset records. | 🔴 | AUT-003 | IMP-002–004 | |
 | IMP-002 | P1 | An import requires at minimum an Asset Name. | 🔴 | IMP-001 | AST-007 | |
 | IMP-003 | P1 | Generate an Asset ID for imported assets when one is not provided. | 🔴 | IMP-001, AST-005 | QRC-001 | |

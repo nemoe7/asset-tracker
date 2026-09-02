@@ -1,7 +1,9 @@
 import logging
+from datetime import datetime
 
 from flask import (
   Blueprint,
+  Response,
   jsonify,
   redirect,
   render_template,
@@ -29,6 +31,7 @@ from ..services.exceptions.data.inventory import (
   ItemNotFoundError,
 )
 from ..services.exceptions.data.locations import LocationNotFoundError
+from ..services.export import build_export
 from .auth import login_required
 
 logger = logging.getLogger(__name__)
@@ -119,6 +122,45 @@ def create():
     )
 
   return redirect(url_for("main.index"))
+
+
+@inventory.route("/export", methods=["GET"])
+@login_required
+def export():
+  search = request.args.get("search")
+  location_id = request.args.get("location_id")
+  sort_by = request.args.get("sort_by", "name")
+  sort_order = request.args.get("sort_order", "asc")
+  include_archived = request.args.get("include_archived") == "true"
+
+  try:
+    if location_id == "__none__":
+      location_id = None
+    elif location_id:
+      location_id = int(location_id)
+    else:
+      location_id = _UNSET
+
+    csv_data = build_export(
+      search=search,
+      location_id=location_id,
+      include_archived=include_archived,
+      sort_by=sort_by,
+      sort_order=sort_order,
+      field_keys=request.args.getlist("fields") or None,
+    )
+  except (InvalidInputError, ValueError) as error:
+    return jsonify({"error": str(error)}), 400
+
+  filename = datetime.now().strftime("inventory-export-%Y%m%d-%H%M.csv")
+
+  return Response(
+    csv_data,
+    mimetype="text/csv",
+    headers={
+      "Content-Disposition": f'attachment; filename="{filename}"',
+    },
+  )
 
 
 @inventory.route("/<item_id>", methods=["GET"])
