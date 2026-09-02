@@ -210,6 +210,11 @@ let activeModal = null;
 let activeModalParent = null;
 let activeModalNextSibling = null;
 
+modalManager?.addEventListener('cancel', (event) => {
+  event.preventDefault();
+  closeModal();
+});
+
 document.addEventListener('click', (event) => {
   if (event.target.closest('.modal-close')) {
     closeModal();
@@ -555,6 +560,20 @@ document
     closeModal();
   });
 
+// Handle description resize
+function autoResize(textArea) {
+  textArea.style.height = 'auto';
+  textArea.style.height = `${textArea.scrollHeight}px`;
+}
+
+for (const textArea of document.querySelectorAll('.description-textarea')) {
+  textArea.addEventListener('input', () => {
+    autoResize(textArea);
+  });
+
+  autoResize(textArea);
+}
+
 // ==================== End Add Item Modal ====================
 
 
@@ -565,6 +584,7 @@ const editItemForm = document.getElementById('edit-item-form');
 
 const editItemId = document.getElementById('edit-item-id');
 const editItemName = document.getElementById('edit-item-name');
+const editItemDescription = document.getElementById('edit-item-description');
 
 let currentEditItemId = null;
 
@@ -597,6 +617,8 @@ async function handleEditItem(event) {
 
     editItemId.textContent = item.id;
     editItemName.value = item.name;
+    editItemDescription.value = item.description ?? '';
+    autoResize(editItemDescription);
     editItemLocation.value = item.location_id ?? '';
     editItemForm.action = `/inventory/${itemId}`;
   });
@@ -633,6 +655,7 @@ const viewItemModal = document.getElementById('view-item-modal');
 
 const viewItemId = document.getElementById('view-item-id');
 const viewItemName = document.getElementById('view-item-name');
+const viewItemDescription = document.getElementById('view-item-description');
 const viewItemLocation = document.getElementById('view-item-location');
 const viewItemCopy = document.getElementById('view-item-copy');
 const viewItemEdit = document.getElementById('view-item-edit');
@@ -670,6 +693,7 @@ async function openViewItem(itemId) {
 
     viewItemId.textContent = asset.id;
     viewItemName.textContent = asset.name;
+    viewItemDescription.textContent = asset.description || '—';
     viewItemLocation.textContent = asset.location_name || '—';
   });
 }
