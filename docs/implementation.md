@@ -27,8 +27,8 @@
 | AST-012 | P1 | Authorized users can restore archived assets. | 🟢 | AST-004, AUT-003 | AUD-003, USE-005 | |
 | AST-013 | P1 | Retain asset information needed for inventory/insurance. | 🟢 | FLD-001 | — | |
 | FLD-001 | P1 | Provide required built-in asset fields. | 🟢 | — | AST-001, AST-007, AST-013 | |
-| FLD-002 | P1 | Admins can create custom asset fields. | 🔴 | — | FLD-003 | |
-| FLD-003 | P1 | Admins can name custom fields. | 🔴 | FLD-002 | — | |
+| FLD-002 | P1 | Admins can create custom asset fields. | 🟡 | — | FLD-003 | Frontend pending |
+| FLD-003 | P1 | Admins can name custom fields. | 🟡 | FLD-002 | — | Frontend pending |
 | QRC-001 | P1 | Associate each asset with a unique Asset ID. | 🟢 | AST-005 | QRC-003 | |
 | QRC-002 | P1 | Encode Asset ID in the QR code. | 🟢 | QRC-001 | QRC-006 | QR generation to be handled externally |
 | QRC-003 | P1 | Asset ID uniquely identifies its asset. | 🟢 | AST-005, AST-008 | QRC-001, CHK-002 | |
@@ -88,8 +88,8 @@
 | CMP-001 | P3 | Support current common desktop browsers. | 🟡 | USE-001 | — | Test browser compatibility |
 | CMP-002 | P3 | Support modern mobile browsers. | 🟡 | USE-003 | QRC-004 | Test mobile browser compatibility |
 | CMP-003 | P3 | QR scanning works through supported mobile cameras/browser functionality. | 🟢 | QRC-004 | CHK-001 | |
-| FLD-006 | P3 | Admins can define Enum values. | 🔴 | FLD-004, FLD-005 | FLD-002 | |
-| FLD-008 | P3 | Admins can mark custom fields required. | 🔴 | FLD-002, FLD-004 | FLD-012 | |
+| FLD-006 | P3 | Admins can define Enum values. | 🟡 | FLD-004, FLD-005 | FLD-002 | Frontend pending |
+| FLD-008 | P3 | Admins can mark custom fields required. | 🟡 | FLD-002, FLD-004 | FLD-012 | Frontend pending |
 | FLD-011 | P3 | Deactivating a field preserves existing values. | 🔴 | FLD-010 | — | |
 | FLD-015 | P3 | Record changes to custom-field definitions. | 🔴 | FLD-002, FLD-009, FLD-010 | AUD-005 | |
 | PER-001 | P3 | Normal inventory operations respond reasonably. | 🟡 | — | PER-002, PER-003 | No explicit performance target/test established |
@@ -125,10 +125,10 @@
 | USR-007 | P4 | Admins can configure per-user overrides. | 🔴 | USR-001 | USR-008, AUT-013 | |
 | USR-012 | P4 | Admins can configure audit-log visibility. | 🔴 | USR-004 | AUD-011, AUD-012 | |
 | USR-013 | P4 | Record user/role/permission changes. | 🔴 | USR-001–007 | AUD-006 | |
-| FLD-004 | P4 | Admins can specify custom-field data type. | 🔴 | FLD-002, FLD-003 | FLD-005 | |
-| FLD-005 | P4 | Support Text, Integer, Decimal, Boolean, Date, Enum, User. | 🔴 | FLD-004 | FLD-006, FLD-007, FLD-012 | |
-| FLD-009 | P4 | Admins can modify custom-field configuration. | 🔴 | FLD-002 | FLD-015 | |
-| FLD-010 | P4 | Admins can deactivate custom fields. | 🔴 | FLD-002 | FLD-011, FLD-015 | |
+| FLD-004 | P4 | Admins can specify custom-field data type. | 🟡 | FLD-002, FLD-003 | FLD-005 | Frontend pending |
+| FLD-005 | P4 | Support Text, Integer, Decimal, Boolean, Date, Enum, User. | 🟡 | FLD-004 | FLD-006, FLD-007, FLD-012 | Frontend pending |
+| FLD-009 | P4 | Admins can modify custom-field configuration. | 🟡 | FLD-002 | FLD-015 | Frontend pending |
+| FLD-010 | P4 | Admins can deactivate custom fields. | 🟡 | FLD-002 | FLD-011, FLD-015 | Frontend pending |
 | FLD-014 | P4 | Custom fields available for search/filter/export. | 🔴 | FLD-002, FLD-004 | SRH-007, EXP-003 | |
 | EXP-005 | P4 | Authorized users can create saved export templates. | 🔴 | EXP-001 | EXP-006, EXP-007 | |
 | EXP-006 | P4 | Export templates contain filters and field selections. | 🔴 | EXP-005 | EXP-007 | |
@@ -167,7 +167,7 @@
 | BKP-018 | P5 | Backup location configurable independently of runtime. | 🔴 | BKP-016 | BKP-019 | |
 | BKP-019 | P5 | Support external backup locations such as NAS where practical. | 🔴 | BKP-018 | — | |
 | EXP-009 | P5 | Export only information available to generating user. | 🔴 | EXP-001, AUT-004 | SEC-003 | |
-| FLD-012 | P5 | Validate custom-field values against configured type. | 🔴 | FLD-005 | SEC-008, IMP-005 | |
+| FLD-012 | P5 | Validate custom-field values against configured type. | 🟡 | FLD-005 | SEC-008, IMP-005 | Frontend pending |
 | FLD-013 | P5 | Custom fields respect viewing/editing permissions. | 🔴 | FLD-002, AUT-004 | USR-009, USR-010 | |
 | REL-002 | P5 | Failed operations provide appropriate errors. | 🟡 | — | — | Complete coverage is not established |
 | REL-007 | P5 | Missed scheduled backup recoverable at startup. | 🔴 | BKP-007 | BKP-006 | |
@@ -183,4 +183,4 @@
 | USR-009 | — | Configure which asset fields Checkers can view. | 🔴 | FLD-002, FLD-013 | USR-010 | |
 | USR-010 | — | Configure which asset fields Checkers can edit. | 🔴 | FLD-002, FLD-013 | USR-009 | |
 | USR-011 | — | Checkers cannot modify their own permissions. | 🔴 | USR-007 | — | |
-| FLD-007 | — | User custom fields reference system users. | 🔴 | FLD-005 | USR-001 | |
+| FLD-007 | — | User custom fields reference system users. | 🟡 | FLD-005 | USR-001 | Frontend pending |
