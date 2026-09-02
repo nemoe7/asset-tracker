@@ -43,6 +43,8 @@
 ## Testing
 
 - Use `pytest`.
+- Use installed/project test tooling and plugins when appropriate; inspect project configuration and dependencies before choosing alternatives.
+- Use `pytest-xdist`/parallel test execution when available and compatible with the tests.
 - Add/update tests for changed behavior.
 - Reuse existing fixtures and helpers.
 - Cover relevant success, failure, and authorization cases.
