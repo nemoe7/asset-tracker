@@ -99,6 +99,83 @@ confirmDeleteLocation?.addEventListener('click', () => {
   }
 });
 
+// ==================== Add Custom Field Modal ====================
+
+const addFieldModal = document.getElementById('add-field-dialog');
+
+for (const button of document.querySelectorAll('#add-field-button, #empty-add-field-button')) {
+  button?.addEventListener('click', () => {
+    openModal(addFieldModal);
+  });
+}
+
+document.getElementById('cancel-add-field')?.addEventListener('click', () => {
+  closeModal();
+});
+
+// ==================== Edit Custom Field Modal ====================
+
+const editFieldModal = document.getElementById('edit-field-dialog');
+const editFieldForm = editFieldModal?.querySelector('form');
+const editFieldName = document.getElementById('edit-field-name');
+const editFieldType = document.getElementById('edit-field-type');
+const editFieldDescription = document.getElementById('edit-field-description');
+const editFieldRequired = document.getElementById('edit-field-required');
+const editFieldEnumValues = document.getElementById('edit-field-enum-values');
+
+document.querySelectorAll('.edit-field').forEach((button) => {
+  button.addEventListener('click', () => {
+    editFieldForm.action = button.dataset.updateUrl;
+    editFieldName.value = button.dataset.fieldName ?? '';
+    editFieldType.value = button.dataset.fieldType ?? 'text';
+    editFieldDescription.value = button.dataset.fieldDescription ?? '';
+    editFieldRequired.checked = button.dataset.fieldRequired === 'true';
+    editFieldEnumValues.value = button.dataset.fieldEnumValues ?? '';
+
+    syncEnumValues();
+    openModal(editFieldModal);
+  });
+});
+
+document.getElementById('cancel-edit-field')?.addEventListener('click', () => {
+  closeModal();
+});
+
+// ==================== Archive Custom Field Confirmation ====================
+
+const archiveFieldModal = document.getElementById('archive-field-dialog');
+const cancelArchiveField = document.getElementById('cancel-archive-field');
+const confirmArchiveField = document.getElementById('confirm-archive-field');
+
+let pendingArchiveFieldForm = null;
+
+document.querySelectorAll('[data-archive-field]').forEach((form) => {
+  form.addEventListener('submit', (event) => {
+    if (form.dataset.confirmed === 'true') {
+      return;
+    }
+
+    event.preventDefault();
+    pendingArchiveFieldForm = form;
+    openModal(archiveFieldModal);
+  });
+});
+
+cancelArchiveField?.addEventListener('click', () => {
+  pendingArchiveFieldForm = null;
+  closeModal();
+});
+
+confirmArchiveField?.addEventListener('click', () => {
+  closeModal();
+
+  if (pendingArchiveFieldForm) {
+    pendingArchiveFieldForm.dataset.confirmed = 'true';
+    pendingArchiveFieldForm.submit();
+    pendingArchiveFieldForm = null;
+  }
+});
+
 // ==================== Enum Values Toggle ====================
 
 function syncEnumValues() {

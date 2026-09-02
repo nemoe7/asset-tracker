@@ -115,18 +115,23 @@ def test_admin_page_edit_location_modal_can_close(
 def test_admin_page_creates_custom_field(page, live_server, logged_in):
   page.goto(f"{live_server}/admin?tab=custom-fields")
 
+  page.locator("#add-field-button").click()
+
+  dialog = page.locator("#add-field-dialog")
+  expect(dialog).to_be_visible()
+
   page.locator("#add-field-name").fill("Serial Number")
   page.locator("#add-field-type").select_option("text")
 
-  page.get_by_role("button", name="Add field").click()
+  dialog.get_by_role("button", name="Add field").click()
 
   page.wait_for_url(f"{live_server}/admin?tab=custom-fields")
 
-  row = page.locator("div.rounded-lg").filter(
-    has=page.locator("input[name='name'][value='Serial Number']")
+  row = page.locator("#tab-custom-fields tbody tr").filter(
+    has_text="Serial Number"
   )
   expect(row).to_be_visible()
-  expect(row.locator("select[name='field_type']")).to_have_value("text")
+  expect(row.get_by_text("text", exact=True)).to_be_visible()
 
 
 
@@ -258,6 +263,8 @@ def test_admin_page_delete_location_cancel_on_escape(
 def test_admin_page_creates_enum_custom_field(page, live_server, logged_in):
   page.goto(f"{live_server}/admin?tab=custom-fields")
 
+  page.locator("#add-field-button").click()
+
   page.locator("#add-field-name").fill("Category")
   page.locator("#add-field-type").select_option("enum")
 
@@ -265,17 +272,20 @@ def test_admin_page_creates_enum_custom_field(page, live_server, logged_in):
   expect(enumValues).to_be_visible()
   enumValues.fill("IT\nHR\nFinance")
 
-  page.get_by_role("button", name="Add field").click()
+  page.locator("#add-field-dialog").get_by_role("button", name="Add field").click()
 
   page.wait_for_url(f"{live_server}/admin?tab=custom-fields")
 
-  row = page.locator("div.rounded-lg").filter(
-    has=page.locator("input[name='name'][value='Category']")
+  row = page.locator("#tab-custom-fields tbody tr").filter(
+    has_text="Category"
   )
   expect(row).to_be_visible()
-  expect(row.get_by_text("IT", exact=True)).to_be_visible()
-  expect(row.get_by_text("HR", exact=True)).to_be_visible()
-  expect(row.get_by_text("Finance", exact=True)).to_be_visible()
+  expect(row.get_by_text("enum", exact=True)).to_be_visible()
+
+  row.locator(".edit-field").click()
+
+  expect(page.locator("#edit-field-dialog")).to_be_visible()
+  expect(page.locator("#edit-field-enum-values")).to_have_value("IT\nHR\nFinance")
 
 
 @pytest.mark.e2e
@@ -298,19 +308,24 @@ def test_admin_page_edits_enum_custom_field_values(
 
   page.goto(f"{live_server}/admin?tab=custom-fields")
 
-  row = page.locator("div.rounded-lg").filter(
-    has=page.locator("input[name='name'][value='Category']")
-  )
-  expect(row.get_by_text("IT", exact=True)).to_be_visible()
-  expect(row.get_by_text("HR", exact=True)).to_be_visible()
+  row = page.locator("#tab-custom-fields tbody tr").filter(has_text="Category")
+  expect(row).to_be_visible()
 
-  row.locator("textarea[name='enum_values']").fill("IT\nFinance")
-  row.get_by_role("button", name="Save").click()
+  row.locator(".edit-field").click()
+
+  dialog = page.locator("#edit-field-dialog")
+  expect(dialog).to_be_visible()
+  expect(page.locator("#edit-field-enum-values")).to_have_value("IT\nHR")
+
+  page.locator("#edit-field-enum-values").fill("IT\nFinance")
+
+  dialog.get_by_role("button", name="Save changes").click()
 
   page.wait_for_url(f"{live_server}/admin?tab=custom-fields")
 
-  expect(row.get_by_text("Finance", exact=True)).to_be_visible()
-  expect(row.get_by_text("HR", exact=True)).to_be_hidden()
+  row.locator(".edit-field").click()
+
+  expect(page.locator("#edit-field-enum-values")).to_have_value("IT\nFinance")
 
 
 @pytest.mark.e2e
@@ -332,17 +347,21 @@ def test_admin_page_archives_and_restores_custom_field(
 
   page.goto(f"{live_server}/admin?tab=custom-fields")
 
-  row = page.locator("div.rounded-lg").filter(
-    has=page.locator("input[name='name'][value='Condition']")
-  )
+  row = page.locator("#tab-custom-fields tbody tr").filter(has_text="Condition")
   expect(row).to_be_visible()
 
-  row.get_by_role("button", name="Archive").click()
+  row.locator("[data-archive-field] button[type='submit']").click()
+
+  dialog = page.locator("#archive-field-dialog")
+  expect(dialog).to_be_visible()
+
+  dialog.get_by_role("button", name="Archive field").click()
 
   page.wait_for_url(f"{live_server}/admin?tab=custom-fields")
 
-  archived = page.locator("div.border-dashed").filter(has_text="Condition")
-  expect(archived).to_be_hidden()
+  expect(
+    page.locator("#tab-custom-fields tbody tr").filter(has_text="Condition")
+  ).to_have_count(0)
 
   archived_section = page.locator("details.group")
   expect(archived_section).to_be_visible()
@@ -353,6 +372,72 @@ def test_admin_page_archives_and_restores_custom_field(
 
   page.wait_for_url(f"{live_server}/admin?tab=custom-fields")
 
-  restored = page.locator("input[name='name'][value='Condition']")
+  restored = page.locator("#tab-custom-fields tbody tr").filter(
+    has_text="Condition"
+  )
   expect(restored).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_admin_page_edits_custom_field(page, live_server, logged_in):
+  response = page.request.post(
+    f"{live_server}/admin/custom-fields",
+    form={
+      "name": "Serial Number",
+      "field_type": "text",
+    },
+    max_redirects=0,
+  )
+
+  assert response.status == 302
+
+  page.goto(f"{live_server}/admin?tab=custom-fields")
+
+  dialog = page.locator("#edit-field-dialog")
+  expect(dialog).to_be_hidden()
+
+  row = page.locator("#tab-custom-fields tbody tr").filter(
+    has_text="Serial Number"
+  )
+  row.locator(".edit-field").click()
+
+  expect(dialog).to_be_visible()
+  expect(page.locator("#edit-field-name")).to_have_value("Serial Number")
+  expect(page.locator("#edit-field-type")).to_have_value("text")
+
+  page.locator("#edit-field-name").fill("Asset Serial Number")
+  page.locator("#edit-field-description").fill("Manufacturer serial")
+
+  dialog.get_by_role("button", name="Save changes").click()
+
+  page.wait_for_url(f"{live_server}/admin?tab=custom-fields")
+
+  expect(page.get_by_text("Asset Serial Number", exact=True).first).to_be_visible()
+  expect(page.get_by_text("Serial Number", exact=True)).to_have_count(0)
+
+
+@pytest.mark.e2e
+def test_admin_page_edit_field_modal_can_close(page, live_server, logged_in):
+  response = page.request.post(
+    f"{live_server}/admin/custom-fields",
+    form={
+      "name": "Serial Number",
+      "field_type": "text",
+    },
+    max_redirects=0,
+  )
+
+  assert response.status == 302
+
+  page.goto(f"{live_server}/admin?tab=custom-fields")
+
+  dialog = page.locator("#edit-field-dialog")
+  expect(dialog).to_be_hidden()
+
+  page.locator(".edit-field").first.click()
+  expect(dialog).to_be_visible()
+
+  dialog.get_by_role("button", name="Close").click()
+
+  expect(dialog).to_be_hidden()
 
