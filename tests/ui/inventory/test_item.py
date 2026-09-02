@@ -67,6 +67,62 @@ def test_item_can_be_edited(
 
 
 @pytest.mark.e2e
+def test_edit_item_description(page, live_server, create_item):
+  item = create_item("Test Asset")
+
+  page.goto(f"{live_server}/")
+
+  page.locator(f'tr .edit-item[data-item-id="{item["id"]}"]').click()
+
+  description = page.locator("#edit-item-description")
+  expect(description).to_be_visible()
+
+  description.fill("Updated description")
+
+  page.get_by_role(
+    "button",
+    name="Save changes",
+  ).click()
+
+  page.wait_for_url(f"{live_server}/")
+
+  page.get_by_title("Test Asset").click()
+
+  expect(page.locator("#view-item-description")).to_have_text("Updated description")
+
+
+@pytest.mark.e2e
+def test_edit_item_description_can_be_cleared(page, live_server, create_item):
+  item = create_item("Test Asset")
+
+  page.goto(f"{live_server}/")
+
+  page.locator(f'tr .edit-item[data-item-id="{item["id"]}"]').click()
+
+  page.locator("#edit-item-description").fill("Temporary description")
+  page.get_by_role(
+    "button",
+    name="Save changes",
+  ).click()
+
+  page.wait_for_url(f"{live_server}/")
+
+  page.locator(f'tr .edit-item[data-item-id="{item["id"]}"]').click()
+
+  page.locator("#edit-item-description").fill("")
+  page.get_by_role(
+    "button",
+    name="Save changes",
+  ).click()
+
+  page.wait_for_url(f"{live_server}/")
+
+  page.locator("#inventory-content").get_by_role("cell", name="Test Asset").click()
+
+  expect(page.locator("#view-item-description")).to_have_text("—")
+
+
+@pytest.mark.e2e
 def test_item_can_open_archive_confirmation(
   page,
   live_server,

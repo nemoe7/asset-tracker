@@ -1,5 +1,6 @@
 import tempfile
 import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -55,4 +56,10 @@ def page(page):
 @pytest.fixture(autouse=True)
 def reset_e2e_db(e2e_db):
   if e2e_db.exists():
-    e2e_db.unlink()
+    for _ in range(10):
+      try:
+        e2e_db.unlink()
+        break
+      except Exception as e:  # noqa: BLE001
+        print(f"Failed to delete {e2e_db}: {e}. Retrying...")
+        time.sleep(0.1)

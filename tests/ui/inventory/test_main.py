@@ -79,6 +79,7 @@ def test_main_page_add_item_modal_opens_and_closes(page, live_server):
   expect(modal.get_by_role("heading", name="Add item")).to_be_visible()
 
   expect(page.locator("#item-name")).to_be_visible()
+  expect(page.locator("#item-description")).to_be_visible()
   expect(page.locator("#item-location")).to_be_visible()
 
   modal.locator(".modal-close").click()
@@ -99,6 +100,26 @@ def test_main_page_add_item_modal_can_be_cancelled(page, live_server):
   modal.locator(".modal-close").click()
 
   expect(modal).to_be_hidden()
+
+
+@pytest.mark.e2e
+def test_add_item_with_description(page, live_server):
+  page.goto(f"{live_server}/")
+
+  page.locator("#add-item-button").click()
+
+  page.locator("#item-name").fill("Test Asset")
+  page.locator("#item-description").fill("Test asset description")
+
+  page.get_by_role("button", name="Add item", exact=True).last.click()
+
+  page.wait_for_url(f"{live_server}/")
+
+  expect(page.get_by_title("Test Asset")).to_be_visible()
+
+  page.get_by_title("Test Asset").click()
+
+  expect(page.locator("#view-item-description")).to_have_text("Test asset description")
 
 
 @pytest.mark.e2e
