@@ -90,6 +90,28 @@ def test_admin_page_edits_location(page, live_server, logged_in):
 
 
 @pytest.mark.e2e
+def test_admin_page_edit_location_modal_can_close(
+  page,
+  live_server,
+  logged_in,
+  create_location,
+):
+  create_location("Warehouse")
+
+  page.goto(f"{live_server}/admin?tab=locations")
+
+  dialog = page.locator("#edit-location-dialog")
+  expect(dialog).to_be_hidden()
+
+  page.locator(".edit-location").first.click()
+  expect(dialog).to_be_visible()
+
+  dialog.get_by_role("button", name="Close").click()
+
+  expect(dialog).to_be_hidden()
+
+
+@pytest.mark.e2e
 def test_admin_page_creates_custom_field(page, live_server, logged_in):
   page.goto(f"{live_server}/admin?tab=custom-fields")
 
