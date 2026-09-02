@@ -5,7 +5,6 @@ from flask import (
   session,
 )
 
-from ..data.permissions import get_permission_by_name
 from ..data.role_permissions import get_role_permissions
 from ..data.user_permissions import get_user_permissions
 from ..data.user_roles import get_user_roles
@@ -74,11 +73,6 @@ def _get_role_decision(
 
 
 def check_permission(user_id, permission_name):
-  permission = get_permission_by_name(permission_name)
-
-  if permission is None:
-    return permission_name.endswith(".read")
-
   user = get_user(user_id)
 
   if user is None or user["archived_at"] is not None:

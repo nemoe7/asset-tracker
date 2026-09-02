@@ -27,8 +27,8 @@
 | AST-012 | P1 | Authorized users can restore archived assets. | 🟢 | AST-004, AUT-003 | AUD-003, USE-005 | |
 | AST-013 | P1 | Retain asset information needed for inventory/insurance. | 🟢 | FLD-001 | — | |
 | FLD-001 | P1 | Provide required built-in asset fields. | 🟢 | — | AST-001, AST-007, AST-013 | |
-| FLD-002 | P1 | Admins can create custom asset fields. | 🟡 | — | FLD-003 | Frontend pending |
-| FLD-003 | P1 | Admins can name custom fields. | 🟡 | FLD-002 | — | Frontend pending |
+| FLD-002 | P1 | Admins can create custom asset fields. | 🟢 | — | FLD-003 | |
+| FLD-003 | P1 | Admins can name custom fields. | 🟢 | FLD-002 | — | |
 | QRC-001 | P1 | Associate each asset with a unique Asset ID. | 🟢 | AST-005 | QRC-003 | |
 | QRC-002 | P1 | Encode Asset ID in the QR code. | 🟢 | QRC-001 | QRC-006 | QR generation to be handled externally |
 | QRC-003 | P1 | Asset ID uniquely identifies its asset. | 🟢 | AST-005, AST-008 | QRC-001, CHK-002 | |

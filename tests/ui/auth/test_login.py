@@ -25,6 +25,7 @@ def e2e_admin(
 
   page.wait_for_url(f"{live_server}/")
 
+  page.locator("details summary").click()
   page.get_by_role("button", name="Log out").click()
   page.wait_for_url(f"{live_server}/auth/login")
 
@@ -101,6 +102,7 @@ def test_login_accepts_valid_credentials(
 
   page.wait_for_url(f"{live_server}/")
 
+  page.locator("details summary").click()
   expect(page.get_by_role("button", name="Log out")).to_be_visible()
 
 
@@ -122,4 +124,5 @@ def test_login_redirects_authenticated_user(
 
   page.wait_for_url(f"{live_server}/")
 
+  page.locator("details summary").click()
   expect(page.get_by_role("button", name="Log out")).to_be_visible()

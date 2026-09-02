@@ -1,5 +1,6 @@
 from flask import (
   Blueprint,
+  abort,
   redirect,
   render_template,
   request,
@@ -7,7 +8,21 @@ from flask import (
   url_for,
 )
 
-from ..services.auth.authorization import permission_required
+from ..services.auth.authorization import (
+  check_permission,
+  permission_required,
+)
+from ..services.data.custom_fields import (
+  create_custom_field,
+  get_custom_fields,
+  update_custom_field,
+)
+from ..services.data.locations import (
+  create_location,
+  delete_location,
+  get_location,
+  get_locations,
+)
 from ..services.data.users import (
   archive_user,
   create_user,
@@ -15,6 +30,11 @@ from ..services.data.users import (
   get_users,
   restore_user,
   update_user,
+)
+from ..services.exceptions.data.common import InvalidInputError
+from ..services.exceptions.data.custom_fields import CustomFieldNotFoundError
+from ..services.exceptions.data.locations import (
+  LocationAlreadyExistsError,
 )
 from ..services.exceptions.data.users import (
   InvalidPasswordError,
@@ -29,15 +49,135 @@ admin = Blueprint(
   url_prefix="/admin",
 )
 
+_LOCATION_TAB = "locations"
+_CUSTOM_FIELDS_TAB = "custom-fields"
+_VALID_TABS = (
+  _LOCATION_TAB,
+  _CUSTOM_FIELDS_TAB,
+)
 
-@admin.route("/users", methods=["GET"])
-@login_required
-@permission_required("users.manage")
-def users():
+
+def _render_settings(
+  active_tab,
+  error=None,
+  **context,
+):
+  user_id = session.get("user_id")
+
   return render_template(
-    "admin/users.jinja",
-    users=get_users(),
+    "admin/settings.jinja",
+    locations=get_locations(),
+    custom_fields=get_custom_fields(),
+    active_tab=active_tab,
+    error=error,
+    can_manage_locations=check_permission(user_id, "locations.manage"),
+    can_manage_custom_fields=check_permission(user_id, "custom_fields.manage"),
+    **context,
   )
+
+
+def _get_active_tab():
+  tab = request.args.get("tab")
+
+  if tab not in _VALID_TABS:
+    return _LOCATION_TAB
+
+  return tab
+
+
+@admin.route("", methods=["GET"])
+@login_required
+def settings():
+  active_tab = _get_active_tab()
+
+  permission_by_tab = {
+    _LOCATION_TAB: "locations.manage",
+    _CUSTOM_FIELDS_TAB: "custom_fields.manage",
+  }
+
+  if not check_permission(
+    session.get("user_id"),
+    permission_by_tab[active_tab],
+  ):
+    abort(403)
+
+  return _render_settings(active_tab)
+
+
+@admin.route("/locations", methods=["POST"])
+@login_required
+@permission_required("locations.manage")
+def create_location_route():
+  name = request.form.get("name", "").strip()
+  description = request.form.get("description") or None
+
+  try:
+    create_location(
+      name=name,
+      description=description,
+    )
+  except (InvalidInputError, LocationAlreadyExistsError) as error:
+    return _render_settings(
+      _LOCATION_TAB,
+      error=str(error),
+      location_name=name,
+      location_description=request.form.get("description"),
+    )
+
+  return redirect(url_for("admin.settings", tab=_LOCATION_TAB))
+
+
+@admin.route("/locations/<int:location_id>/delete", methods=["POST"])
+@login_required
+@permission_required("locations.manage")
+def delete_location_route(location_id):
+  if get_location(location_id) is None:
+    abort(404)
+
+  delete_location(location_id, confirm=True)
+
+  return redirect(url_for("admin.settings", tab=_LOCATION_TAB))
+
+
+@admin.route("/custom-fields", methods=["POST"])
+@login_required
+@permission_required("custom_fields.manage")
+def create_custom_field_route():
+  name = request.form.get("name", "").strip()
+  field_type = request.form.get("field_type", "")
+
+  try:
+    create_custom_field(
+      name=name,
+      field_type=field_type,
+    )
+  except InvalidInputError as error:
+    return _render_settings(
+      _CUSTOM_FIELDS_TAB,
+      error=str(error),
+      field_name=name,
+    )
+
+  return redirect(url_for("admin.settings", tab=_CUSTOM_FIELDS_TAB))
+
+
+@admin.route("/custom-fields/<int:field_id>", methods=["POST"])
+@login_required
+@permission_required("custom_fields.manage")
+def update_custom_field_route(field_id):
+  name = request.form.get("name", "").strip()
+
+  try:
+    update_custom_field(field_id, name=name)
+  except InvalidInputError as error:
+    return _render_settings(
+      _CUSTOM_FIELDS_TAB,
+      error=str(error),
+    )
+  except CustomFieldNotFoundError:
+    abort(404)
+
+  return redirect(url_for("admin.settings", tab=_CUSTOM_FIELDS_TAB))
 
 
 @admin.route("/users", methods=["POST"])
@@ -86,7 +226,7 @@ def create_user_route():
       display_name=display_name,
     )
 
-  return redirect(url_for("admin.users"))
+  return redirect(url_for("admin.settings"))
 
 
 @admin.route("/users/<int:user_id>", methods=["POST"])
@@ -113,9 +253,9 @@ def update_user_route(user_id):
     )
 
   if not updated:
-    return redirect(url_for("admin.users"))
+    return redirect(url_for("admin.settings"))
 
-  return redirect(url_for("admin.users"))
+  return redirect(url_for("admin.settings"))
 
 
 @admin.route("/users/<int:user_id>/archive", methods=["POST"])
@@ -123,11 +263,11 @@ def update_user_route(user_id):
 @permission_required("users.manage")
 def archive_user_route(user_id):
   if user_id == session.get("user_id"):
-    return redirect(url_for("admin.users"))
+    return redirect(url_for("admin.settings"))
 
   archive_user(user_id)
 
-  return redirect(url_for("admin.users"))
+  return redirect(url_for("admin.settings"))
 
 
 @admin.route("/users/<int:user_id>/restore", methods=["POST"])
@@ -136,4 +276,4 @@ def archive_user_route(user_id):
 def restore_user_route(user_id):
   restore_user(user_id)
 
-  return redirect(url_for("admin.users"))
+  return redirect(url_for("admin.settings"))

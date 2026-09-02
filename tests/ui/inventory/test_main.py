@@ -10,6 +10,11 @@ def test_main_page_loads(page, live_server):
   expect(page.locator("#filter-item-button")).to_be_visible()
   expect(page.locator("#add-item-button")).to_be_visible()
   expect(page.locator("#inventory-items")).to_be_visible()
+
+  menu = page.locator("details")
+  expect(menu).to_be_visible()
+
+  menu.locator("summary").click()
   expect(page.get_by_role("button", name="Log out")).to_be_visible()
 
 
@@ -18,6 +23,18 @@ def test_main_page_shows_empty_inventory(page, live_server):
   page.goto(f"{live_server}/")
 
   expect(page.get_by_role("heading", name="No inventory items")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_main_page_manage_locations_links_to_admin(page, live_server):
+  page.goto(f"{live_server}/")
+
+  page.locator("#add-item-button").click()
+
+  link = page.get_by_role("link", name="Manage locations", exact=True)
+
+  expect(link).to_be_visible()
+  expect(link).to_have_attribute("href", "/admin?tab=locations")
 
 
 @pytest.mark.e2e
@@ -133,6 +150,9 @@ def test_main_page_edit_modal_starts_hidden(page, live_server):
 def test_main_page_logout(page, live_server):
   page.goto(f"{live_server}/")
 
+  menu = page.locator("details")
+  menu.locator("summary").click()
+
   page.get_by_role("button", name="Log out").click()
 
   page.wait_for_url(f"{live_server}/auth/login")
@@ -143,6 +163,9 @@ def test_main_page_logout(page, live_server):
 @pytest.mark.e2e
 def test_main_page_requires_authentication(page, live_server):
   page.goto(f"{live_server}/")
+
+  menu = page.locator("details")
+  menu.locator("summary").click()
 
   page.get_by_role("button", name="Log out").click()
   page.wait_for_url(f"{live_server}/auth/login")
@@ -201,13 +224,20 @@ def test_main_page_desktop_header_actions(page, live_server, setup_admin):
   page.set_viewport_size({"width": 1280, "height": 720})
   page.goto(f"{live_server}/")
 
-  expect(
-    page.locator("span").filter(has_text=f"@{setup_admin['username']}")
-  ).to_be_visible()
   expect(page.locator("#qr-scanner-button")).to_be_visible()
-  expect(page.locator("form").first).to_be_visible()
+  expect(page.locator("#search-form")).to_be_visible()
 
-  expect(page.locator("details")).to_be_hidden()
+  # The menu is available on desktop and its contents are initially hidden.
+  menu = page.locator("details")
+  expect(menu).to_be_visible()
+  expect(menu.get_by_text(f"@{setup_admin['username']}", exact=True)).to_be_hidden()
+  expect(menu.locator('form[action="/auth/logout"]')).to_be_hidden()
+
+  # Opening the menu reveals the unified actions.
+  menu.locator("summary").click()
+
+  expect(menu.get_by_text(f"@{setup_admin['username']}", exact=True)).to_be_visible()
+  expect(menu.locator('form[action="/auth/logout"]')).to_be_visible()
 
 
 @pytest.mark.e2e
@@ -222,15 +252,9 @@ def test_main_page_mobile_header_actions(
   # Scan remains directly available.
   expect(page.locator("#qr-scanner-button")).to_be_visible()
 
-  # Desktop actions are hidden.
-  expect(page.get_by_text("admin", exact=True)).to_be_hidden()
-  expect(page.get_by_role("link", name="Users")).to_be_hidden()
-
-  # Hamburger is visible.
+  # The menu is available on mobile and its contents are initially hidden.
   menu = page.locator("details")
   expect(menu).to_be_visible()
-
-  # Menu contents are initially hidden.
   expect(menu.get_by_text(f"@{setup_admin['username']}", exact=True)).to_be_hidden()
   expect(menu.locator('form[action="/auth/logout"]')).to_be_hidden()
 
