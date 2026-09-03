@@ -2,6 +2,9 @@ from datetime import date
 
 from ..exceptions.data.common import InvalidInputError
 
+# Sentinel filter value matching items with no stored value for the field.
+EMPTY_FILTER_VALUE = "__empty__"
+
 _FIELD_OPERATORS = {
   "integer": [
     ("=", "="),
@@ -23,9 +26,9 @@ _FIELD_OPERATORS = {
     ("=", "On"),
     ("!=", "Not on"),
     ("<", "Before"),
-    ("<=", "No later than"),
+    ("<=", "Until"),
     (">", "After"),
-    (">=", "No earlier than"),
+    (">=", "Since"),
   ],
   "enum": [
     ("=", "Is"),
@@ -51,6 +54,10 @@ def get_operators(field_type):
 
 
 def _validate_operator(field, op):
+  # "—" filters items with no stored value; valid for every field type.
+  if op == EMPTY_FILTER_VALUE:
+    return op
+
   field_type = field["field_type"]
 
   if field_type == "boolean":
@@ -76,6 +83,9 @@ def _validate_operator(field, op):
 def _validate_value(field, raw_value):
   field_type = field["field_type"]
   value = str(raw_value)
+
+  if value == EMPTY_FILTER_VALUE:
+    return value
 
   if field_type in ("integer", "decimal"):
     try:
@@ -126,7 +136,13 @@ def parse_filters(f_fields, f_ops, f_values, fields):
 
     validated_op = _validate_operator(field, op)
 
-    filters.append((field["id"], validated_op, _validate_value(field, raw_value)))
+    validated_value = (
+      EMPTY_FILTER_VALUE
+      if validated_op == EMPTY_FILTER_VALUE
+      else _validate_value(field, raw_value)
+    )
+
+    filters.append((field["id"], validated_op, validated_value))
 
   return filters
 

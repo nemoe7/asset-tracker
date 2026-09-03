@@ -1,6 +1,7 @@
 import pytest
 
 from app.services.data.custom_field_filters import (
+  EMPTY_FILTER_VALUE,
   get_operators,
   parse_filters,
 )
@@ -145,6 +146,35 @@ def test_parse_filters_accepts_text_case_tokens(fields, text_field):
   ]
 
 
+@pytest.mark.parametrize(
+  ("fixture_name", "op"),
+  [
+    ("integer_field", "="),
+    ("decimal_field", ">="),
+    ("date_field", "<"),
+    ("enum_field", "="),
+    ("boolean_field", "="),
+    ("text_field", "contains"),
+  ],
+)
+def test_parse_filters_accepts_empty_sentinel_for_any_type(
+  fields,
+  fixture_name,
+  op,
+  request,
+):
+  field = request.getfixturevalue(fixture_name)
+
+  filters = parse_filters(
+    [str(field["id"])],
+    [op],
+    [EMPTY_FILTER_VALUE],
+    list(fields.values()),
+  )
+
+  assert filters == [(field["id"], op, EMPTY_FILTER_VALUE)]
+
+
 # --- parse_filters: invalid input -------------------------------------------
 
 
@@ -284,9 +314,9 @@ def test_get_operators_date_uses_worded_labels():
     ("=", "On"),
     ("!=", "Not on"),
     ("<", "Before"),
-    ("<=", "No later than"),
+    ("<=", "Until"),
     (">", "After"),
-    (">=", "No earlier than"),
+    (">=", "Since"),
   ]
 
 

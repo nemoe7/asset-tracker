@@ -636,6 +636,48 @@ def test_admin_can_edit_asset_boolean_custom_field_false(
   assert response.json["custom_fields"] == {"Active": False}
 
 
+def test_admin_cannot_create_asset_with_invalid_decimal_custom_field(
+  gen_test_admin_client,
+):
+  field = _create_field(gen_test_admin_client, "Price", "decimal")
+
+  response = gen_test_admin_client.post(
+    "/inventory",
+    data={
+      "name": "Test Asset",
+      f"f_{field['name']}": "11ddddawd",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
+def test_admin_cannot_edit_asset_with_invalid_decimal_custom_field(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  field = _create_field(gen_test_admin_client, "Price", "decimal")
+
+  item_id = gen_test_item(name="Test Asset")
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      f"f_{field['name']}": "11ddddawd",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
 def test_admin_cannot_edit_asset_missing_required_custom_field(
   gen_test_admin_client,
   gen_test_item,

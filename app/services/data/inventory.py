@@ -5,6 +5,7 @@ from ..exceptions.data.common import InvalidInputError
 from ..exceptions.data.inventory import *
 from ..exceptions.data.locations import LocationNotFoundError
 from .audit import create_audit_log
+from .custom_field_filters import EMPTY_FILTER_VALUE
 from .db import db_connection, db_transaction
 from .locations import get_location
 
@@ -94,6 +95,10 @@ def _filter_row_condition(connection, field_id, op, value):
         AND inventory_item_fields.field_id = ?
   """
 
+  if value == EMPTY_FILTER_VALUE:
+    # Match items with no stored value for the field.
+    return f"NOT {exists_base}\n    )", [field_id]
+
   if field_type in ("integer", "decimal"):
     comparison = "=" if negated else op
     inner = f"CAST(inventory_item_fields.value AS NUMERIC) {comparison} ?"
@@ -122,7 +127,7 @@ def _filter_row_condition(connection, field_id, op, value):
   return f"{exists_base} AND {inner}\n    )", parameters
 
 
-_EQUALITY_OPS = {"=", "contains", "contains_cs"}
+_EQUALITY_OPS = {"=", "contains", "contains_cs", EMPTY_FILTER_VALUE}
 _ORDERING_OPS = {"<", "<=", ">", ">="}
 _NEGATED_OPS = {"!=", "excludes", "excludes_cs"}
 
