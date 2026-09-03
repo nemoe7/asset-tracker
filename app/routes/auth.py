@@ -8,6 +8,7 @@ from flask import (
 )
 
 from ..services.auth.authentication import login_required
+from ..services.auth import rate_limit
 from ..services.data.setup import (
   create_initial_admin,
   is_first_run,
@@ -87,6 +88,13 @@ def login_post():
   if is_first_run():
     return redirect(url_for("auth.setup"))
 
+  if rate_limit.is_limited(request.remote_addr):
+    return render_template(
+      "auth/login.jinja",
+      error="Too many failed login attempts. Try again later.",
+      username=request.form["username"].strip(),
+    ), 429
+
   username = request.form["username"].strip()
   password = request.form["password"]
 
@@ -97,11 +105,15 @@ def login_post():
     or user["archived_at"] is not None
     or not verify_password(user["id"], password)
   ):
+    rate_limit.record_failure(request.remote_addr)
+
     return render_template(
       "auth/login.jinja",
       error="Invalid username or password.",
       username=username,
     )
+
+  rate_limit.clear(request.remote_addr)
 
   session.clear()
   session.permanent = True

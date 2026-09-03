@@ -9,11 +9,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
 from app import create_app
+from app.services.auth import rate_limit
 from app.services.auth.context import reset_current_user, set_current_user
 from app.services.data.db import init_db
 from app.services.data.inventory import create_item
 from app.services.data.locations import create_location
 from app.services.data.users import create_user, get_user_by_username
+
+
+@pytest.fixture(autouse=True)
+def gen_clean_rate_limit():
+  # The login rate limiter is process-global; keep tests independent.
+  rate_limit.reset()
+
+  yield
+
+  rate_limit.reset()
 
 
 @pytest.fixture
