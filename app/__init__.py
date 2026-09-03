@@ -38,6 +38,9 @@ def _database_initialized():
     if oe.sqlite_errorcode == sqlite3.SQLITE_CANTOPEN:
       return False
 
+    # Any other database failure means we cannot confirm initialization.
+    return False
+
   finally:
     if connection is not None:
       connection.close()
