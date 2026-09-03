@@ -651,3 +651,87 @@ def test_admin_cannot_edit_asset_missing_required_custom_field(
 
   assert response.status_code == 400
   assert response.json["error"]
+
+
+def test_fragment_filters_by_custom_field(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  field = _create_field(gen_test_admin_client, "Serial Number", "text")
+
+  match_id = gen_test_item(name="Match")
+  gen_test_item(name="Other")
+
+  gen_test_admin_client.post(
+    f"/inventory/{match_id}",
+    data={
+      f"f_{field['name']}": "contains NEEDLE here",
+    },
+  )
+
+  response = gen_test_admin_client.get(
+    f"/inventory/fragment?f_field={field['id']}&f_op=contains&f_value=NEEDLE"
+  )
+
+  assert response.status_code == 200
+  assert b"Match" in response.data
+  assert b"Other" not in response.data
+
+
+def test_fragment_ignores_empty_filter_values(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  field = _create_field(gen_test_admin_client, "Serial Number", "text")
+
+  gen_test_item(name="Match")
+  gen_test_item(name="Other")
+
+  response = gen_test_admin_client.get(
+    f"/inventory/fragment?f_field={field['id']}&f_op=contains&f_value="
+  )
+
+  assert response.status_code == 200
+  assert b"Match" in response.data
+  assert b"Other" in response.data
+
+
+def test_fragment_rejects_invalid_filter_operator(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  field = _create_field(gen_test_admin_client, "Serial Number", "text")
+
+  gen_test_item(name="Match")
+
+  response = gen_test_admin_client.get(
+    f"/inventory/fragment?f_field={field['id']}&f_op=gte&f_value=5"
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
+def test_export_applies_custom_field_filters(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  field = _create_field(gen_test_admin_client, "Serial Number", "text")
+
+  match_id = gen_test_item(name="Match")
+  gen_test_item(name="Other")
+
+  gen_test_admin_client.post(
+    f"/inventory/{match_id}",
+    data={
+      f"f_{field['name']}": "contains NEEDLE here",
+    },
+  )
+
+  response = gen_test_admin_client.get(
+    f"/inventory/export?f_field={field['id']}&f_op=contains&f_value=NEEDLE"
+  )
+
+  assert response.status_code == 200
+  assert b"Match" in response.data
+  assert b"Other" not in response.data

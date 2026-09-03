@@ -72,6 +72,7 @@ def build_export(
   include_archived=False,
   sort_by="name",
   sort_order="asc",
+  custom_field_filters=None,
   field_keys=None,
 ):
   columns = _selected_columns(field_keys)
@@ -82,6 +83,7 @@ def build_export(
     include_archived=include_archived,
     sort_by=sort_by,
     sort_order=sort_order,
+    custom_field_filters=custom_field_filters,
   )
 
   output = io.StringIO()
