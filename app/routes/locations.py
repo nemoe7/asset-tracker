@@ -20,7 +20,7 @@ from ..services.exceptions.data.locations import (
   LocationDeletionConfirmationRequired,
   LocationNotFoundError,
 )
-from .auth import login_required
+from ..services.auth.authentication import login_required
 
 locations = Blueprint(
   "locations",
