@@ -18,7 +18,7 @@ from app.services.data.user_permissions import (
 )
 from app.services.data.user_roles import set_user_role
 from app.services.data.users import archive_user
-from app.services.exceptions.auth.orization import (
+from app.services.exceptions.auth.authorization import (
   PermissionDeniedError,
 )
 
