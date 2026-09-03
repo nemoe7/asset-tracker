@@ -11,6 +11,10 @@ from ..data.user_roles import get_user_roles
 from ..data.users import get_user
 from ..exceptions.auth.orization import PermissionDeniedError
 
+# Namespaces that never default to allow on ".read"; access requires an
+# explicit permission decision (direct, role, or wildcard grant).
+_SENSITIVE_NAMESPACES = ("users", "roles", "permissions", "audit")
+
 
 def _get_permission_precedence(permission_name):
   parts = permission_name.split(".")
@@ -98,7 +102,12 @@ def check_permission(user_id, permission_name):
   if role_decision is not None:
     return role_decision
 
-  return permission_name.endswith(".read")
+  if permission_name.endswith(".read"):
+    namespace = permission_name.split(".", 1)[0]
+
+    return namespace not in _SENSITIVE_NAMESPACES
+
+  return False
 
 
 def require_permission(user_id, permission_name):
