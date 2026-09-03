@@ -1,6 +1,20 @@
 import csv
 import io
 
+from app.services.export import _csv_safe
+
+
+def test_csv_safe_passes_through_plain_negative_number():
+  assert _csv_safe("-5") == "-5"
+  assert _csv_safe("-12.75") == "-12.75"
+
+
+def test_csv_safe_still_prefixes_formula_characters():
+  assert _csv_safe("=cmd()") == "'=cmd()"
+  assert _csv_safe("+1") == "'+1"
+  assert _csv_safe("@x") == "'@x"
+  assert _csv_safe("-1;drop") == "'-1;drop"
+
 
 def test_export_returns_csv_with_built_in_fields(
   gen_test_admin_client,
