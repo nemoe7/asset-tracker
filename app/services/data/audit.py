@@ -1,7 +1,7 @@
 import json
 
 from ..auth.context import get_current_user
-from .db import db_transaction, get_db
+from .db import db_connection, db_transaction
 
 
 def create_audit_log(
@@ -53,9 +53,7 @@ def _parse_audit_log(row):
 
 
 def get_audit_log(audit_id):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     row = connection.execute(
       """
       SELECT *
@@ -66,14 +64,10 @@ def get_audit_log(audit_id):
     ).fetchone()
 
     return _parse_audit_log(row)
-  finally:
-    connection.close()
 
 
 def get_audit_logs(entity_type=None, entity_id=None):
-  connection = get_db()
-
-  try:
+  with db_connection() as connection:
     query = """
       SELECT *
       FROM audit_log
@@ -98,5 +92,3 @@ def get_audit_logs(entity_type=None, entity_id=None):
     ).fetchall()
 
     return [_parse_audit_log(row) for row in rows]
-  finally:
-    connection.close()
