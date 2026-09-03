@@ -71,7 +71,7 @@ def create_location(page, live_server):
 
 @pytest.fixture
 def create_custom_field(page, live_server):
-  def _create(name, field_type, required=False, enum_values=None):
+  def _create(name, field_type, required=False, enum_values=None, description=None):
     data = {
       "name": name,
       # Enum fields cannot be created without values; create as text and
@@ -90,12 +90,18 @@ def create_custom_field(page, live_server):
     fields = page.request.get(f"{live_server}/custom-fields").json()
     field = next(candidate for candidate in fields if candidate["name"] == name)
 
-    if required:
+    if required or description is not None:
+      update = {}
+
+      if required:
+        update["required"] = "true"
+
+      if description is not None:
+        update["description"] = description
+
       page.request.post(
         f"{live_server}/custom-fields/{field['id']}",
-        form={
-          "required": "true",
-        },
+        form=update,
         max_redirects=0,
       )
 

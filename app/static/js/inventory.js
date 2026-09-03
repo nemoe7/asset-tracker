@@ -399,6 +399,68 @@ function formatCustomFieldValue(value) {
   return String(value);
 }
 
+const CUSTOM_FIELD_TYPE_LABELS = {
+  text: 'Text',
+  integer: 'Integer',
+  decimal: 'Decimal',
+  boolean: 'Boolean',
+  date: 'Date',
+  enum: 'Enum'
+};
+
+function wrapSelectWithChevron(select) {
+  const wrapper = document.createElement('div');
+
+  wrapper.className = 'relative';
+
+  const chevron = document.createElement('i');
+
+  chevron.className =
+    'bi bi-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400';
+  chevron.setAttribute('aria-hidden', 'true');
+
+  wrapper.append(select, chevron);
+
+  return wrapper;
+}
+
+function appendCustomFieldHint(element, field) {
+  // Type hint and Required badge under the field name (Add/Edit modals).
+  if (!CUSTOM_FIELD_TYPE_LABELS[field.field_type]) {
+    return;
+  }
+
+  const hint = document.createElement('div');
+
+  hint.className = 'mb-2 flex items-center gap-1.5 text-xs text-zinc-500';
+  hint.textContent = CUSTOM_FIELD_TYPE_LABELS[field.field_type];
+
+  if (field.required) {
+    const badge = document.createElement('span');
+
+    badge.className = 'rounded bg-zinc-700 px-1.5 py-0.5 text-xs text-zinc-300';
+    badge.textContent = 'Required';
+
+    hint.append(badge);
+  }
+
+  element.append(hint);
+}
+
+function appendDescriptionIcon(element, description) {
+  // Hover tooltip only for fields that actually have a description.
+  if (!description) {
+    return;
+  }
+
+  const icon = document.createElement('i');
+
+  icon.className = 'bi bi-question-circle ml-1 text-zinc-500';
+  icon.title = description;
+
+  element.append(icon);
+}
+
 function buildCustomFieldInput(field) {
   if (field.field_type === 'user') {
     return null;
@@ -426,13 +488,21 @@ function buildCustomFieldInput(field) {
     input.className = 'form-input';
     input.name = name;
 
-    if (field.field_type === 'integer' || field.field_type === 'decimal') {
+    if (field.field_type === 'integer') {
       input.type = 'number';
-      input.step = field.field_type === 'integer' ? '1' : 'any';
+      input.step = '1';
+      input.placeholder = 'e.g. 42';
+    } else if (field.field_type === 'decimal') {
+      // A number input can block decimals; accept any text and rely on
+      // server-side validation instead.
+      input.type = 'text';
+      input.inputMode = 'decimal';
+      input.placeholder = 'e.g. 3.14';
     } else if (field.field_type === 'date') {
       input.type = 'date';
     } else {
       input.type = 'text';
+      input.placeholder = `Enter ${field.name.toLowerCase()}`;
     }
   }
 
@@ -456,6 +526,12 @@ function setCustomFieldValue(input, value) {
   input.value = String(value);
 }
 
+function clearCustomFieldRows(container) {
+  for (const row of [...container.querySelectorAll('tr.cf-row')]) {
+    row.remove();
+  }
+}
+
 function renderAddItemCustomFields(fields) {
   if (!addItemCustomFields) {
     return;
@@ -472,13 +548,19 @@ function renderAddItemCustomFields(fields) {
 
     const label = document.createElement('label');
 
-    label.className = 'mb-2 block text-sm font-medium text-zinc-300';
+    label.className = 'mb-1 block text-sm font-medium text-zinc-300';
     label.htmlFor = input.id = `add-cf-${field.id}`;
     label.textContent = field.name;
 
+    appendDescriptionIcon(label, field.description);
+
     const wrapper = document.createElement('div');
 
-    wrapper.append(label, input);
+    wrapper.append(label);
+    appendCustomFieldHint(wrapper, field);
+    wrapper.append(
+      input.tagName === 'SELECT' ? wrapSelectWithChevron(input) : input
+    );
     addItemCustomFields.append(wrapper);
   }
 }
@@ -488,7 +570,7 @@ function renderEditItemCustomFields(fields, valuesByName) {
     return;
   }
 
-  editItemCustomFields.replaceChildren();
+  clearCustomFieldRows(editItemCustomFields);
 
   for (const field of fields) {
     const input = buildCustomFieldInput(field);
@@ -502,15 +584,26 @@ function renderEditItemCustomFields(fields, valuesByName) {
     const label = document.createElement('th');
 
     label.className = 'w-1/3 px-4 py-3 font-medium text-zinc-400';
-    label.textContent = field.name;
+
+    const name = document.createElement('div');
+
+    name.className = 'mb-1';
+    name.textContent = field.name;
+
+    appendDescriptionIcon(name, field.description);
+    label.append(name);
+    appendCustomFieldHint(label, field);
 
     const cell = document.createElement('td');
 
     cell.className = 'px-4 py-3';
-    cell.append(input);
+    cell.append(
+      input.tagName === 'SELECT' ? wrapSelectWithChevron(input) : input
+    );
 
     const row = document.createElement('tr');
 
+    row.className = 'cf-row';
     row.append(label, cell);
     editItemCustomFields.append(row);
   }
@@ -521,13 +614,15 @@ function renderViewItemCustomFields(fields, valuesByName) {
     return;
   }
 
-  viewItemCustomFields.replaceChildren();
+  clearCustomFieldRows(viewItemCustomFields);
 
   for (const field of fields) {
     const label = document.createElement('th');
 
     label.className = 'w-1/3 px-4 py-3 font-medium text-zinc-400';
     label.textContent = field.name;
+
+    appendDescriptionIcon(label, field.description);
 
     const cell = document.createElement('td');
 
@@ -536,6 +631,7 @@ function renderViewItemCustomFields(fields, valuesByName) {
 
     const row = document.createElement('tr');
 
+    row.className = 'cf-row';
     row.append(label, cell);
     viewItemCustomFields.append(row);
   }
@@ -615,9 +711,12 @@ function buildFilterValueControl(field) {
     control.className = 'form-input';
     control.name = 'f_value';
 
-    if (field.field_type === 'integer' || field.field_type === 'decimal') {
+    if (field.field_type === 'integer') {
       control.type = 'number';
-      control.step = field.field_type === 'integer' ? '1' : 'any';
+      control.step = '1';
+    } else if (field.field_type === 'decimal') {
+      control.type = 'text';
+      control.inputMode = 'decimal';
     } else if (field.field_type === 'date') {
       control.type = 'date';
     } else {
@@ -646,7 +745,7 @@ function updateFilterRowControls(row, field) {
       opSelect.append(new Option(label, value));
     }
 
-    controls.append(opSelect);
+    controls.append(wrapSelectWithChevron(opSelect));
 
     if (field.field_type === 'text') {
       const matchCase = document.createElement('input');
@@ -679,7 +778,11 @@ function updateFilterRowControls(row, field) {
     controls.append(op);
   }
 
-  controls.append(buildFilterValueControl(field));
+  const valueControl = buildFilterValueControl(field);
+
+  controls.append(
+    valueControl.tagName === 'SELECT' ? wrapSelectWithChevron(valueControl) : valueControl
+  );
 }
 
 function buildFilterRow(fields) {
@@ -717,7 +820,7 @@ function buildFilterRow(fields) {
     row.remove();
   });
 
-  header.append(fieldSelect, removeButton);
+  header.append(wrapSelectWithChevron(fieldSelect), removeButton);
 
   const controls = document.createElement('div');
 
