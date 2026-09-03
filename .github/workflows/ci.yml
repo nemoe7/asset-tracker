@@ -22,9 +22,7 @@ jobs:
           python-version: "3.13"
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install -r requirements.dev.txt
+        run: pip install -r requirements.dev.txt
 
       - name: Run tests
         run: pytest -n auto -m "not e2e"
