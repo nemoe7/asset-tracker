@@ -1,5 +1,6 @@
 import csv
 import io
+import re
 
 from .data.audit import create_audit_log
 from .data.custom_fields import get_custom_fields
@@ -51,9 +52,13 @@ def _selected_columns(field_keys):
 
 _FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 
+# Plain integers/decimals (including negative) are exempt from the
+# formula-prefix defense so "-5" is not mangled into "'-5".
+_PLAIN_NUMERIC = re.compile(r"-?\d+(?:\.\d+)?")
+
 
 def _csv_safe(value):
-  if value.startswith(_FORMULA_PREFIXES):
+  if value.startswith(_FORMULA_PREFIXES) and not _PLAIN_NUMERIC.fullmatch(value):
     return f"'{value}"
 
   return value
