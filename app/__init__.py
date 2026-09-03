@@ -1,7 +1,11 @@
 import sqlite3
 from datetime import timedelta
 
-from flask import Flask
+from flask import (
+  Flask,
+  request,
+)
+from werkzeug.exceptions import Forbidden
 
 from .logging import configure_logging
 from .routes import register_routes
@@ -39,6 +43,26 @@ def _database_initialized():
       connection.close()
 
 
+_SAFE_METHODS = ("GET", "HEAD", "OPTIONS", "TRACE")
+_ALLOWED_FETCH_SITES = ("same-origin", "none")
+
+
+def _csrf_protect():
+  if request.method in _SAFE_METHODS:
+    return None
+
+  sec_fetch_site = request.headers.get("Sec-Fetch-Site")
+
+  if sec_fetch_site is None:
+    # Older browsers do not send the header; SameSite=Lax still protects them.
+    return None
+
+  if sec_fetch_site in _ALLOWED_FETCH_SITES:
+    return None
+
+  raise Forbidden("Cross-site request blocked")
+
+
 def create_app():
   app = Flask(__name__)
 
@@ -46,6 +70,9 @@ def create_app():
 
   app.config.from_object("config")
   app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+  app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+  app.before_request(_csrf_protect)
 
   app.jinja_env.filters["datetime"] = format_datetime
 
