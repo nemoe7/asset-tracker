@@ -54,7 +54,11 @@ def _deserialize_enum_values(field):
   if field["enum_values"] is None:
     return None
 
-  return json.loads(field["enum_values"])
+  try:
+    return json.loads(field["enum_values"])
+  except json.JSONDecodeError:
+    # A corrupt stored value degrades to None instead of a 500.
+    return None
 
 
 def create_custom_field(

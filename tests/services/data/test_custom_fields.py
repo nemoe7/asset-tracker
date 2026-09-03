@@ -10,9 +10,42 @@ from app.services.data.custom_fields import (
   restore_custom_field,
   update_custom_field,
 )
+from app.services.data.db import db_transaction
 from app.services.data.inventory import create_item
 from app.services.exceptions.data.common import InvalidInputError
 from app.services.exceptions.data.custom_fields import *
+
+
+def test_get_custom_fields_tolerate_corrupt_enum_values(gen_test_data_admin):
+  field_id = create_custom_field(
+    name="Color",
+    field_type="enum",
+    enum_values=["red", "green"],
+  )
+
+  with db_transaction() as connection:
+    connection.execute(
+      """
+      UPDATE custom_fields
+      SET enum_values = 'not-json'
+      WHERE id = ?
+      """,
+      (field_id,),
+    )
+
+  field = get_custom_field(field_id)
+
+  assert field is not None
+  assert field["enum_values"] is None
+
+  fields = get_custom_fields()
+
+  assert field_id in [entry["id"] for entry in fields]
+
+  by_name = get_custom_field_by_name("Color")
+
+  assert by_name is not None
+  assert by_name["enum_values"] is None
 
 
 def test_create_custom_field(gen_test_data_admin):
