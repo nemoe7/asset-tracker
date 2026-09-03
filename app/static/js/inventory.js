@@ -47,22 +47,6 @@ function getInventoryParams() {
   return params;
 }
 
-function updateExportHref() {
-  const exportButton = document.getElementById('export-button');
-
-  if (!exportButton) {
-    return;
-  }
-
-  const params = getInventoryParams();
-
-  const queryString = params.toString();
-
-  exportButton.href = queryString
-    ? `/inventory/export?${queryString}`
-    : '/inventory/export';
-}
-
 // ==================== End Inventory Query Params ====================
 
 
@@ -88,7 +72,6 @@ async function loadInventory(page = 1) {
 
   params.set('page', page);
 
-  updateExportHref();
   // params.set('per_page', 2);
 
   try {
@@ -1547,3 +1530,256 @@ resetInventoryFilters();
 loadInventory();
 
 // ==================== End Initial Load ====================
+
+
+// ==================== Export Modal ====================
+
+// Keep in sync with _BUILTIN_COLUMNS in app/services/export.py.
+const BUILTIN_EXPORT_FIELDS = [
+  ['id', 'ID'],
+  ['name', 'Name'],
+  ['description', 'Description'],
+  ['location', 'Location'],
+  ['created_at', 'Created at'],
+  ['updated_at', 'Updated at']
+];
+
+const exportItemModal = document.getElementById('export-item-modal');
+const exportForm = document.getElementById('export-form');
+const exportColumnRows = document.getElementById('export-column-rows');
+const exportColumnOptions = document.getElementById(
+  'export-column-options'
+);
+const addExportColumn = document.getElementById('add-export-column');
+const addExportColumnError = document.getElementById(
+  'add-export-column-error'
+);
+const exportColumnsReset = document.getElementById('export-columns-reset');
+const addExportColumnButton = document.getElementById(
+  'add-export-column-button'
+);
+
+// Full list of available column names; the datalist excludes the columns
+// that are already selected.
+let exportColumnChoices = [];
+
+// Columns contributed by the currently active filters: the location filter
+// contributes "location", each field-filter row contributes its custom
+// field, and "id" and "name" are always included alongside them so
+// exported rows stay identifiable. Empty when no field-bearing filter is
+// active.
+async function collectActiveFilterColumns() {
+  const columns = [];
+
+  if (getInventoryParams().get('location_id')) {
+    columns.push('location');
+  }
+
+  const fields = await loadCustomFields();
+  const fieldsById = new Map(
+    fields.map((field) => [String(field.id), field])
+  );
+
+  for (const row of customFieldFilterRows?.querySelectorAll(
+    '.cf-filter-row'
+  ) ?? []) {
+    const field = fieldsById.get(row.querySelector('.cf-filter-field')?.value);
+
+    // Rows without a chosen field are not active filters.
+    if (field && field.field_type !== 'user' && !columns.includes(field.name)) {
+      columns.push(field.name);
+    }
+  }
+
+  if (columns.length > 0) {
+    // Exported rows must stay identifiable.
+    columns.unshift('id', 'name');
+  }
+
+  return columns;
+}
+
+function buildExportColumnRow(name) {
+  // Pill-style row: short names share a line and wrap naturally; a name
+  // wider than the container gets its own row (max-w-full) with the label
+  // truncated instead of overflowing.
+  const row = document.createElement('div');
+
+  row.className =
+    'export-column-row flex w-fit max-w-full items-center gap-1.5 rounded-full border border-zinc-700 py-1 pl-3 pr-1.5';
+
+  const label = document.createElement('span');
+
+  label.className = 'export-column-name min-w-0 truncate text-sm text-zinc-200';
+  label.textContent = name;
+
+  const removeButton = document.createElement('button');
+
+  removeButton.type = 'button';
+  removeButton.className =
+    'export-column-remove flex size-5 shrink-0 items-center justify-center rounded-full text-red-400 hover:bg-red-950 hover:text-red-300';
+  removeButton.title = 'Remove column';
+  removeButton.setAttribute('aria-label', 'Remove column');
+  removeButton.innerHTML =
+    '<i class="bi bi-x-lg block" aria-hidden="true"></i>';
+
+  removeButton.addEventListener('click', () => {
+    row.remove();
+    refreshExportColumnOptions();
+  });
+
+  row.append(label, removeButton);
+
+  return row;
+}
+
+function setExportColumns(names) {
+  exportColumnRows?.replaceChildren(
+    ...names.map((name) => buildExportColumnRow(name))
+  );
+
+  refreshExportColumnOptions();
+}
+
+function resetExportColumns() {
+  setExportColumns([]);
+
+  if (addExportColumn) {
+    addExportColumn.value = '';
+  }
+
+  addExportColumnError?.classList.add('hidden');
+}
+
+function populateExportColumnOptions(fields) {
+  exportColumnChoices = [
+    ...BUILTIN_EXPORT_FIELDS.map(([name]) => name),
+    ...fields
+      .filter((field) => field.field_type !== 'user')
+      .map((field) => field.name)
+  ];
+
+  refreshExportColumnOptions();
+}
+
+// Rebuild the datalist from all available column names minus the ones
+// already selected as rows.
+function refreshExportColumnOptions() {
+  if (!exportColumnOptions) {
+    return;
+  }
+
+  const selected = new Set(
+    [...exportColumnRows.querySelectorAll('.export-column-name')].map(
+      (label) => label.textContent.toLowerCase()
+    )
+  );
+
+  exportColumnOptions.replaceChildren(
+    ...exportColumnChoices
+      .filter((name) => !selected.has(name.toLowerCase()))
+      .map((name) => new Option(name, name))
+  );
+}
+
+function addExportColumnByName(rawName) {
+  const name = rawName.trim();
+
+  if (!name) {
+    return;
+  }
+
+  const available = new Set(
+    exportColumnChoices.map((choice) => choice.toLowerCase())
+  );
+
+  const existing = new Set(
+    [...exportColumnRows.querySelectorAll('.export-column-name')].map(
+      (label) => label.textContent.toLowerCase()
+    )
+  );
+
+  const valid = available.has(name.toLowerCase()) && !existing.has(name.toLowerCase());
+
+  addExportColumnError?.classList.toggle('hidden', valid);
+
+  if (!valid) {
+    return;
+  }
+
+  exportColumnRows?.append(buildExportColumnRow(name));
+
+  refreshExportColumnOptions();
+
+  addExportColumn.value = '';
+}
+
+// Open Export modal.
+
+document
+  .getElementById('export-button')
+  ?.addEventListener('click', async () => {
+    loadLocations();
+
+    populateExportColumnOptions(await loadCustomFields());
+    resetExportColumns();
+    setExportColumns(await collectActiveFilterColumns());
+
+    openModal(exportItemModal);
+  });
+
+
+function submitExportColumn() {
+  addExportColumnByName(addExportColumn.value);
+}
+
+// Hide the error while typing a new value.
+addExportColumn?.addEventListener('input', () => {
+  addExportColumnError?.classList.add('hidden');
+});
+
+// Add a column when Enter is pressed instead of submitting the form.
+
+addExportColumn?.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter') {
+    return;
+  }
+
+  event.preventDefault();
+
+  submitExportColumn();
+});
+
+// Add a column via the explicit Add button.
+
+addExportColumnButton?.addEventListener('click', submitExportColumn);
+
+
+// Reset to all fields.
+
+exportColumnsReset?.addEventListener('click', resetExportColumns);
+
+
+// Trigger the export with the current filters and selected columns.
+
+exportForm?.addEventListener('submit', (event) => {
+  event.preventDefault();
+
+  const params = getInventoryParams();
+
+  for (const label of exportColumnRows.querySelectorAll(
+    '.export-column-name'
+  )) {
+    params.append('fields', label.textContent);
+  }
+
+  const queryString = params.toString();
+
+  window.location.assign(
+    queryString ? `/inventory/export?${queryString}` : '/inventory/export'
+  );
+
+  closeModal();
+});
+
+// ==================== End Export Modal ====================
