@@ -1,13 +1,40 @@
+# VCS
 .git
-.venv
-__pycache__
-*.pyc
-.pytest_cache
-htmlcov
-
-tests/
-docs/
-
 .gitignore
+.github
+
+# Environment
+.env
+**/environments/local.*
+
+# Python
+.venv
+venv
+env
+__pycache__
+*.py[cod]
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+test-results
+
+# App data
+.cache
+.data
+logs
+
+# Misc.
+**/.diff
+**/*.session.sql
+
+# Node
+node_modules
+
+# Docs & dev
+tests
+docs
 compose.yml
+compose.dev.yml
 requirements.md
