@@ -45,12 +45,16 @@ def _get_custom_fields(connection, item_id):
     value = row["value"]
     field_type = row["field_type"]
 
-    if field_type == "integer":
-      value = int(value)
-    elif field_type == "decimal":
-      value = Decimal(value)
-    elif field_type == "boolean":
-      value = value == "1"
+    try:
+      if field_type == "integer":
+        value = int(value)
+      elif field_type == "decimal":
+        value = Decimal(value)
+      elif field_type == "boolean":
+        value = value == "1"
+    except (ValueError, InvalidOperation):
+      # A corrupt stored value degrades to text display instead of a 500.
+      pass
 
     fields[row["name"]] = value
 
