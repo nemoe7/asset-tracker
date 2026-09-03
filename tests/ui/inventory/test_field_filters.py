@@ -209,3 +209,67 @@ def test_filter_sort_by_lists_custom_fields_and_sorts(
   expect(items).to_have_count(2)
   expect(items.nth(0)).to_contain_text("Alpha")
   expect(items.nth(1)).to_contain_text("Beta")
+
+
+@pytest.mark.e2e
+def test_filtered_custom_fields_shown_in_table_and_cards(
+  page,
+  live_server,
+  create_custom_field,
+  create_item,
+  set_item_custom_field,
+):
+  text_field = create_custom_field("Serial", "text")
+  boolean_field = create_custom_field("Active", "boolean")
+
+  item_one = create_item("Asset One")
+  item_two = create_item("Asset Two")
+
+  set_item_custom_field(item_one["id"], text_field["name"], "SN-ONE")
+  set_item_custom_field(item_one["id"], boolean_field["name"], "true")
+  set_item_custom_field(item_two["id"], text_field["name"], "SN-TWO")
+  set_item_custom_field(item_two["id"], boolean_field["name"], "true")
+
+  modal = open_filter_modal(page, live_server)
+
+  # Row 1: Serial contains SN.
+  page.locator("#add-field-filter-button").click()
+
+  row = page.locator("#custom-field-filter-rows .cf-filter-row").last
+
+  row.locator("select.cf-filter-field").select_option(label="Serial")
+  row.locator("select.cf-filter-op").select_option("contains")
+  row.locator("input[name='f_value']").fill("SN")
+
+  # Row 2: Active is True.
+  page.locator("#add-field-filter-button").click()
+
+  row = page.locator("#custom-field-filter-rows .cf-filter-row").last
+
+  row.locator("select.cf-filter-field").select_option(label="Active")
+  row.locator("select[name='f_value']").select_option("true")
+
+  modal.get_by_role("button", name="Apply").click()
+
+  expect(page.get_by_role("row").filter(has_text="Asset One")).to_be_visible()
+
+  # Desktop table: a column per filtered field.
+  header_row = page.locator("#inventory-items thead tr")
+
+  expect(header_row.locator("th").filter(has_text="Serial")).to_be_visible()
+  expect(header_row.locator("th").filter(has_text="Active")).to_be_visible()
+
+  row_one = page.get_by_role("row").filter(has_text="Asset One")
+
+  expect(row_one.get_by_text("SN-ONE")).to_be_visible()
+  expect(row_one.get_by_text("True")).to_be_visible()
+
+  row_two = page.get_by_role("row").filter(has_text="Asset Two")
+
+  expect(row_two.get_by_text("SN-TWO")).to_be_visible()
+
+  # Mobile cards: filtered field values are listed on the card.
+  cards = page.locator("#inventory-items article")
+
+  expect(cards.filter(has_text="Asset One")).to_contain_text("SN-ONE")
+  expect(cards.filter(has_text="Asset Two")).to_contain_text("SN-TWO")
