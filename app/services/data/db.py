@@ -5,7 +5,7 @@ from pathlib import Path
 
 import config
 
-SCHEMA_PATH = Path("database/schema.sql")
+SCHEMA_PATH = Path(__file__).resolve().parents[3] / "database" / "schema.sql"
 
 _connection_context = ContextVar(
   "database_connection",
