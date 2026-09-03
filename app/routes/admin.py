@@ -36,7 +36,7 @@ from ..services.exceptions.data.locations import (
   LocationAlreadyExistsError,
   LocationNotFoundError,
 )
-from .auth import login_required
+from ..services.auth.authentication import login_required
 
 admin = Blueprint(
   "admin",

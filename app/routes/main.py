@@ -6,7 +6,7 @@ from flask import (
   session,
 )
 
-from .auth import login_required
+from ..services.auth.authentication import login_required
 from ..services.auth.authorization import check_permission
 
 main = Blueprint("main", __name__)

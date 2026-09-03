@@ -6,6 +6,7 @@ from flask import (
   url_for,
 )
 
+from ..services.auth.authentication import login_required
 from ..services.data.custom_fields import (
   archive_custom_field,
   create_custom_field,
@@ -16,7 +17,6 @@ from ..services.data.custom_fields import (
 )
 from ..services.exceptions.data.common import InvalidInputError
 from ..services.exceptions.data.custom_fields import CustomFieldNotFoundError
-from .auth import login_required
 
 custom_fields = Blueprint(
   "custom_fields",

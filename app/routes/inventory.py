@@ -36,7 +36,7 @@ from ..services.exceptions.data.inventory import (
 )
 from ..services.exceptions.data.locations import LocationNotFoundError
 from ..services.export import build_export
-from .auth import login_required
+from ..services.auth.authentication import login_required
 
 logger = logging.getLogger(__name__)
 
