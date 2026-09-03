@@ -40,6 +40,49 @@ def test_admin_page_requires_login(
   assert response.status_code == 302
 
 
+# ==================== User Management (not implemented) ====================
+
+
+def test_admin_user_routes_redirect_to_index_without_side_effects(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "display_name": "New User",
+      "password": "password123",
+    },
+  )
+
+  assert response.status_code == 302
+  assert response.location.endswith("/")
+
+  response = gen_test_admin_client.post(
+    "/admin/users/1",
+    data={
+      "username": "renamed_user",
+    },
+  )
+
+  assert response.status_code == 302
+  assert response.location.endswith("/")
+
+  response = gen_test_admin_client.post(
+    "/admin/users/1/archive",
+  )
+
+  assert response.status_code == 302
+  assert response.location.endswith("/")
+
+  response = gen_test_admin_client.post(
+    "/admin/users/1/restore",
+  )
+
+  assert response.status_code == 302
+  assert response.location.endswith("/")
+
+
 # ==================== Locations Tab ====================
 
 
