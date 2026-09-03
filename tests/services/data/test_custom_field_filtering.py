@@ -1,6 +1,9 @@
 import pytest
 
-from app.services.data.custom_field_filters import parse_filters
+from app.services.data.custom_field_filters import (
+  EMPTY_FILTER_VALUE,
+  parse_filters,
+)
 from app.services.data.custom_field_values import set_custom_field_value
 from app.services.data.custom_fields import (
   create_custom_field,
@@ -312,3 +315,66 @@ def test_get_items_paginated_applies_filters_and_totals(integer_field):
   assert _ids(result["items"]) == {
     item["id"] for item in get_items(custom_field_filters=filters)
   }
+
+
+def test_get_items_empty_filter_matches_missing_value(integer_field):
+  empty = create_item("Empty")
+  _make_item("Five", integer_field, 5)
+
+  filters = _filter(
+    [integer_field],
+    [str(integer_field["id"])],
+    ["="],
+    [EMPTY_FILTER_VALUE],
+  )
+  items = get_items(custom_field_filters=filters)
+  assert _ids(items) == {empty}
+
+
+def test_get_items_empty_filter_boolean(boolean_field):
+  empty = create_item("Bare")
+  _make_item("On", boolean_field, True)
+  _make_item("Off", boolean_field, False)
+
+  filters = _filter(
+    [boolean_field],
+    [str(boolean_field["id"])],
+    ["="],
+    [EMPTY_FILTER_VALUE],
+  )
+  items = get_items(custom_field_filters=filters)
+  assert _ids(items) == {empty}
+
+
+def test_get_items_empty_filter_with_positive_filter_ands(integer_field, text_field):
+  empty_number = create_item("Empty number")
+
+  set_custom_field_value(empty_number, text_field["id"], "abc here")
+
+  _make_item("Both match", integer_field, 5)
+  wrong_text = create_item("Wrong text")
+
+  set_custom_field_value(wrong_text, text_field["id"], "no match")
+
+  filters = _filter(
+    [integer_field, text_field],
+    [str(integer_field["id"]), str(text_field["id"])],
+    ["=", "contains"],
+    [EMPTY_FILTER_VALUE, "abc"],
+  )
+  items = get_items(custom_field_filters=filters)
+  assert _ids(items) == {empty_number}
+
+
+def test_get_items_empty_operator_ignores_value(integer_field):
+  empty = create_item("Empty")
+  _make_item("Five", integer_field, 5)
+
+  filters = _filter(
+    [integer_field],
+    [str(integer_field["id"])],
+    [EMPTY_FILTER_VALUE],
+    ["11ddddawd"],
+  )
+  items = get_items(custom_field_filters=filters)
+  assert _ids(items) == {empty}

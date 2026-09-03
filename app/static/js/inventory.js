@@ -432,8 +432,14 @@ function appendCustomFieldHint(element, field) {
 
   const hint = document.createElement('div');
 
-  hint.className = 'mb-2 flex items-center gap-1.5 text-xs text-zinc-500';
-  hint.textContent = CUSTOM_FIELD_TYPE_LABELS[field.field_type];
+  hint.className = 'mb-2 flex items-center gap-1.5';
+
+  const typeBadge = document.createElement('span');
+
+  typeBadge.className = 'rounded bg-zinc-700 px-1.5 py-0.5 text-xs text-zinc-300';
+  typeBadge.textContent = CUSTOM_FIELD_TYPE_LABELS[field.field_type];
+
+  hint.append(typeBadge);
 
   if (field.required) {
     const badge = document.createElement('span');
@@ -459,6 +465,52 @@ function appendDescriptionIcon(element, description) {
   icon.title = description;
 
   element.append(icon);
+}
+
+const DECIMAL_PATTERN = /^[+-]?[0-9]+(\.[0-9]+)?$/;
+
+// Validate decimal input as the user types: strip illegal characters and
+// block submit until the value is a valid number.
+function attachDecimalValidation(input) {
+  const validate = () => {
+    if (input.value === '' || DECIMAL_PATTERN.test(input.value)) {
+      input.setCustomValidity('');
+    } else {
+      input.setCustomValidity('Enter a valid number');
+      input.reportValidity();
+    }
+  };
+
+  input.addEventListener('input', () => {
+    const caret = input.selectionStart;
+    const originalLength = input.value.length;
+
+    // Drop anything that cannot appear in a decimal number, then keep a
+    // single leading sign and a single decimal point.
+    let cleaned = input.value.replace(/[^0-9.+-]/g, '');
+    cleaned = cleaned.replace(/(?!^)[+-]/g, '');
+
+    const firstDot = cleaned.indexOf('.');
+
+    if (firstDot !== -1) {
+      cleaned =
+        cleaned.slice(0, firstDot + 1) +
+        cleaned.slice(firstDot + 1).replace(/\./g, '');
+    }
+
+    if (cleaned !== input.value) {
+      input.value = cleaned;
+
+      const removed = originalLength - cleaned.length;
+      const position = Math.max(0, (caret ?? cleaned.length) - removed);
+
+      input.setSelectionRange(position, position);
+    }
+
+    validate();
+  });
+
+  validate();
 }
 
 function buildCustomFieldInput(field) {
@@ -491,18 +543,26 @@ function buildCustomFieldInput(field) {
     if (field.field_type === 'integer') {
       input.type = 'number';
       input.step = '1';
-      input.placeholder = 'e.g. 42';
+      input.placeholder = 'Enter integer';
     } else if (field.field_type === 'decimal') {
-      // A number input can block decimals; accept any text and rely on
-      // server-side validation instead.
+      // A number input can block decimals; accept any text and validate
+      // the pattern client-side as the user types.
       input.type = 'text';
       input.inputMode = 'decimal';
-      input.placeholder = 'e.g. 3.14';
+      input.placeholder = 'Enter decimal';
+      input.pattern = '[+-]?[0-9]+(\\.[0-9]+)?';
+      input.title = 'Enter a number';
+      attachDecimalValidation(input);
     } else if (field.field_type === 'date') {
       input.type = 'date';
     } else {
-      input.type = 'text';
+      input = document.createElement('textarea');
+      input.className =
+        'form-input description-textarea !resize-none overflow-hidden min-h-16';
+      input.name = name;
+      input.rows = '1';
       input.placeholder = `Enter ${field.name.toLowerCase()}`;
+      attachAutoResize(input);
     }
   }
 
@@ -606,6 +666,10 @@ function renderEditItemCustomFields(fields, valuesByName) {
     row.className = 'cf-row';
     row.append(label, cell);
     editItemCustomFields.append(row);
+
+    if (input.tagName === 'TEXTAREA') {
+      autoResize(input);
+    }
   }
 }
 
@@ -649,6 +713,8 @@ const addFieldFilterButton = document.getElementById(
   'add-field-filter-button'
 );
 
+const EMPTY_FILTER_VALUE = '__empty__';
+
 const FILTER_OPERATORS = {
   integer: [
     ['=', '='],
@@ -670,9 +736,9 @@ const FILTER_OPERATORS = {
     ['=', 'On'],
     ['!=', 'Not on'],
     ['<', 'Before'],
-    ['<=', 'No later than'],
+    ['<=', 'Until'],
     ['>', 'After'],
-    ['>=', 'No earlier than']
+    ['>=', 'Since']
   ],
   enum: [
     ['=', 'Is'],
@@ -692,60 +758,86 @@ function operatorOptionsFor(fieldType) {
 function buildFilterValueControl(field) {
   let control;
 
-  if (field.field_type === 'boolean' || field.field_type === 'enum') {
+  if (field.field_type === 'boolean') {
     control = document.createElement('select');
     control.className = 'form-select';
     control.name = 'f_value';
 
-    control.append(new Option('—', ''));
+    // "—" filters items with no stored value for the field.
+    control.append(new Option('—', EMPTY_FILTER_VALUE));
 
-    if (field.field_type === 'boolean') {
-      control.append(new Option('True', 'true'), new Option('False', 'false'));
-    } else {
-      for (const value of field.enum_values ?? []) {
-        control.append(new Option(value, value));
-      }
-    }
-  } else {
-    control = document.createElement('input');
-    control.className = 'form-input';
+    control.append(new Option('True', 'true'), new Option('False', 'false'));
+
+    return control;
+  }
+
+  if (field.field_type === 'enum') {
+    control = document.createElement('select');
+    control.className = 'form-select';
     control.name = 'f_value';
 
-    if (field.field_type === 'integer') {
-      control.type = 'number';
-      control.step = '1';
-    } else if (field.field_type === 'decimal') {
-      control.type = 'text';
-      control.inputMode = 'decimal';
-    } else if (field.field_type === 'date') {
-      control.type = 'date';
-    } else {
-      control.type = 'text';
+    for (const value of field.enum_values ?? []) {
+      control.append(new Option(value, value));
     }
+
+    return control;
+  }
+
+  control = document.createElement('input');
+  control.className = 'form-input min-w-0 flex-1';
+  control.name = 'f_value';
+
+  if (field.field_type === 'integer') {
+    control.type = 'number';
+    control.step = '1';
+  } else if (field.field_type === 'decimal') {
+    control.type = 'text';
+    control.inputMode = 'decimal';
+    control.pattern = '[+-]?[0-9]+(\\.[0-9]+)?';
+    control.title = 'Enter a number';
+    attachDecimalValidation(control);
+  } else if (field.field_type === 'date') {
+    control.type = 'date';
+  } else {
+    control.type = 'text';
   }
 
   return control;
 }
 
 function updateFilterRowControls(row, field) {
+  const selectsLine = row.querySelector('.cf-filter-selects');
   const controls = row.querySelector('.cf-filter-controls');
 
   controls.replaceChildren();
+
+  // Remove any operator or value control left by the previous field type.
+  selectsLine.querySelector('.cf-filter-op-wrap')?.remove();
+  selectsLine.querySelector('.cf-filter-value-wrap')?.remove();
 
   const operators = operatorOptionsFor(field.field_type);
 
   if (operators.length > 0) {
     const opSelect = document.createElement('select');
 
-    opSelect.className = 'form-select cf-filter-op';
+    opSelect.className = 'form-select cf-filter-op w-28';
     opSelect.name = 'f_op';
     opSelect.setAttribute('aria-label', 'Operator');
+
+    // "—" filters items with no stored value; it is the default operator.
+    opSelect.append(new Option('—', EMPTY_FILTER_VALUE));
 
     for (const [value, label] of operators) {
       opSelect.append(new Option(label, value));
     }
 
-    controls.append(wrapSelectWithChevron(opSelect));
+    const opWrap = wrapSelectWithChevron(opSelect);
+
+    opWrap.classList.add('cf-filter-op-wrap', 'shrink-0');
+
+    selectsLine.append(opWrap);
+
+    let matchCaseLabel = null;
 
     if (field.field_type === 'text') {
       const matchCase = document.createElement('input');
@@ -756,17 +848,66 @@ function updateFilterRowControls(row, field) {
 
       matchCase.addEventListener('change', () => {
         for (const option of opSelect.options) {
+          if (option.value === EMPTY_FILTER_VALUE) {
+            continue;
+          }
+
           option.value = matchCase.checked ? `${option.value}_cs` : option.value.replace('_cs', '');
         }
       });
 
-      const matchCaseLabel = document.createElement('label');
+      matchCaseLabel = document.createElement('label');
 
-      matchCaseLabel.className = 'flex items-center gap-1 text-xs text-zinc-400 whitespace-nowrap';
-      matchCaseLabel.append(matchCase, document.createTextNode('Aa'));
-
-      controls.append(matchCaseLabel);
+      // Aligned with the text inside the value input above it.
+      matchCaseLabel.className = 'ml-3 flex items-center gap-1 text-xs text-zinc-400 whitespace-nowrap';
+      matchCaseLabel.append(matchCase, document.createTextNode('Match Case'));
     }
+
+    const valueControl = buildFilterValueControl(field);
+
+    let valueNode = valueControl;
+
+    if (valueControl.tagName === 'SELECT') {
+      valueNode = wrapSelectWithChevron(valueControl);
+      valueNode.classList.add('cf-filter-value-wrap', 'flex-1');
+    }
+
+    const hiddenValue = document.createElement('input');
+
+    hiddenValue.type = 'hidden';
+    hiddenValue.name = 'f_value';
+    hiddenValue.value = EMPTY_FILTER_VALUE;
+
+    const inputLine = document.createElement('div');
+
+    inputLine.className = 'flex w-full items-center gap-2';
+
+    inputLine.append(valueNode, hiddenValue);
+
+    const valueRow = document.createElement('div');
+
+    valueRow.className = 'flex w-full flex-col gap-2';
+
+    valueRow.append(inputLine);
+
+    if (matchCaseLabel) {
+      valueRow.append(matchCaseLabel);
+    }
+
+    // The value row is hidden while "—" filters for items with no stored
+    // value; the hidden sentinel is submitted instead of the value control.
+    const applyMode = () => {
+      const isEmpty = opSelect.value === EMPTY_FILTER_VALUE;
+
+      valueRow.classList.toggle('hidden', isEmpty);
+      valueControl.disabled = isEmpty;
+      hiddenValue.disabled = !isEmpty;
+    };
+
+    opSelect.addEventListener('change', applyMode);
+    applyMode();
+
+    controls.append(valueRow);
   } else {
     // Boolean rows have no operator control; the server treats them as "=".
     const op = document.createElement('input');
@@ -776,23 +917,22 @@ function updateFilterRowControls(row, field) {
     op.value = '=';
 
     controls.append(op);
+
+    const valueControl = buildFilterValueControl(field);
+
+    const valueWrap = wrapSelectWithChevron(valueControl);
+
+    valueWrap.classList.add('cf-filter-value-wrap', 'min-w-0', 'flex-1');
+
+    selectsLine.append(valueWrap);
   }
-
-  const valueControl = buildFilterValueControl(field);
-
-  controls.append(
-    valueControl.tagName === 'SELECT' ? wrapSelectWithChevron(valueControl) : valueControl
-  );
 }
 
 function buildFilterRow(fields) {
   const row = document.createElement('div');
 
-  row.className = 'cf-filter-row space-y-2 rounded-lg border border-zinc-800 p-3';
-
-  const header = document.createElement('div');
-
-  header.className = 'flex items-center gap-2';
+  row.className =
+    'cf-filter-row flex items-center gap-2 rounded-lg border border-zinc-800 p-2';
 
   const fieldSelect = document.createElement('select');
 
@@ -820,13 +960,31 @@ function buildFilterRow(fields) {
     row.remove();
   });
 
-  header.append(wrapSelectWithChevron(fieldSelect), removeButton);
+  const fieldWrap = wrapSelectWithChevron(fieldSelect);
+
+  fieldWrap.classList.add('min-w-0', 'flex-1');
+
+  // Field and operator share one line that stretches to the remove button;
+  // the value control gets its own line below.
+  const selectsLine = document.createElement('div');
+
+  selectsLine.className = 'cf-filter-selects flex items-center gap-2';
+
+  selectsLine.append(fieldWrap);
 
   const controls = document.createElement('div');
 
-  controls.className = 'cf-filter-controls flex items-center gap-2';
+  controls.className = 'cf-filter-controls contents';
 
-  row.append(header, controls);
+  const content = document.createElement('div');
+
+  content.className = 'flex min-w-0 flex-1 flex-col items-stretch gap-2';
+
+  content.append(selectsLine, controls);
+
+  row.append(content, removeButton);
+
+  removeButton.classList.add('shrink-0');
 
   fieldSelect.addEventListener('change', () => {
     const field = fields.find((candidate) => candidate.id == fieldSelect.value);
@@ -953,6 +1111,12 @@ clearFilterItem?.addEventListener('click', () => {
 
 filterForm?.addEventListener('submit', (event) => {
   event.preventDefault();
+
+  if (!filterForm.checkValidity()) {
+    filterForm.reportValidity();
+    return;
+  }
+
   loadInventory(1);
   closeModal();
 });
@@ -998,12 +1162,16 @@ function autoResize(textArea) {
   textArea.style.height = `${textArea.scrollHeight}px`;
 }
 
-for (const textArea of document.querySelectorAll('.description-textarea')) {
+function attachAutoResize(textArea) {
   textArea.addEventListener('input', () => {
     autoResize(textArea);
   });
 
   autoResize(textArea);
+}
+
+for (const textArea of document.querySelectorAll('.description-textarea')) {
+  attachAutoResize(textArea);
 }
 
 // ==================== End Add Item Modal ====================
@@ -1071,6 +1239,11 @@ async function handleEditItem(event) {
 
 editItemForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
+
+  if (!editItemForm.checkValidity()) {
+    editItemForm.reportValidity();
+    return;
+  }
 
   const response = await fetch(
     editItemForm.action,

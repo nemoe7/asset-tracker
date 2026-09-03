@@ -50,9 +50,10 @@ def test_filter_modal_adds_and_removes_field_filter_rows(
   expect(row.locator("select.cf-filter-op")).to_have_count(0)
 
   row.locator("select.cf-filter-field").select_option(label="Serial")
+  row.locator("select.cf-filter-op").select_option("contains")
 
   expect(row.locator("select.cf-filter-op")).to_be_visible()
-  expect(row.locator("[name='f_value']")).to_be_visible()
+  expect(row.locator("input[type='text'][name='f_value']")).to_be_visible()
 
   page.locator("#add-field-filter-button").click()
 
@@ -81,20 +82,34 @@ def test_filter_row_controls_change_with_field_type(
   field_select.select_option(label="Quantity")
 
   expect(op_select.locator("option")).to_have_text(
-    ["=", "!=", "<", "<=", ">", ">="]
+    ["\u2014", "=", "!=", "<", "<=", ">", ">="]
   )
-  expect(row.locator("input[name='f_value']")).to_have_attribute("type", "number")
+  expect(op_select).to_have_value("__empty__")
+  expect(row.locator("input[type='number'][name='f_value']")).to_be_hidden()
+
+  op_select.select_option(label="=")
+
+  expect(row.locator("input[type='number'][name='f_value']")).to_have_attribute(
+    "type", "number"
+  )
 
   field_select.select_option(label="Purchased")
 
   expect(op_select.locator("option")).to_have_text(
-    ["On", "Not on", "Before", "No later than", "After", "No earlier than"]
+    ["\u2014", "On", "Not on", "Before", "Until", "After", "Since"]
   )
-  expect(row.locator("input[name='f_value']")).to_have_attribute("type", "date")
+
+  op_select.select_option(label="On")
+
+  expect(row.locator("input[type='date'][name='f_value']")).to_be_visible()
 
   field_select.select_option(label="Category")
 
-  expect(op_select.locator("option")).to_have_text(["Is", "Is not"])
+  expect(op_select.locator("option")).to_have_text(["\u2014", "Is", "Is not"])
+  expect(row.locator("select[name='f_value']")).to_be_hidden()
+
+  op_select.select_option(label="Is")
+
   expect(row.locator("select[name='f_value']")).to_be_visible()
 
   field_select.select_option(label="Active")
@@ -108,8 +123,12 @@ def test_filter_row_controls_change_with_field_type(
   field_select.select_option(label="Serial")
 
   expect(row.locator("select.cf-filter-op option")).to_have_text(
-    ["Contains", "Excludes"]
+    ["\u2014", "Contains", "Excludes"]
   )
+
+  op_select.select_option(label="Contains")
+
+  expect(row.locator("input[type='text'][name='f_value']")).to_be_visible()
   expect(row.locator(".cf-filter-match-case")).to_be_visible()
 
 
@@ -121,7 +140,8 @@ def test_filter_rows_persist_when_modal_reopened(page, live_server, sort_fields)
   row = page.locator("#custom-field-filter-rows .cf-filter-row").last
 
   row.locator("select.cf-filter-field").select_option(label="Serial")
-  row.locator("input[name='f_value']").fill("SN-1")
+  row.locator("select.cf-filter-op").select_option("contains")
+  row.locator("input[type='text'][name='f_value']").fill("SN-1")
 
   page.get_by_role("button", name="Close").click()
   page.locator("#filter-item-button").click()
@@ -131,7 +151,7 @@ def test_filter_rows_persist_when_modal_reopened(page, live_server, sort_fields)
   expect(row.locator("select.cf-filter-field")).to_have_value(
     str(sort_fields["text"]["id"])
   )
-  expect(row.locator("input[name='f_value']")).to_have_value("SN-1")
+  expect(row.locator("input[type='text'][name='f_value']")).to_have_value("SN-1")
 
 
 @pytest.mark.e2e
@@ -156,7 +176,7 @@ def test_filter_applies_custom_field_filters(
 
   row.locator("select.cf-filter-field").select_option(label="Serial")
   row.locator("select.cf-filter-op").select_option("contains")
-  row.locator("input[name='f_value']").fill("needle")
+  row.locator("input[type='text'][name='f_value']").fill("needle")
 
   # An empty second row must be ignored on Apply.
   page.locator("#add-field-filter-button").click()
@@ -239,7 +259,7 @@ def test_filtered_custom_fields_shown_in_table_and_cards(
 
   row.locator("select.cf-filter-field").select_option(label="Serial")
   row.locator("select.cf-filter-op").select_option("contains")
-  row.locator("input[name='f_value']").fill("SN")
+  row.locator("input[type='text'][name='f_value']").fill("SN")
 
   # Row 2: Active is True.
   page.locator("#add-field-filter-button").click()
@@ -273,3 +293,68 @@ def test_filtered_custom_fields_shown_in_table_and_cards(
 
   expect(cards.filter(has_text="Asset One")).to_contain_text("SN-ONE")
   expect(cards.filter(has_text="Asset Two")).to_contain_text("SN-TWO")
+
+
+@pytest.mark.e2e
+def test_empty_filter_shows_only_items_without_value(
+  page,
+  live_server,
+  create_custom_field,
+  create_item,
+  set_item_custom_field,
+):
+  boolean_field = create_custom_field("Active", "boolean")
+
+  create_item("Bare Asset")
+  valued = create_item("Valued Asset")
+
+  set_item_custom_field(valued["id"], boolean_field["name"], "true")
+
+  modal = open_filter_modal(page, live_server)
+
+  page.locator("#add-field-filter-button").click()
+
+  row = page.locator("#custom-field-filter-rows .cf-filter-row").last
+
+  row.locator("select.cf-filter-field").select_option(label="Active")
+  row.locator("select[name='f_value']").select_option(label="—")
+
+  modal.get_by_role("button", name="Apply").click()
+
+  expect(page.get_by_role("row").filter(has_text="Bare Asset")).to_be_visible()
+  expect(page.get_by_role("row").filter(has_text="Valued Asset")).to_have_count(0)
+
+
+@pytest.mark.e2e
+def test_empty_operator_shows_only_items_without_value(
+  page,
+  live_server,
+  create_custom_field,
+  create_item,
+  set_item_custom_field,
+):
+  integer_field = create_custom_field("Quantity", "integer")
+
+  create_item("Bare Asset")
+  valued = create_item("Valued Asset")
+
+  set_item_custom_field(valued["id"], integer_field["name"], "5")
+
+  modal = open_filter_modal(page, live_server)
+
+  page.locator("#add-field-filter-button").click()
+
+  row = page.locator("#custom-field-filter-rows .cf-filter-row").last
+
+  row.locator("select.cf-filter-field").select_option(label="Quantity")
+  row.locator("select.cf-filter-op").select_option(label="—")
+
+  # The value control is hidden while "—" is selected; the hidden sentinel
+  # is submitted instead.
+  expect(row.locator("input[type='hidden'][name='f_value']")).to_have_count(1)
+  expect(row.locator("input[type='number'][name='f_value']")).to_be_hidden()
+
+  modal.get_by_role("button", name="Apply").click()
+
+  expect(page.get_by_role("row").filter(has_text="Bare Asset")).to_be_visible()
+  expect(page.get_by_role("row").filter(has_text="Valued Asset")).to_have_count(0)

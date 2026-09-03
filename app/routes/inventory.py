@@ -137,11 +137,16 @@ def fragment():
 def _coerce_form_value(field, raw_value):
   field_type = field["field_type"]
 
-  if field_type == "integer":
-    return int(raw_value)
+  try:
+    if field_type == "integer":
+      return int(raw_value)
 
-  if field_type == "decimal":
-    return float(raw_value)
+    if field_type == "decimal":
+      return float(raw_value)
+  except ValueError:
+    raise InvalidInputError(
+      f"Invalid value for {field_type} field"
+    ) from None
 
   if field_type == "boolean":
     return raw_value == "true"

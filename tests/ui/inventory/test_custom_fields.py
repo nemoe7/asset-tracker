@@ -29,7 +29,7 @@ def test_add_item_modal_renders_custom_field_inputs(
 
   modal = page.get_by_role("dialog")
 
-  expect(modal.locator('input[name="f_Serial Number"]')).to_be_visible()
+  expect(modal.locator('[name="f_Serial Number"]')).to_be_visible()
   expect(modal.locator('input[name="f_Quantity"]')).to_be_visible()
   expect(modal.locator('input[name="f_Quantity"]')).to_have_attribute(
     "type",
@@ -75,11 +75,11 @@ def test_add_item_modal_marks_required_custom_fields(
 
   modal = page.get_by_role("dialog")
 
-  expect(modal.locator('input[name="f_Serial Number"]')).to_have_attribute(
+  expect(modal.locator('[name="f_Serial Number"]')).to_have_attribute(
     "required",
     "",
   )
-  expect(modal.locator('input[name="f_Notes"]')).not_to_have_attribute(
+  expect(modal.locator('[name="f_Notes"]')).not_to_have_attribute(
     "required",
     "",
   )
@@ -114,7 +114,7 @@ def test_add_item_persists_custom_field_values(
   modal = page.get_by_role("dialog")
 
   modal.locator("#item-name").fill("Labeled Asset")
-  modal.locator('input[name="f_Serial Number"]').fill("SN-100")
+  modal.locator('[name="f_Serial Number"]').fill("SN-100")
   modal.locator('input[name="f_Quantity"]').fill("5")
   modal.locator('select[name="f_Active"]').select_option("true")
   modal.locator('select[name="f_Category"]').select_option("Electronics")
@@ -151,7 +151,7 @@ def test_add_item_required_custom_field_blocks_submit(
   modal.get_by_role("button", name="Add item").click()
 
   expect(page.get_by_role("row").filter(has_text="Blocked Asset")).to_have_count(0)
-  expect(modal.locator('input[name="f_Serial Number"]')).to_be_visible()
+  expect(modal.locator('[name="f_Serial Number"]')).to_be_visible()
 
 
 @pytest.mark.e2e
@@ -207,12 +207,12 @@ def test_edit_modal_prefills_and_updates_custom_fields(
 
   edit_modal = page.get_by_role("dialog")
 
-  expect(edit_modal.locator('input[name="f_Serial Number"]')).to_have_value(
+  expect(edit_modal.locator('[name="f_Serial Number"]')).to_have_value(
     "SN-300"
   )
   expect(edit_modal.locator('select[name="f_Active"]')).to_have_value("true")
 
-  edit_modal.locator('input[name="f_Serial Number"]').fill("SN-301")
+  edit_modal.locator('[name="f_Serial Number"]').fill("SN-301")
   edit_modal.locator('select[name="f_Active"]').select_option("false")
   edit_modal.get_by_role("button", name="Save changes").click()
 
@@ -246,7 +246,7 @@ def test_edit_modal_clearing_optional_custom_field(
 
   edit_modal = page.get_by_role("dialog")
 
-  edit_modal.locator('input[name="f_Serial Number"]').fill("")
+  edit_modal.locator('[name="f_Serial Number"]').fill("")
 
   edit_modal.get_by_role("button", name="Save changes").click()
 
@@ -272,7 +272,7 @@ def test_add_modal_shows_type_hints_required_badges_and_placeholders(
 
   modal = page.get_by_role("dialog")
 
-  serial_wrapper = modal.locator('input[name="f_Serial Number"]').locator("xpath=ancestor::div[1]")
+  serial_wrapper = modal.locator('[name="f_Serial Number"]').locator("xpath=ancestor::div[1]")
   quantity_wrapper = modal.locator('input[name="f_Quantity"]').locator("xpath=ancestor::div[1]")
   price_wrapper = modal.locator('input[name="f_Price"]').locator("xpath=ancestor::div[1]")
 
@@ -282,17 +282,17 @@ def test_add_modal_shows_type_hints_required_badges_and_placeholders(
   expect(quantity_wrapper.get_by_text("Required")).to_have_count(0)
   expect(price_wrapper.get_by_text("Decimal")).to_be_visible()
 
-  expect(modal.locator('input[name="f_Serial Number"]')).to_have_attribute(
+  expect(modal.locator('[name="f_Serial Number"]')).to_have_attribute(
     "placeholder",
     "Enter serial number",
   )
   expect(modal.locator('input[name="f_Quantity"]')).to_have_attribute(
     "placeholder",
-    "e.g. 42",
+    "Enter integer",
   )
   expect(modal.locator('input[name="f_Price"]')).to_have_attribute(
     "placeholder",
-    "e.g. 3.14",
+    "Enter decimal",
   )
 
 
@@ -433,3 +433,23 @@ def test_decimal_custom_field_accepts_fractional_value(
   edit_modal = page.get_by_role("dialog")
 
   expect(edit_modal.locator('input[name="f_Price"]')).to_have_value("12.99")
+
+
+@pytest.mark.e2e
+def test_decimal_custom_field_strips_illegal_characters(
+  page,
+  live_server,
+  create_custom_field,
+):
+  create_custom_field("Price", "decimal")
+
+  page.goto(f"{live_server}/")
+  page.locator("#add-item-button").click()
+
+  modal = page.get_by_role("dialog")
+
+  price_input = modal.locator('input[name="f_Price"]')
+
+  price_input.press_sequentially("11ddddawd")
+
+  expect(price_input).to_have_value("11")
