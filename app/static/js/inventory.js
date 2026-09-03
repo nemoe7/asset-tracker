@@ -358,6 +358,192 @@ qrScannerButton?.addEventListener('click', () => {
 // ==================== End QR Scanner ====================
 
 
+// ==================== Custom Fields ====================
+
+const addItemCustomFields = document.getElementById('add-item-custom-fields');
+const editItemCustomFields = document.getElementById('edit-item-custom-fields');
+const viewItemCustomFields = document.getElementById('view-item-custom-fields');
+
+let customFieldsCache = null;
+
+async function loadCustomFields() {
+  if (customFieldsCache) {
+    return customFieldsCache;
+  }
+
+  try {
+    const response = await fetch('/custom-fields');
+
+    customFieldsCache = response.ok ? await response.json() : [];
+  } catch (error) {
+    console.error('Failed to load custom fields:', error);
+    customFieldsCache = [];
+  }
+
+  return customFieldsCache;
+}
+
+function formatCustomFieldValue(value) {
+  if (value === null || value === undefined || value === '') {
+    return '—';
+  }
+
+  if (value === true) {
+    return 'True';
+  }
+
+  if (value === false) {
+    return 'False';
+  }
+
+  return String(value);
+}
+
+function buildCustomFieldInput(field) {
+  if (field.field_type === 'user') {
+    return null;
+  }
+
+  const name = `f_${field.name}`;
+  let input;
+
+  if (field.field_type === 'boolean' || field.field_type === 'enum') {
+    input = document.createElement('select');
+    input.className = 'form-select';
+    input.name = name;
+
+    input.append(new Option('—', ''));
+
+    if (field.field_type === 'boolean') {
+      input.append(new Option('True', 'true'), new Option('False', 'false'));
+    } else {
+      for (const value of field.enum_values ?? []) {
+        input.append(new Option(value, value));
+      }
+    }
+  } else {
+    input = document.createElement('input');
+    input.className = 'form-input';
+    input.name = name;
+
+    if (field.field_type === 'integer' || field.field_type === 'decimal') {
+      input.type = 'number';
+      input.step = field.field_type === 'integer' ? '1' : 'any';
+    } else if (field.field_type === 'date') {
+      input.type = 'date';
+    } else {
+      input.type = 'text';
+    }
+  }
+
+  if (field.required) {
+    input.required = true;
+  }
+
+  return input;
+}
+
+function setCustomFieldValue(input, value) {
+  if (value === null || value === undefined) {
+    return;
+  }
+
+  if (input.type === 'select-one' || input.tagName === 'SELECT') {
+    input.value = value === true ? 'true' : value === false ? 'false' : String(value);
+    return;
+  }
+
+  input.value = String(value);
+}
+
+function renderAddItemCustomFields(fields) {
+  if (!addItemCustomFields) {
+    return;
+  }
+
+  addItemCustomFields.replaceChildren();
+
+  for (const field of fields) {
+    const input = buildCustomFieldInput(field);
+
+    if (!input) {
+      continue;
+    }
+
+    const label = document.createElement('label');
+
+    label.className = 'mb-2 block text-sm font-medium text-zinc-300';
+    label.htmlFor = input.id = `add-cf-${field.id}`;
+    label.textContent = field.name;
+
+    const wrapper = document.createElement('div');
+
+    wrapper.append(label, input);
+    addItemCustomFields.append(wrapper);
+  }
+}
+
+function renderEditItemCustomFields(fields, valuesByName) {
+  if (!editItemCustomFields) {
+    return;
+  }
+
+  editItemCustomFields.replaceChildren();
+
+  for (const field of fields) {
+    const input = buildCustomFieldInput(field);
+
+    if (!input) {
+      continue;
+    }
+
+    setCustomFieldValue(input, valuesByName[field.name]);
+
+    const label = document.createElement('th');
+
+    label.className = 'w-1/3 px-4 py-3 font-medium text-zinc-400';
+    label.textContent = field.name;
+
+    const cell = document.createElement('td');
+
+    cell.className = 'px-4 py-3';
+    cell.append(input);
+
+    const row = document.createElement('tr');
+
+    row.append(label, cell);
+    editItemCustomFields.append(row);
+  }
+}
+
+function renderViewItemCustomFields(fields, valuesByName) {
+  if (!viewItemCustomFields) {
+    return;
+  }
+
+  viewItemCustomFields.replaceChildren();
+
+  for (const field of fields) {
+    const label = document.createElement('th');
+
+    label.className = 'w-1/3 px-4 py-3 font-medium text-zinc-400';
+    label.textContent = field.name;
+
+    const cell = document.createElement('td');
+
+    cell.className = 'px-4 py-3 text-zinc-100';
+    cell.textContent = formatCustomFieldValue(valuesByName[field.name]);
+
+    const row = document.createElement('tr');
+
+    row.append(label, cell);
+    viewItemCustomFields.append(row);
+  }
+}
+
+// ==================== End Custom Fields ====================
+
+
 // ==================== Filter & Sort Modal ====================
 
 const filterItemButton = document.getElementById('filter-item-button');
@@ -460,6 +646,7 @@ const addItemModal = document.getElementById('add-item-modal');
 document.addEventListener('click', (event) => {
   if (event.target.closest('#empty-add-item-button')) {
     loadLocations();
+    loadCustomFields().then(renderAddItemCustomFields);
     openModal(addItemModal);
   }
 });
@@ -471,6 +658,7 @@ document
   .getElementById('add-item-button')
   ?.addEventListener('click', () => {
     loadLocations();
+    loadCustomFields().then(renderAddItemCustomFields);
     openModal(addItemModal);
   });
 
@@ -529,6 +717,11 @@ async function loadEditItem(itemId) {
   autoResize(editItemDescription);
   editItemLocation.value = item.location_id ?? '';
   editItemForm.action = `/inventory/${itemId}`;
+
+  renderEditItemCustomFields(
+    await loadCustomFields(),
+    item.custom_fields ?? {}
+  );
 }
 
 
@@ -620,6 +813,11 @@ async function openViewItem(itemId) {
     viewItemName.textContent = asset.name;
     viewItemDescription.textContent = asset.description || '—';
     viewItemLocation.textContent = asset.location_name || '—';
+
+    renderViewItemCustomFields(
+      await loadCustomFields(),
+      asset.custom_fields ?? {}
+    );
   });
 }
 
