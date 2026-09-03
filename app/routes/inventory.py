@@ -12,6 +12,7 @@ from flask import (
 )
 
 from app.services.checks import check_item
+from app.services.data.custom_field_filters import parse_filters
 from app.services.data.custom_field_values import set_custom_field_value
 from app.services.data.custom_fields import get_custom_fields
 
@@ -52,6 +53,43 @@ def index():
   return redirect(url_for("main.index"))
 
 
+def _parse_custom_field_filters():
+  f_fields = request.args.getlist("f_field")
+  f_ops = request.args.getlist("f_op")
+  f_values = request.args.getlist("f_value")
+
+  if not (len(f_fields) == len(f_ops) == len(f_values)):
+    raise InvalidInputError("Malformed filter parameters")
+
+  rows = [
+    (field_id, op, value)
+    for field_id, op, value in zip(f_fields, f_ops, f_values)
+    if value != ""
+  ]
+
+  if not rows:
+    return None, []
+
+  fields = get_custom_fields()
+  filters = parse_filters(
+    [field_id for field_id, _op, _value in rows],
+    [op for _field_id, op, _value in rows],
+    [value for _field_id, _op, value in rows],
+    fields,
+  )
+
+  fields_by_id = {field["id"]: field for field in fields}
+  filtered_fields = []
+  seen_ids = set()
+
+  for field_id, _op, _value in filters:
+    if field_id not in seen_ids:
+      seen_ids.add(field_id)
+      filtered_fields.append(fields_by_id[field_id])
+
+  return filters, filtered_fields
+
+
 @inventory.route("/fragment", methods=["GET"])
 @login_required
 def fragment():
@@ -71,12 +109,15 @@ def fragment():
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 25))
 
+    custom_field_filters, filtered_custom_fields = _parse_custom_field_filters()
+
     result = get_items_paginated(
       search=search,
       location_id=location_id,
       include_archived=include_archived,
       sort_by=sort_by,
       sort_order=sort_order,
+      custom_field_filters=custom_field_filters,
       page=page,
       per_page=per_page,
     )
@@ -86,6 +127,7 @@ def fragment():
   return render_template(
     "inventory/fragment.jinja",
     search=search,
+    filtered_custom_fields=filtered_custom_fields,
     **result,
   )
 
@@ -202,12 +244,15 @@ def export():
     else:
       location_id = _UNSET
 
+    custom_field_filters, _filtered_custom_fields = _parse_custom_field_filters()
+
     csv_data = build_export(
       search=search,
       location_id=location_id,
       include_archived=include_archived,
       sort_by=sort_by,
       sort_order=sort_order,
+      custom_field_filters=custom_field_filters,
       field_keys=request.args.getlist("fields") or None,
     )
   except (InvalidInputError, ValueError) as error:
