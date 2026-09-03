@@ -5,6 +5,7 @@ from app.services.data.audit import (
   get_audit_log,
   get_audit_logs,
 )
+from app.services.data.db import db_transaction
 
 
 def test_create_audit_log(gen_test_data_admin):
@@ -67,6 +68,30 @@ def test_create_audit_log_returns_id(gen_test_data_admin):
   assert first_id is not None
   assert second_id is not None
   assert second_id > first_id
+
+
+def test_get_audit_logs_tolerates_corrupt_details(gen_test_data_admin):
+  with db_transaction() as connection:
+    connection.execute(
+      """
+      INSERT INTO audit_log (
+        user_id,
+        action,
+        entity_type,
+        entity_id,
+        details,
+        timestamp
+      )
+      VALUES ('1', 'corrupt', 'test', '1', 'not-json', datetime('now'))
+      """
+    )
+
+  logs = get_audit_logs()
+
+  corrupt = [log for log in logs if log["action"] == "corrupt"]
+
+  assert len(corrupt) == 1
+  assert corrupt[0]["details"] == "not-json"
 
 
 def test_get_audit_log_returns_none_for_nonexistent_log(gen_test_data_admin):

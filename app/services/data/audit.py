@@ -47,7 +47,11 @@ def _parse_audit_log(row):
   row = dict(row)
 
   if row["details"] is not None:
-    row["details"] = json.loads(row["details"])
+    try:
+      row["details"] = json.loads(row["details"])
+    except json.JSONDecodeError:
+      # A corrupt stored value degrades to the raw string instead of a 500.
+      pass
 
   return row
 
