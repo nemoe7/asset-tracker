@@ -544,6 +544,225 @@ function renderViewItemCustomFields(fields, valuesByName) {
 // ==================== End Custom Fields ====================
 
 
+// ==================== Field Filters (Filter Modal) ====================
+
+const customFieldFilterRows = document.getElementById(
+  'custom-field-filter-rows'
+);
+const addFieldFilterButton = document.getElementById(
+  'add-field-filter-button'
+);
+
+const FILTER_OPERATORS = {
+  integer: [
+    ['=', '='],
+    ['!=', '!='],
+    ['<', '<'],
+    ['<=', '<='],
+    ['>', '>'],
+    ['>=', '>=']
+  ],
+  decimal: [
+    ['=', '='],
+    ['!=', '!='],
+    ['<', '<'],
+    ['<=', '<='],
+    ['>', '>'],
+    ['>=', '>=']
+  ],
+  date: [
+    ['=', 'On'],
+    ['!=', 'Not on'],
+    ['<', 'Before'],
+    ['<=', 'No later than'],
+    ['>', 'After'],
+    ['>=', 'No earlier than']
+  ],
+  enum: [
+    ['=', 'Is'],
+    ['!=', 'Is not']
+  ],
+  boolean: [],
+  text: [
+    ['contains', 'Contains'],
+    ['excludes', 'Excludes']
+  ]
+};
+
+function operatorOptionsFor(fieldType) {
+  return FILTER_OPERATORS[fieldType] ?? [];
+}
+
+function buildFilterValueControl(field) {
+  let control;
+
+  if (field.field_type === 'boolean' || field.field_type === 'enum') {
+    control = document.createElement('select');
+    control.className = 'form-select';
+    control.name = 'f_value';
+
+    control.append(new Option('—', ''));
+
+    if (field.field_type === 'boolean') {
+      control.append(new Option('True', 'true'), new Option('False', 'false'));
+    } else {
+      for (const value of field.enum_values ?? []) {
+        control.append(new Option(value, value));
+      }
+    }
+  } else {
+    control = document.createElement('input');
+    control.className = 'form-input';
+    control.name = 'f_value';
+
+    if (field.field_type === 'integer' || field.field_type === 'decimal') {
+      control.type = 'number';
+      control.step = field.field_type === 'integer' ? '1' : 'any';
+    } else if (field.field_type === 'date') {
+      control.type = 'date';
+    } else {
+      control.type = 'text';
+    }
+  }
+
+  return control;
+}
+
+function updateFilterRowControls(row, field) {
+  const controls = row.querySelector('.cf-filter-controls');
+
+  controls.replaceChildren();
+
+  const operators = operatorOptionsFor(field.field_type);
+
+  if (operators.length > 0) {
+    const opSelect = document.createElement('select');
+
+    opSelect.className = 'form-select cf-filter-op';
+    opSelect.name = 'f_op';
+    opSelect.setAttribute('aria-label', 'Operator');
+
+    for (const [value, label] of operators) {
+      opSelect.append(new Option(label, value));
+    }
+
+    controls.append(opSelect);
+
+    if (field.field_type === 'text') {
+      const matchCase = document.createElement('input');
+
+      matchCase.type = 'checkbox';
+      matchCase.className = 'cf-filter-match-case h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-zinc-100 focus:ring-zinc-500';
+      matchCase.title = 'Match case';
+
+      matchCase.addEventListener('change', () => {
+        for (const option of opSelect.options) {
+          option.value = matchCase.checked ? `${option.value}_cs` : option.value.replace('_cs', '');
+        }
+      });
+
+      const matchCaseLabel = document.createElement('label');
+
+      matchCaseLabel.className = 'flex items-center gap-1 text-xs text-zinc-400 whitespace-nowrap';
+      matchCaseLabel.append(matchCase, document.createTextNode('Aa'));
+
+      controls.append(matchCaseLabel);
+    }
+  } else {
+    // Boolean rows have no operator control; the server treats them as "=".
+    const op = document.createElement('input');
+
+    op.type = 'hidden';
+    op.name = 'f_op';
+    op.value = '=';
+
+    controls.append(op);
+  }
+
+  controls.append(buildFilterValueControl(field));
+}
+
+function buildFilterRow(fields) {
+  const row = document.createElement('div');
+
+  row.className = 'cf-filter-row space-y-2 rounded-lg border border-zinc-800 p-3';
+
+  const header = document.createElement('div');
+
+  header.className = 'flex items-center gap-2';
+
+  const fieldSelect = document.createElement('select');
+
+  fieldSelect.className = 'form-select cf-filter-field';
+  fieldSelect.name = 'f_field';
+  fieldSelect.setAttribute('aria-label', 'Field');
+
+  fieldSelect.append(new Option('—', ''));
+
+  for (const field of fields) {
+    if (field.field_type !== 'user') {
+      fieldSelect.append(new Option(field.name, field.id));
+    }
+  }
+
+  const removeButton = document.createElement('button');
+
+  removeButton.type = 'button';
+  removeButton.className = 'cf-filter-row-remove icon-button text-red-400 hover:bg-red-950 hover:text-red-300';
+  removeButton.title = 'Remove filter';
+  removeButton.setAttribute('aria-label', 'Remove filter');
+  removeButton.innerHTML = '<i class="bi bi-x-lg block size-3.5" aria-hidden="true"></i>';
+
+  removeButton.addEventListener('click', () => {
+    row.remove();
+  });
+
+  header.append(fieldSelect, removeButton);
+
+  const controls = document.createElement('div');
+
+  controls.className = 'cf-filter-controls flex items-center gap-2';
+
+  row.append(header, controls);
+
+  fieldSelect.addEventListener('change', () => {
+    const field = fields.find((candidate) => candidate.id == fieldSelect.value);
+
+    if (field) {
+      updateFilterRowControls(row, field);
+    } else {
+      controls.replaceChildren();
+    }
+  });
+
+  return row;
+}
+
+function populateFilterSortBy(fields) {
+  if (!filterSortBy) {
+    return;
+  }
+
+  const selectedValue = filterSortBy.value;
+
+  for (const field of fields) {
+    if (field.field_type !== 'user' && !filterSortBy.querySelector(`option[value="${field.id}"]`)) {
+      filterSortBy.append(new Option(field.name, field.id));
+    }
+  }
+
+  filterSortBy.value = selectedValue;
+}
+
+addFieldFilterButton?.addEventListener('click', async () => {
+  const fields = await loadCustomFields();
+
+  customFieldFilterRows?.append(buildFilterRow(fields));
+});
+
+// ==================== End Field Filters (Filter Modal) ====================
+
+
 // ==================== Filter & Sort Modal ====================
 
 const filterItemButton = document.getElementById('filter-item-button');
@@ -611,6 +830,7 @@ async function loadLocations() {
 
 filterItemButton?.addEventListener('click', () => {
   loadLocations();
+  loadCustomFields().then(populateFilterSortBy);
   openModal(filterItemModal);
 });
 
@@ -619,6 +839,7 @@ filterItemButton?.addEventListener('click', () => {
 
 clearFilterItem?.addEventListener('click', () => {
   filterForm?.reset();
+  customFieldFilterRows?.replaceChildren();
   resetInventoryFilters();
   loadInventory(1);
   closeModal();
