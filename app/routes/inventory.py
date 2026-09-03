@@ -13,7 +13,7 @@ from flask import (
 
 from app.services.checks import check_item
 from app.services.data.custom_field_values import set_custom_field_value
-from app.services.data.custom_fields import get_custom_field_by_name
+from app.services.data.custom_fields import get_custom_fields
 
 from ..services.data.inventory import (
   _UNSET,
@@ -25,6 +25,9 @@ from ..services.data.inventory import (
   update_item,
 )
 from ..services.exceptions.data.common import InvalidInputError
+from ..services.exceptions.data.custom_field_values import (
+  RequiredCustomFieldError,
+)
 from ..services.exceptions.data.inventory import (
   ItemIsArchivedError,
   ItemIsNotArchivedError,
@@ -87,6 +90,51 @@ def fragment():
   )
 
 
+def _coerce_form_value(field, raw_value):
+  field_type = field["field_type"]
+
+  if field_type == "integer":
+    return int(raw_value)
+
+  if field_type == "decimal":
+    return float(raw_value)
+
+  if field_type == "boolean":
+    return raw_value == "true"
+
+  return raw_value
+
+
+def _collect_custom_field_values():
+  return {
+    key[2:]: value
+    for key, value in request.form.items()
+    if key.startswith("f_")
+  }
+
+
+def _required_custom_field_error(field):
+  raise RequiredCustomFieldError(field["name"])
+
+
+def _apply_custom_field_values(item_id, custom_fields, values):
+  for field in custom_fields:
+    raw_value = values.get(field["name"])
+
+    if raw_value is None:
+      continue
+
+    if raw_value == "":
+      set_custom_field_value(item_id, field["id"], None)
+      continue
+
+    set_custom_field_value(
+      item_id,
+      field["id"],
+      _coerce_form_value(field, raw_value),
+    )
+
+
 @inventory.route("", methods=["POST"])
 @login_required
 def create():
@@ -94,7 +142,18 @@ def create():
   description = request.form.get("description") or None
   location_id = request.form.get("location_id")
 
+  custom_fields = [
+    field
+    for field in get_custom_fields()
+    if field["field_type"] != "user"
+  ]
+  values = _collect_custom_field_values()
+
   try:
+    for field in custom_fields:
+      if field["required"] and not values.get(field["name"], "").strip():
+        _required_custom_field_error(field)
+
     if location_id:
       item_id = create_item(
         name=name,
@@ -106,6 +165,8 @@ def create():
         name=name,
         description=description,
       )
+
+    _apply_custom_field_values(item_id, custom_fields, values)
   except InvalidInputError as error:
     return jsonify({"error": str(error)}), 400
   except LocationNotFoundError as error:
@@ -193,7 +254,18 @@ def update(item_id):
   if description == "":
     description = None
 
+  custom_fields = [
+    field
+    for field in get_custom_fields()
+    if field["field_type"] != "user"
+  ]
+  values = _collect_custom_field_values()
+
   try:
+    for field in custom_fields:
+      if field["required"] and values.get(field["name"], "") == "":
+        _required_custom_field_error(field)
+
     if location_id:
       location_id = int(location_id)
     else:
@@ -206,19 +278,7 @@ def update(item_id):
       location_id=location_id,
     )
 
-    for key, value in request.form.items():
-      if key.startswith("f_"):
-        field_name = key[2:]
-        field = get_custom_field_by_name(field_name)
-
-        if field is None:
-          continue
-
-        set_custom_field_value(
-          item_id,
-          field["id"],
-          value,
-        )
+    _apply_custom_field_values(item_id, custom_fields, values)
   except (InvalidInputError, ValueError, LocationNotFoundError) as error:
     return jsonify({"error": str(error)}), 400
   except ItemNotFoundError as error:
