@@ -26,6 +26,24 @@ def test_admin_login_sets_session(
 
   with gen_test_client.session_transaction() as session:
     assert session["user_id"] == gen_test_admin
+    assert session.permanent is False
+
+
+def test_admin_login_with_remember_me_sets_permanent_session(
+  gen_test_admin,
+  gen_test_client,
+  gen_password,
+):
+  gen_test_client.post(
+    "/auth/login",
+    data={
+      "username": "test_admin",
+      "password": gen_password("test_admin"),
+      "remember": "on",
+    },
+  )
+
+  with gen_test_client.session_transaction() as session:
     assert session.permanent is True
 
 

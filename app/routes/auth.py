@@ -116,7 +116,7 @@ def login_post():
   rate_limit.clear(request.remote_addr)
 
   session.clear()
-  session.permanent = True
+  session.permanent = request.form.get("remember") == "on"
   session["user_id"] = user["id"]
   session["username"] = username
 
