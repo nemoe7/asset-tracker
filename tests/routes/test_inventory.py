@@ -1,7 +1,47 @@
+import importlib
+
 from app.services.data.custom_fields import (
   get_custom_field,
   get_custom_fields,
 )
+
+
+def test_fragment_caps_per_page(
+  gen_test_admin_client,
+  monkeypatch,
+):
+  # Import the module explicitly: the "inventory" attribute on the package
+  # is the Blueprint, not the module that owns the route's globals.
+  inventory_routes = importlib.import_module("app.routes.inventory")
+
+  captured = {}
+
+  def fake_get_items_paginated(**kwargs):
+    captured.update(kwargs)
+
+    return {
+      "items": [],
+      "page": 1,
+      "per_page": kwargs["per_page"],
+      "total": 0,
+      "total_pages": 1,
+    }
+
+  monkeypatch.setattr(
+    inventory_routes,
+    "get_items_paginated",
+    fake_get_items_paginated,
+  )
+
+  response = gen_test_admin_client.get(
+    "/inventory/fragment",
+    query_string={
+      "per_page": "100",
+    },
+  )
+
+  assert response.status_code == 200
+  assert captured["per_page"] == 50
 
 
 def test_admin_can_create_asset(

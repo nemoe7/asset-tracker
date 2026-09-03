@@ -46,6 +46,8 @@ inventory = Blueprint(
   url_prefix="/inventory",
 )
 
+_MAX_PER_PAGE = 50
+
 
 @inventory.route("", methods=["GET"])
 @login_required
@@ -109,7 +111,7 @@ def fragment():
     else:
       location_id = _UNSET
     page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 25))
+    per_page = min(int(request.args.get("per_page", 25)), _MAX_PER_PAGE)
 
     custom_field_filters, filtered_custom_fields = _parse_custom_field_filters()
 
