@@ -33,6 +33,11 @@ def db_connection(db_path=None):
   connection = _connection_context.get()
 
   if connection is not None:
+    if db_path is not None:
+      raise ValueError(
+        "db_path is ignored when a connection is already open"
+      )
+
     yield connection
     return
 
@@ -53,6 +58,11 @@ def db_transaction(db_path=None):
   owns_connection = _connection_context.get() is None
 
   if not owns_connection:
+    if db_path is not None:
+      raise ValueError(
+        "db_path is ignored when a connection is already open"
+      )
+
     yield connection
     return
 
