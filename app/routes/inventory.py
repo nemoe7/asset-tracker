@@ -58,14 +58,16 @@ def _parse_custom_field_filters():
   f_ops = request.args.getlist("f_op")
   f_values = request.args.getlist("f_value")
 
-  if not (len(f_fields) == len(f_ops) == len(f_values)):
-    raise InvalidInputError("Malformed filter parameters")
+  # Rows are (field, op, value) triplets. Browsers omit empty form values,
+  # so align by row index and drop incomplete or value-less rows entirely.
+  rows = []
 
-  rows = [
-    (field_id, op, value)
-    for field_id, op, value in zip(f_fields, f_ops, f_values)
-    if value != ""
-  ]
+  for index, field_id in enumerate(f_fields):
+    op = f_ops[index] if index < len(f_ops) else ""
+    value = f_values[index] if index < len(f_values) else ""
+
+    if field_id and value:
+      rows.append((field_id, op, value))
 
   if not rows:
     return None, []
