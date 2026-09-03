@@ -265,10 +265,12 @@ def test_update_user_with_same_name_creates_no_audit_log(gen_test_data_user):
   assert logs[0]["action"] == "created"
 
 
-def test_update_user_with_same_password_creates_no_audit_log(
+def test_update_user_with_same_password_writes_audit_log(
   gen_test_data_user,
   gen_password,
 ):
+  # Re-submitting the current password re-hashes it and is audited
+  # like any other password change.
   user_id = gen_test_data_user("alice")
 
   assert (
@@ -284,8 +286,8 @@ def test_update_user_with_same_password_creates_no_audit_log(
     entity_id=user_id,
   )
 
-  assert len(logs) == 1
-  assert logs[0]["action"] == "created"
+  assert len(logs) == 2
+  assert logs[1]["action"] == "updated"
 
 
 def test_update_user_to_existing_username_fails(gen_test_data_user):

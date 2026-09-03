@@ -223,7 +223,10 @@ def update_user(user_id, username=None, name=None, password=None):
         "new": name,
       }
 
-    if password is not None and not verify_password(user_id, password):
+    # Re-hash unconditionally: re-submitting the current password still
+    # updates the hash and writes an audit entry, and skips the verify
+    # round-trip.
+    if password is not None:
       updates.append("password_hash = ?")
       values.append(generate_password_hash(password))
 
