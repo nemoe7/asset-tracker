@@ -70,6 +70,116 @@ def _item_with_custom_fields(connection, item):
   return item
 
 
+def _filter_row_condition(connection, field_id, op, value):
+  field = connection.execute(
+    """
+    SELECT field_type
+    FROM custom_fields
+    WHERE id = ?
+    """,
+    (field_id,),
+  ).fetchone()
+
+  if field is None:
+    raise InvalidInputError("Unknown custom field in filter")
+
+  field_type = field["field_type"]
+  negated = op in _NEGATED_OPS
+
+  exists_base = """
+    EXISTS (
+      SELECT 1
+      FROM inventory_item_fields
+      WHERE inventory_item_fields.item_id = inventory_items.id
+        AND inventory_item_fields.field_id = ?
+  """
+
+  if field_type in ("integer", "decimal"):
+    comparison = "=" if negated else op
+    inner = f"CAST(inventory_item_fields.value AS NUMERIC) {comparison} ?"
+    parameters = [field_id, value]
+
+  elif field_type in ("date", "enum"):
+    comparison = "=" if negated else op
+    inner = f"inventory_item_fields.value {comparison} ?"
+    parameters = [field_id, value]
+
+  elif field_type == "boolean":
+    inner = "inventory_item_fields.value = ?"
+    parameters = [field_id, "1" if value == "true" else "0"]
+
+  else:
+    if op.endswith("_cs"):
+      inner = "instr(inventory_item_fields.value, ?) > 0"
+    else:
+      inner = "instr(lower(inventory_item_fields.value), lower(?)) > 0"
+
+    parameters = [field_id, value]
+
+  if negated:
+    return f"NOT {exists_base} AND {inner}\n    )", parameters
+
+  return f"{exists_base} AND {inner}\n    )", parameters
+
+
+_EQUALITY_OPS = {"=", "contains", "contains_cs"}
+_ORDERING_OPS = {"<", "<=", ">", ">="}
+_NEGATED_OPS = {"!=", "excludes", "excludes_cs"}
+
+
+def _field_filter_conditions(connection, custom_field_filters):
+  if not custom_field_filters:
+    return [], []
+
+  conditions = []
+  parameters = []
+  groups = {}
+
+  for field_id, op, value in custom_field_filters:
+    groups.setdefault(field_id, []).append((op, value))
+
+  for field_id, rows in groups.items():
+    row_conditions = []
+
+    equality_rows = [row for row in rows if row[0] in _EQUALITY_OPS]
+
+    if equality_rows:
+      equality_conditions = []
+
+      for op, value in equality_rows:
+        condition, row_parameters = _filter_row_condition(
+          connection,
+          field_id,
+          op,
+          value,
+        )
+
+        equality_conditions.append(condition)
+        parameters.extend(row_parameters)
+
+      row_conditions.append(
+        f"({' OR '.join(equality_conditions)})"
+      )
+
+    for op, value in rows:
+      if op not in _ORDERING_OPS and op not in _NEGATED_OPS:
+        continue
+
+      condition, row_parameters = _filter_row_condition(
+        connection,
+        field_id,
+        op,
+        value,
+      )
+
+      row_conditions.append(condition)
+      parameters.extend(row_parameters)
+
+    conditions.append(f"({' AND '.join(row_conditions)})")
+
+  return conditions, parameters
+
+
 def _build_item_query(
   connection,
   search,
@@ -78,6 +188,7 @@ def _build_item_query(
   custom_fields,
   sort_by,
   sort_order,
+  custom_field_filters=None,
 ):
   if sort_order not in ("asc", "desc"):
     raise InvalidInputError("Invalid sort order")
@@ -120,6 +231,14 @@ def _build_item_query(
           str(value),
         ]
       )
+
+  filter_conditions, filter_parameters = _field_filter_conditions(
+    connection,
+    custom_field_filters,
+  )
+
+  conditions.extend(filter_conditions)
+  parameters.extend(filter_parameters)
 
   where_clause = ""
 
@@ -263,6 +382,7 @@ def get_items(
   custom_fields=None,
   sort_by="name",
   sort_order="asc",
+  custom_field_filters=None,
 ):
   with db_connection() as connection:
     (
@@ -278,6 +398,7 @@ def get_items(
       custom_fields,
       sort_by,
       sort_order,
+      custom_field_filters,
     )
 
     items = connection.execute(
@@ -308,6 +429,7 @@ def get_items_paginated(
   custom_fields=None,
   sort_by="name",
   sort_order="asc",
+  custom_field_filters=None,
   page=1,
   per_page=25,
 ):
@@ -331,6 +453,7 @@ def get_items_paginated(
       custom_fields,
       sort_by,
       sort_order,
+      custom_field_filters,
     )
 
     total = connection.execute(
