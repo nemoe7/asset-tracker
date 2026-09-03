@@ -6,6 +6,7 @@ from flask import (
   session,
   url_for,
 )
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..services.auth.authentication import login_required
 from ..services.auth import rate_limit
@@ -23,6 +24,10 @@ from ..services.exceptions.data.users import (
 )
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")
+
+# Verification target for unknown users, so response timing does not
+# reveal which usernames exist.
+_DUMMY_PASSWORD_HASH = generate_password_hash("dummy-password")
 
 
 @auth.route("/setup", methods=["GET"])
@@ -99,6 +104,11 @@ def login_post():
   password = request.form["password"]
 
   user = get_user_by_username(username)
+
+  if user is None or user["archived_at"] is not None:
+    # Burn a hash verification so unknown or archived users are not
+    # distinguishable from known users by response timing.
+    check_password_hash(_DUMMY_PASSWORD_HASH, password)
 
   if (
     user is None
