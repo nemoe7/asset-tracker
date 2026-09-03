@@ -9,7 +9,7 @@ from ..data.role_permissions import get_role_permissions
 from ..data.user_permissions import get_user_permissions
 from ..data.user_roles import get_user_roles
 from ..data.users import get_user
-from ..exceptions.auth.orization import PermissionDeniedError
+from ..exceptions.auth.authorization import PermissionDeniedError
 
 # Namespaces that never default to allow on ".read"; access requires an
 # explicit permission decision (direct, role, or wildcard grant).
