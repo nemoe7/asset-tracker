@@ -4,7 +4,7 @@ from werkzeug.security import (
 )
 
 from ..exceptions.data.common import InvalidInputError
-from ..exceptions.data.users import *
+from ..exceptions.data.users import *  # noqa: F403 -- intentional: full exception surface
 from .audit import create_audit_log
 from .db import db_connection, db_transaction
 
