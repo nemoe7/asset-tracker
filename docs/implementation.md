@@ -55,9 +55,9 @@
 | AUD-003 | P1 | Record asset archival/restoration events. | 🟢 | AST-004, AST-012 | USE-005 | |
 | AUD-004 | P1 | Record asset QR scan events. | 🟢 | CHK-003 | CHK-004, CHK-005 | |
 | AUD-009 | P1 | Record date/time for each audit event. | 🟢 | AUD-001–004 | CHK-005 | |
-| EXP-001 | P1 | Authorized users can export inventory. | 🟡 | AUT-003 | EXP-002 | Backend only; frontend pending |
-| EXP-002 | P1 | Provide Excel-compatible export. | 🟡 | EXP-001 | — | Backend CSV only; frontend pending |
-| EXP-003 | P1 | Allow field selection for exports. | 🟡 | EXP-001 | FLD-014 | Backend only; frontend pending |
+| EXP-001 | P1 | Authorized users can export inventory. | 🟢 | AUT-003 | EXP-002 | |
+| EXP-002 | P1 | Provide Excel-compatible export. | 🟢 | EXP-001 | — | |
+| EXP-003 | P1 | Allow field selection for exports. | 🟢 | EXP-001 | FLD-014 | |
 | EXP-004 | P1 | Allow filtered inventory exports. | 🟢 | EXP-001, SRH-006 | SRH-002 | |
 | IMP-001 | P1 | Authorized users can import asset records. | 🔴 | AUT-003 | IMP-002–004 | |
 | IMP-002 | P1 | An import requires at minimum an Asset Name. | 🔴 | IMP-001 | AST-007 | |
@@ -75,12 +75,12 @@
 
 | ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
 | ----- | :---: | ----- | :---: | ----- | ----- | -------- |
-| AUD-005 | P3 | Record custom-field creation/modification/deactivation. | 🔴 | FLD-002, FLD-009, FLD-010 | FLD-015 | |
-| AUD-006 | P3 | Record user/role/permission changes. | 🔴 | USR-001–007 | USR-013 | |
+| AUD-005 | P3 | Record custom-field creation/modification/deactivation. | 🟢 | FLD-002, FLD-009, FLD-010 | FLD-015 | |
+| AUD-006 | P3 | Record user/role/permission changes. | 🟡 | USR-001–007 | USR-013 | UI pending |
 | AUD-007 | P3 | Record backup/restoration events. | 🔴 | BKP-011, BKP-012 | BKP-014 | |
 | AUD-008 | P3 | Record user responsible for each event. | 🟢 | — | CHK-004 | |
-| AUD-010 | P3 | Record affected field and previous/new values. | 🟡 | AUD-002 | CHK-008 | Complete old/new field-value coverage is not established. |
-| AUD-011 | P3 | Authorized users can view audit/activity logs on desktop/mobile. | 🔴 | AUT-003 | USR-012, AUD-012 | |
+| AUD-010 | P3 | Record affected field and previous/new values. | 🟢 | AUD-002 | CHK-008 | |
+| AUD-011 | P3 | Authorized users can view audit/activity logs on desktop/mobile. | 🔴 | AUT-003 | USR-012, AUD-012 | route/UI pending |
 | AUD-013 | P3 | Audit logs cannot be edited normally. | 🟢 | — | SEC-005 | |
 | BKP-007 | P3 | Perform missed scheduled backup on next startup. | 🔴 | BKP-006 | REL-007 | |
 | BKP-010 | P3 | System backup includes all required application data. | 🔴 | — | REL-004 | |
@@ -90,8 +90,8 @@
 | CMP-003 | P3 | QR scanning works through supported mobile cameras/browser functionality. | 🟢 | QRC-004 | CHK-001 | |
 | FLD-006 | P3 | Admins can define Enum values. | 🟢 | FLD-004, FLD-005 | FLD-002 | |
 | FLD-008 | P3 | Admins can mark custom fields required. | 🟢 | FLD-002, FLD-004 | FLD-012 | |
-| FLD-011 | P3 | Deactivating a field preserves existing values. | 🔴 | FLD-010 | — | |
-| FLD-015 | P3 | Record changes to custom-field definitions. | 🔴 | FLD-002, FLD-009, FLD-010 | AUD-005 | |
+| FLD-011 | P3 | Deactivating a field preserves existing values. | 🟢 | FLD-010 | — | |
+| FLD-015 | P3 | Record changes to custom-field definitions. | 🟢 | FLD-002, FLD-009, FLD-010 | AUD-005 | |
 | PER-001 | P3 | Normal inventory operations respond reasonably. | 🟡 | — | PER-002, PER-003 | No explicit performance target/test established |
 | PER-002 | P3 | Search/filtering does not require manual reload. | 🟢 | SRH-001, SRH-002 | — | |
 | PER-003 | P3 | QR scanning opens the asset without unnecessary steps. | 🟢 | QRC-005 | CHK-001 | |
@@ -116,19 +116,19 @@
 | AUT-001 | P4 | Users can log in with assigned credentials. | 🟢 | — | SEC-004 | |
 | AUT-002 | P4 | Users can log out. | 🟢 | AUT-001 | — | |
 | AUT-006 | P4 | Unauthenticated users cannot access protected functionality. | 🟢 | — | SEC-001 | |
-| USR-001 | P4 | Admins can create users. | 🟡 | AUT-003 | USR-002, USR-003, USR-005 | |
-| USR-002 | P4 | Admins can modify users. | 🟡 | USR-001 | — | |
-| USR-003 | P4 | Admins can deactivate users. | 🟡 | USR-001 | — | |
-| USR-004 | P4 | Admins can create/manage roles. | 🔴 | AUT-003 | USR-005, USR-006 | |
-| USR-005 | P4 | Admins can assign roles to users. | 🔴 | USR-001, USR-004 | AUT-003 | |
-| USR-006 | P4 | Admins can configure role permissions. | 🔴 | USR-004 | AUT-003 | |
+| USR-001 | P4 | Admins can create users. | 🟡 | AUT-003 | USR-002, USR-003, USR-005 | UI pending |
+| USR-002 | P4 | Admins can modify users. | 🟡 | USR-001 | — | UI pending |
+| USR-003 | P4 | Admins can deactivate users. | 🟡 | USR-001 | — | UI pending |
+| USR-004 | P4 | Admins can create/manage roles. | 🟡 | AUT-003 | USR-005, USR-006 | route/UI pending |
+| USR-005 | P4 | Admins can assign roles to users. | 🟡 | USR-001, USR-004 | AUT-003 | route/UI pending |
+| USR-006 | P4 | Admins can configure role permissions. | 🟡 | USR-004 | AUT-003 | route/UI pending |
 | USR-007 | P4 | Admins can configure per-user overrides. | 🔴 | USR-001 | USR-008, AUT-013 | |
 | USR-012 | P4 | Admins can configure audit-log visibility. | 🔴 | USR-004 | AUD-011, AUD-012 | |
-| USR-013 | P4 | Record user/role/permission changes. | 🔴 | USR-001–007 | AUD-006 | |
+| USR-013 | P4 | Record user/role/permission changes. | 🟡 | USR-001–007 | AUD-006 | UI pending |
 | FLD-004 | P4 | Admins can specify custom-field data type. | 🟢 | FLD-002, FLD-003 | FLD-005 | |
 | FLD-005 | P4 | Support Text, Integer, Decimal, Boolean, Date, Enum, User. | 🟢 | FLD-004 | FLD-006, FLD-007, FLD-012 | |
 | FLD-009 | P4 | Admins can modify custom-field configuration. | 🟢 | FLD-002 | FLD-015 | |
-| FLD-010 | P4 | Admins can deactivate custom fields. | 🟡 | FLD-002 | FLD-011, FLD-015 | Frontend pending |
+| FLD-010 | P4 | Admins can deactivate custom fields. | 🟢 | FLD-002 | FLD-011, FLD-015 | |
 | FLD-014 | P4 | Custom fields available for search/filter/export. | 🟢 | FLD-002, FLD-004 | SRH-007, EXP-003 | User-type fields excluded (FLD-007 pending) |
 | EXP-005 | P4 | Authorized users can create saved export templates. | 🔴 | EXP-001 | EXP-006, EXP-007 | |
 | EXP-006 | P4 | Export templates contain filters and field selections. | 🔴 | EXP-005 | EXP-007 | |
@@ -183,4 +183,4 @@
 | USR-009 | — | Configure which asset fields Checkers can view. | 🔴 | FLD-002, FLD-013 | USR-010 | |
 | USR-010 | — | Configure which asset fields Checkers can edit. | 🔴 | FLD-002, FLD-013 | USR-009 | |
 | USR-011 | — | Checkers cannot modify their own permissions. | 🔴 | USR-007 | — | |
-| FLD-007 | — | User custom fields reference system users. | 🟡 | FLD-005 | USR-001 | Frontend pending |
+| FLD-007 | — | User custom fields reference system users. | 🟡 | FLD-005 | USR-001 | UI pending |
