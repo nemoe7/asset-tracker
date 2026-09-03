@@ -86,12 +86,15 @@ def init_db(logger=None, db_path=None):
   db_path = db_path or config.DB_PATH
   db_path.parent.mkdir(parents=True, exist_ok=True)
 
-  connection = get_db(db_path)
+  # Open a dedicated connection so init_db never closes one owned by an
+  # outer db_connection/db_transaction context.
+  connection = sqlite3.connect(db_path)
 
-  with SCHEMA_PATH.open() as file:
-    connection.executescript(file.read())
-
-  connection.close()
+  try:
+    with SCHEMA_PATH.open() as file:
+      connection.executescript(file.read())
+  finally:
+    connection.close()
 
   if logger:
     logger.warning(f"Database initialized: {db_path}")
