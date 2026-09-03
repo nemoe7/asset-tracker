@@ -1,3 +1,5 @@
+import sqlite3
+
 import pytest
 
 from app.services.data.audit import get_audit_logs
@@ -14,6 +16,7 @@ from app.services.data.custom_fields import (
 from app.services.data.inventory import (
   archive_item,
   create_item,
+  get_item,
 )
 from app.services.exceptions.data.custom_field_values import *
 from app.services.exceptions.data.custom_fields import (
@@ -241,6 +244,36 @@ def test_set_custom_field_value_can_clear_optional_value_with_audit_log(
       "new": None,
     },
   }
+
+
+def test_corrupt_custom_field_value_degrades_to_text(
+  gen_test_data_db,
+  gen_test_data_admin,
+):
+  field_id = create_custom_field(
+    name="Serial Number",
+    field_type="integer",
+  )
+  item_id = create_item("Corrupt Item")
+
+  set_custom_field_value(item_id, field_id, 42)
+
+  connection = sqlite3.connect(gen_test_data_db)
+
+  connection.execute(
+    """
+    UPDATE inventory_item_fields
+    SET value = 'not-a-number'
+    WHERE field_id = ?
+    """,
+    (field_id,),
+  )
+  connection.commit()
+  connection.close()
+
+  item = get_item(item_id)
+
+  assert item["custom_fields"]["Serial Number"] == "not-a-number"
 
 
 def test_required_custom_field_can_initially_be_unset(gen_test_data_admin):
