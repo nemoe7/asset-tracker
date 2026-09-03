@@ -1,3 +1,9 @@
+from app.services.data.custom_fields import (
+  get_custom_field,
+  get_custom_fields,
+)
+
+
 def test_admin_can_create_asset(
   gen_test_admin_client,
 ):
@@ -418,3 +424,230 @@ def test_inventory_page_sorts_items(
   zebra_position = response.data.index(b"Zebra")
 
   assert apple_position > zebra_position
+
+
+def _create_field(
+  client,
+  name,
+  field_type,
+  required=False,
+  enum_values=None,
+):
+  data = {
+    "name": name,
+    "field_type": field_type,
+  }
+
+  if required:
+    data["required"] = "true"
+
+  if enum_values:
+    data["enum_values"] = ",".join(enum_values)
+
+  client.post("/custom-fields", data=data)
+
+  fields = get_custom_fields()
+
+  field = next(field for field in fields if field["name"] == name)
+
+  if required:
+    client.post(
+      f"/custom-fields/{field['id']}",
+      data={
+        "required": "true",
+      },
+    )
+
+    field = get_custom_field(field["id"])
+
+  return field
+
+
+def test_admin_can_create_asset_with_custom_field_values(
+  gen_test_admin_client,
+):
+  _create_field(gen_test_admin_client, "Serial Number", "text")
+  _create_field(gen_test_admin_client, "Quantity", "integer")
+
+  response = gen_test_admin_client.post(
+    "/inventory",
+    data={
+      "name": "Test Asset",
+      "f_Serial Number": "SN-001",
+      "f_Quantity": "5",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 200
+
+  item_id = response.json["id"]
+
+  response = gen_test_admin_client.get(f"/inventory/{item_id}")
+
+  assert response.json["custom_fields"] == {
+    "Serial Number": "SN-001",
+    "Quantity": 5,
+  }
+
+
+def test_admin_creating_asset_with_empty_optional_value_stores_no_row(
+  gen_test_admin_client,
+):
+  _create_field(gen_test_admin_client, "Serial Number", "text")
+
+  response = gen_test_admin_client.post(
+    "/inventory",
+    data={
+      "name": "Test Asset",
+      "f_Serial Number": "",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 200
+
+  item_id = response.json["id"]
+
+  response = gen_test_admin_client.get(f"/inventory/{item_id}")
+
+  assert response.json["custom_fields"] == {}
+
+
+def test_admin_cannot_create_asset_missing_required_custom_field(
+  gen_test_admin_client,
+):
+  _create_field(gen_test_admin_client, "Serial Number", "text", required=True)
+
+  response = gen_test_admin_client.post(
+    "/inventory",
+    data={
+      "name": "Test Asset",
+    },
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
+def test_admin_cannot_create_asset_with_empty_required_custom_field(
+  gen_test_admin_client,
+):
+  _create_field(gen_test_admin_client, "Serial Number", "text", required=True)
+
+  response = gen_test_admin_client.post(
+    "/inventory",
+    data={
+      "name": "Test Asset",
+      "f_Serial Number": "",
+    },
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
+def test_admin_can_edit_asset_custom_field_values(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  _create_field(gen_test_admin_client, "Serial Number", "text")
+  _create_field(gen_test_admin_client, "Quantity", "integer")
+
+  item_id = gen_test_item(name="Test Asset")
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "f_Serial Number": "SN-002",
+      "f_Quantity": "7",
+    },
+  )
+
+  assert response.status_code == 302
+
+  response = gen_test_admin_client.get(f"/inventory/{item_id}")
+
+  assert response.json["custom_fields"] == {
+    "Serial Number": "SN-002",
+    "Quantity": 7,
+  }
+
+
+def test_admin_editing_asset_with_empty_optional_value_clears_it(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  _create_field(gen_test_admin_client, "Serial Number", "text")
+
+  item_id = gen_test_item(name="Test Asset")
+
+  gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "f_Serial Number": "SN-001",
+    },
+  )
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "f_Serial Number": "",
+    },
+  )
+
+  assert response.status_code == 302
+
+  response = gen_test_admin_client.get(f"/inventory/{item_id}")
+
+  assert response.json["custom_fields"] == {}
+
+
+def test_admin_can_edit_asset_boolean_custom_field_false(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  _create_field(gen_test_admin_client, "Active", "boolean")
+
+  item_id = gen_test_item(name="Test Asset")
+
+  gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "f_Active": "true",
+    },
+  )
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "f_Active": "false",
+    },
+  )
+
+  assert response.status_code == 302
+
+  response = gen_test_admin_client.get(f"/inventory/{item_id}")
+
+  assert response.json["custom_fields"] == {"Active": False}
+
+
+def test_admin_cannot_edit_asset_missing_required_custom_field(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  _create_field(gen_test_admin_client, "Serial Number", "text", required=True)
+
+  item_id = gen_test_item(name="Test Asset")
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={},
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
