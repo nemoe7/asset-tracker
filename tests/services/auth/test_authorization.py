@@ -483,3 +483,61 @@ def test_permission_required_denies_unauthenticated_user():
 
   with app.test_request_context(), pytest.raises(Forbidden):
     view()
+
+
+# ==================== Sensitive Namespace Fail-Close ====================
+
+
+def test_sensitive_read_permission_defaults_to_deny(gen_test_data_admin):
+  assert (
+    check_permission(
+      gen_test_data_admin,
+      "users.read",
+    )
+    is False
+  )
+
+
+def test_sensitive_namespaces_default_to_deny(gen_test_data_admin):
+  for permission_name in (
+    "roles.read",
+    "permissions.read",
+    "audit.read",
+  ):
+    assert (
+      check_permission(
+        gen_test_data_admin,
+        permission_name,
+      )
+      is False
+    )
+
+
+def test_inventory_read_permission_still_defaults_to_allow(
+  gen_test_data_admin,
+):
+  assert (
+    check_permission(
+      gen_test_data_admin,
+      "inventory.read",
+    )
+    is True
+  )
+
+
+def test_sensitive_read_allowed_by_global_wildcard(gen_test_data_admin):
+  wildcard_id = get_permission_by_name(name="*")["id"]
+
+  set_user_permission(
+    gen_test_data_admin,
+    wildcard_id,
+    True,
+  )
+
+  assert (
+    check_permission(
+      gen_test_data_admin,
+      "users.read",
+    )
+    is True
+  )
