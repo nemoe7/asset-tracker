@@ -44,3 +44,67 @@ def test_secret_key_env_var_takes_precedence(tmp_path, monkeypatch):
   assert reloaded.SECRET_KEY == "explicit-key"
 
   assert not (tmp_path / "secret_key").exists()
+
+
+def _create_app(monkeypatch, tmp_path, trust_proxy):
+  import config
+  from app import create_app
+
+  monkeypatch.setattr(config, "DB_PATH", tmp_path / "test.db")
+  monkeypatch.delenv("SECRET_KEY", raising=False)
+
+  if trust_proxy:
+    monkeypatch.setenv("TRUST_PROXY", "1")
+  else:
+    monkeypatch.delenv("TRUST_PROXY", raising=False)
+
+  app = create_app()
+  app.config.update(TESTING=True)
+
+  return app
+
+
+def test_remote_addr_uses_forwarded_for_when_trust_proxy_enabled(
+  tmp_path,
+  monkeypatch,
+):
+  app = _create_app(monkeypatch, tmp_path, trust_proxy=True)
+
+  @app.route("/_probe")
+  def _probe():
+    from flask import request
+
+    return request.remote_addr
+
+  client = app.test_client()
+
+  response = client.get(
+    "/_probe",
+    headers={"X-Forwarded-For": "203.0.113.7"},
+    environ_base={"REMOTE_ADDR": "10.0.0.1"},
+  )
+
+  assert response.get_data(as_text=True) == "203.0.113.7"
+
+
+def test_remote_addr_ignores_forwarded_for_by_default(
+  tmp_path,
+  monkeypatch,
+):
+  app = _create_app(monkeypatch, tmp_path, trust_proxy=False)
+
+  @app.route("/_probe")
+  def _probe():
+    from flask import request
+
+    return request.remote_addr
+
+  client = app.test_client()
+
+  response = client.get(
+    "/_probe",
+    headers={"X-Forwarded-For": "203.0.113.7"},
+    environ_base={"REMOTE_ADDR": "10.0.0.1"},
+  )
+
+  assert response.get_data(as_text=True) == "10.0.0.1"

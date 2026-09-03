@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from datetime import timedelta
 
@@ -6,6 +7,7 @@ from flask import (
   request,
 )
 from werkzeug.exceptions import Forbidden
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .logging import configure_logging
 from .routes import register_routes
@@ -66,6 +68,10 @@ def _csrf_protect():
   raise Forbidden("Cross-site request blocked")
 
 
+def _trust_proxy():
+  return os.environ.get("TRUST_PROXY", "0").strip().lower() in {"1", "true", "yes"}
+
+
 def create_app():
   app = Flask(__name__)
 
@@ -74,6 +80,11 @@ def create_app():
   app.config.from_object("config")
   app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
   app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+  if _trust_proxy():
+    # Behind a reverse proxy (e.g. zrok), trust one X-Forwarded-For hop so
+    # request.remote_addr is the real client address.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 
   app.before_request(_csrf_protect)
 
