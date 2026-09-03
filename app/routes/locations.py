@@ -6,8 +6,8 @@ from flask import (
   url_for,
 )
 
+from ..services.constants import UNSET as _UNSET
 from ..services.data.locations import (
-  _UNSET,
   create_location,
   delete_location,
   get_location,

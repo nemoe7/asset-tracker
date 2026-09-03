@@ -1,15 +1,14 @@
 import uuid
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
+from ..constants import UNSET as _UNSET
 from ..exceptions.data.common import InvalidInputError
-from ..exceptions.data.inventory import *
+from ..exceptions.data.inventory import *  # noqa: F403 -- intentional: full exception surface
 from ..exceptions.data.locations import LocationNotFoundError
 from .audit import create_audit_log
 from .custom_field_filters import EMPTY_FILTER_VALUE
 from .db import db_connection, db_transaction
 from .locations import get_location
-
-_UNSET = object()
 
 
 def _validate_item_name(name):
@@ -46,12 +45,16 @@ def _get_custom_fields(connection, item_id):
     value = row["value"]
     field_type = row["field_type"]
 
-    if field_type == "integer":
-      value = int(value)
-    elif field_type == "decimal":
-      value = Decimal(value)
-    elif field_type == "boolean":
-      value = value == "1"
+    try:
+      if field_type == "integer":
+        value = int(value)
+      elif field_type == "decimal":
+        value = Decimal(value)
+      elif field_type == "boolean":
+        value = value == "1"
+    except (ValueError, InvalidOperation):
+      # A corrupt stored value degrades to text display instead of a 500.
+      pass
 
     fields[row["name"]] = value
 

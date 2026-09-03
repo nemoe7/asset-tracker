@@ -12,12 +12,12 @@ from flask import (
 )
 
 from app.services.checks import check_item
+from app.services.constants import UNSET as _UNSET
 from app.services.data.custom_field_filters import parse_filters
 from app.services.data.custom_field_values import set_custom_field_value
 from app.services.data.custom_fields import get_custom_fields
 
 from ..services.data.inventory import (
-  _UNSET,
   archive_item,
   create_item,
   get_item,
