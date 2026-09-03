@@ -1,5 +1,6 @@
 import json
 
+from ..constants import UNSET as _UNSET
 from ..exceptions.data.common import InvalidInputError
 from ..exceptions.data.custom_fields import *
 from .audit import create_audit_log
@@ -14,8 +15,6 @@ _VALID_FIELD_TYPES = {
   "enum",
   "user",
 }
-
-_UNSET = object()
 
 
 def _validate_name(name):

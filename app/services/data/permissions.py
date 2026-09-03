@@ -1,9 +1,8 @@
+from ..constants import UNSET as _UNSET
 from ..exceptions.data.common import InvalidInputError
 from ..exceptions.data.permissions import *
 from .audit import create_audit_log
 from .db import db_connection, db_transaction
-
-_UNSET = object()
 
 
 def _validate_name(name):
