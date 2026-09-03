@@ -18,8 +18,13 @@ class RepeatHandler(logging.StreamHandler):
     self.previous = None
     self.previous_record = None
     self.repeat_count = 0
+    self._lock = threading.Lock()
 
   def emit(self, record: logging.LogRecord) -> None:
+    with self._lock:
+      self._emit(record)
+
+  def _emit(self, record: logging.LogRecord) -> None:
     message = re.sub(
       r" ?\[\d{2}/[A-Za-z]{3}/\d{4} \d{2}:\d{2}:\d{2}\] ?",
       " ",
