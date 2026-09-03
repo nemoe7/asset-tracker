@@ -1,0 +1,71 @@
+{% from "shared/_modal.jinja" import modal %}
+
+{% call modal("export-item-modal", "Export CSV") %}
+
+<form id="export-form">
+  <div class="space-y-5">
+
+    {# ==================== Columns ==================== #}
+    <fieldset>
+
+      <legend class="mb-2 text-sm font-medium text-zinc-300">
+        Columns
+      </legend>
+
+      <p class="mb-3 text-xs text-zinc-500">
+        Leave empty to include all fields.
+      </p>
+
+      <div id="export-column-rows" class="flex flex-wrap gap-2"></div>
+
+      <div class="mt-3 flex gap-2">
+        <label for="add-export-column" class="sr-only">
+          Add column
+        </label>
+
+        <input id="add-export-column" name="add_export_column" type="text" autocomplete="off"
+          list="export-column-options" placeholder="Add column..."
+          class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+
+        <button type="button" id="add-export-column-button"
+          class="flex shrink-0 items-center justify-center gap-1 rounded-lg border border-zinc-700 px-3 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100">
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>
+          Add
+        </button>
+      </div>
+
+      <datalist id="export-column-options"></datalist>
+
+        <p id="add-export-column-error" class="mt-2 hidden text-xs text-red-400">
+          Unknown or duplicate column. Pick one of the available fields.
+        </p>
+      </div>
+
+      <button type="button" id="export-columns-reset"
+        class="mt-3 text-sm text-zinc-400 underline transition hover:text-zinc-200">
+        Reset fields
+      </button>
+
+    </fieldset>
+    {# ==================== End Columns ==================== #}
+
+
+    {# ==================== Export Modal Actions ==================== #}
+    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+      <button type="button"
+        class="modal-close rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+        Cancel
+      </button>
+
+      <button type="submit" id="export-submit-button"
+        class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+        Export CSV
+      </button>
+
+    </div>
+    {# ==================== End Export Modal Actions ==================== #}
+
+  </div>
+</form>
+{% endcall %}
