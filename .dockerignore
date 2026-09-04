@@ -1,4 +1,4 @@
-# VCS
+# Version control
 .git
 .gitignore
 .github
@@ -14,27 +14,37 @@ env
 __pycache__
 *.py[cod]
 
-# Testing
+# Node
+node_modules
+package.json
+package-lock.json
+
+# Tests
+tests
 .pytest_cache
 .coverage
 htmlcov
 test-results
+pytest.ini
+requirements.dev.txt
 
-# App data
+# Application data
 .cache
 .data
 logs
 
-# Misc.
-**/.diff
-**/*.session.sql
-
-# Node
-node_modules
-
-# Docs & dev
-tests
-docs
+# Development
+.vscode
+AGENTS.md
+Dockerfile
+implementation_plan.md
 compose.yml
 compose.dev.yml
+
+# Documentation
+docs
 requirements.md
+
+# Miscellaneous
+**/.diff
+**/*.session.sql
