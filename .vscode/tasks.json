@@ -4,7 +4,43 @@
     {
       "label": "diff",
       "type": "shell",
-      "command": "git add -N . && git diff HEAD > .diff && code -r .diff"
+      "command": "git add -N . && git diff HEAD > .diff && code -r .diff",
+      "presentation": {
+        "reveal": "never",
+        "focus": false,
+        "echo": false,
+        "showReuseMessage": false,
+        "close": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Copy Bootstrap Icons",
+      "type": "shell",
+      "command": "if not exist app\\static\\css\\fonts mkdir app\\static\\css\\fonts && copy /Y node_modules\\bootstrap-icons\\font\\bootstrap-icons.min.css app\\static\\css\\ && copy /Y node_modules\\bootstrap-icons\\font\\fonts\\* app\\static\\css\\fonts\\",
+      "problemMatcher": []
+    },
+    {
+      "label": "Tailwind Watch",
+      "type": "process",
+      "command": "${workspaceFolder}/node_modules/.bin/tailwindcss.cmd",
+      "args": [
+        "-i",
+        "./app/static/src/input.css",
+        "-o",
+        "./app/static/css/app.css",
+        "--watch"
+      ],
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never",
+        "focus": false,
+        "echo": false,
+        "showReuseMessage": false,
+        "panel": "shared"
+      },
+      "runOptions": { "runOn": "folderOpen" }
     }
   ]
 }
