@@ -5,7 +5,8 @@ RUN useradd --create-home appuser
 WORKDIR /home/appuser
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+  && rm requirements.txt
 
 COPY --chown=appuser:appuser . .
 
