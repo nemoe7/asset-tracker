@@ -1,10 +1,10 @@
 {
-  "name": "Inventory Management",
-  "short_name": "InvMan",
+  "name": "Astra",
+  "short_name": "Astra",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#09090b",
+  "theme_color": "#18181b",
   "icons": [
     {
       "src": "/static/icons/icon-192.png",
@@ -15,6 +15,12 @@
       "src": "/static/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/static/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
