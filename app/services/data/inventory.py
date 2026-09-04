@@ -7,8 +7,10 @@ from ..exceptions.data.inventory import *  # noqa: F403 -- intentional: full exc
 from ..exceptions.data.locations import LocationNotFoundError
 from .audit import create_audit_log
 from .custom_field_filters import EMPTY_FILTER_VALUE
+from .custom_field_values import set_custom_field_value
+from .custom_fields import get_custom_fields
 from .db import db_connection, db_transaction
-from .locations import get_location
+from .locations import get_location, get_location_by_name
 
 
 def _validate_item_name(name):
@@ -354,6 +356,60 @@ def create_item(name, description=None, location_id=None):
     )
 
     return item_id
+
+
+def import_items(rows):
+  with db_transaction() as _connection:
+    custom_fields = {
+      field["name"]: field for field in get_custom_fields()
+    }
+
+    item_ids = []
+
+    for row in rows:
+      name = row["name"]
+
+      if not isinstance(name, str) or not name.strip():
+        raise InvalidInputError("Import requires an item name")
+
+      location = None
+
+      if row["location"]:
+        location = get_location_by_name(row["location"])
+
+        if location is None:
+          raise LocationNotFoundError()
+
+      item_id = create_item(
+        name,
+        description=row["description"],
+        location_id=location["id"] if location else None,
+      )
+
+      for field_name, value in row["custom_fields"].items():
+        field = custom_fields.get(field_name)
+
+        if field is None:
+          raise InvalidInputError(f"Unknown field: {field_name}")
+
+        if field["field_type"] == "user":
+          continue
+
+        set_custom_field_value(item_id, field["id"], value)
+
+      item_ids.append(item_id)
+
+    create_audit_log(
+      action="imported",
+      entity_type="inventory",
+      entity_id="import",
+      details={"item_count": len(item_ids)},
+    )
+
+    return {
+      "imported_count": len(item_ids),
+      "item_ids": item_ids,
+    }
 
 
 def get_item(item_id, include_archived=False):
