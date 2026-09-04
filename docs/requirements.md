@@ -2,8 +2,8 @@
 
 **Client:** The Birth-Giver
 **Developer:** nemoe7
-**Version:** 0.7
-**Last Updated:** 2026-09-04
+**Version:** 0.8
+**Last Updated:** 2026-09-05
 
 ## 1. Introduction
 
@@ -35,10 +35,13 @@ The system will support:
 
 ### 1.3 Users
 
-The system will have the following user roles:
+The system will have a single user role:
 
-- **Office Admins** — manage inventory, users, permissions, asset fields, exports, backups, restoration, and system configuration.
-- **Checkers** — inspect assets, perform QR scans, and view or update asset information according to their assigned permissions.
+- **Admins** — manage inventory, users, permissions, asset fields, exports, backups, restoration, and system configuration.
+
+The Admin role is granted all permissions by default through the global wildcard grant (`*`). No other roles are defined (OI-002, resolved).
+
+Asset inspection, QR scanning, and asset checking (Section 3.6) remain available to authenticated users according to their effective permissions.
 
 Access to functionality shall be determined by user permissions rather than by device type.
 
@@ -452,7 +455,7 @@ The system shall support field types appropriate to the project's requirements, 
 | Enum | One value selected from an Admin-defined list |
 | User | Reference to a user account within the system |
 
-Additional field types may be supported in future versions.
+This set is confirmed as the complete set of custom field types for the initial implementation (OI-003, resolved). Additional field types may be supported in future versions.
 
 #### 5.1.2 Custom Field Configuration
 
@@ -641,7 +644,7 @@ The project will be considered complete when:
 - [x] Asset checks and relevant changes are recorded.
 - [x] Asset changes include appropriate audit information.
 - [x] Office Admins can create and configure custom asset fields.
-- [ ] Custom fields support the implemented data types required by the project.
+- [x] Custom fields support the implemented data types required by the project.
 - [x] Custom field values are validated according to their configured types.
 - [ ] Authorized users can view relevant logs from supported desktop and mobile devices.
 - [ ] Log visibility respects effective user permissions.
@@ -673,8 +676,8 @@ The project will be considered complete when:
 | ID | Issue | Status |
 | --- | --- | --- |
 | OI-001 | Confirm any additional built-in fields required beyond Asset ID, Name, Location, Created At, and Updated At | Resolved (v0.7) |
-| OI-002 | Final role definitions and default permissions to be confirmed | Open |
-| OI-003 | Final custom field types required for the initial implementation to be confirmed | Open |
+| OI-002 | Final role definitions and default permissions to be confirmed — single Admin role with full permissions by default (`*`) | Resolved (v0.8) |
+| OI-003 | Final custom field types required for the initial implementation to be confirmed — the Section 5.1.1 set is complete and implemented | Resolved (v0.8) |
 | OI-004 | Audit-log retention period to be confirmed | Open |
 | OI-005 | Backup retention policy to be confirmed | Open |
 | OI-006 | Backup storage deployment configuration to be finalized | Open |
@@ -693,3 +696,4 @@ The project will be considered complete when:
 | 0.5 | 2026-08-25 | Update requirement priorities per client. |
 | 0.6 | 2026-09-04 | Update project name. |
 | 0.7 | 2026-09-04 | Add archival reason and notes fields. |
+| 0.8 | 2026-09-05 | Resolve OI-002 (single Admin role, full default permissions) and OI-003 (custom field types confirmed as implemented). |
