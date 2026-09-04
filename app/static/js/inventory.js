@@ -1783,3 +1783,75 @@ exportForm?.addEventListener('submit', (event) => {
 });
 
 // ==================== End Export Modal ====================
+
+// ==================== Import Modal ====================
+
+const importItemModal = document.getElementById('import-item-modal');
+const importForm = document.getElementById('import-form');
+const importFile = document.getElementById('import-file');
+const importError = document.getElementById('import-error');
+const importSubmitButton = document.getElementById('import-submit-button');
+
+function showImportError(message) {
+  if (!importError) {
+    return;
+  }
+
+  importError.textContent = message;
+  importError.classList.remove('hidden');
+}
+
+document
+  .getElementById('import-button')
+  ?.addEventListener('click', () => {
+    if (importForm) {
+      importForm.reset();
+    }
+
+    importError?.classList.add('hidden');
+    importFile?.classList.remove('opacity-50');
+
+    openModal(importItemModal);
+  });
+
+importForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  if (!importFile?.files?.length) {
+    showImportError('Choose a CSV or .xlsx file to import.');
+    return;
+  }
+
+  const formData = new FormData();
+
+  formData.append('file', importFile.files[0]);
+
+  importSubmitButton?.setAttribute('disabled', '');
+  importFile.classList.add('opacity-50');
+  importError?.classList.add('hidden');
+
+  try {
+    const response = await fetch('/inventory/import', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      showImportError(payload.error || 'Import failed.');
+      return;
+    }
+
+    closeModal();
+
+    await loadInventory();
+  } catch {
+    showImportError('Import failed.');
+  } finally {
+    importSubmitButton?.removeAttribute('disabled');
+    importFile.classList.remove('opacity-50');
+  }
+});
+
+// ==================== End Import Modal ====================

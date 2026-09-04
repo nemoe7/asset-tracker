@@ -1,0 +1,41 @@
+{% from "shared/_modal.jinja" import modal %}
+
+{% call modal("import-item-modal", "Import items") %}
+
+<form id="import-form">
+  <div class="space-y-5">
+
+    <p class="text-sm text-zinc-400">
+      Import asset records from a CSV or .xlsx file. A unique Asset ID is
+      generated for every row; each row requires at least a
+      <code class="text-zinc-300">name</code> column.
+    </p>
+
+    <div>
+      <label for="import-file" class="mb-2 block text-sm font-medium text-zinc-300">
+        File
+      </label>
+
+      <input id="import-file" name="file" type="file" required accept=".csv,.xlsx"
+        class="block w-full text-sm text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-zinc-300 file:transition hover:file:bg-zinc-700">
+    </div>
+
+    <p id="import-error" class="hidden text-sm text-red-400"></p>
+
+    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+      <button type="button"
+        class="modal-close rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+        Cancel
+      </button>
+
+      <button type="submit" id="import-submit-button"
+        class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+        Import
+      </button>
+
+    </div>
+
+  </div>
+</form>
+{% endcall %}
