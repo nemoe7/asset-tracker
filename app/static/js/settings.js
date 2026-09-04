@@ -191,3 +191,57 @@ document.querySelectorAll('[data-enum-toggle]').forEach((select) => {
 });
 
 syncEnumValues();
+
+// ==================== Manual Backup ====================
+
+const backupButton = document.getElementById('backup-button');
+const backupStatus = document.getElementById('backup-status');
+
+function showBackupStatus(message, isError) {
+  if (!backupStatus) {
+    return;
+  }
+
+  backupStatus.textContent = message;
+  backupStatus.classList.remove('hidden');
+  backupStatus.classList.toggle('text-red-400', isError);
+  backupStatus.classList.toggle('text-emerald-400', !isError);
+}
+
+backupButton?.addEventListener('click', async () => {
+  backupButton.setAttribute('disabled', '');
+  backupStatus?.classList.add('hidden');
+
+  try {
+    const response = await fetch('/backups/create', { method: 'POST' });
+
+    if (!response.ok) {
+      showBackupStatus('Backup failed. No backup was created.', true);
+      return;
+    }
+
+    const blob = await response.blob();
+
+    const disposition = response.headers.get('Content-Disposition') || '';
+
+    const match = disposition.match(/filename="([^"]+)"/);
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = match ? match[1] : 'backup.db';
+    link.click();
+
+    URL.revokeObjectURL(url);
+
+    showBackupStatus('Backup downloaded successfully.', false);
+  } catch {
+    showBackupStatus('Backup failed. No backup was created.', true);
+  } finally {
+    backupButton.removeAttribute('disabled');
+  }
+});
+
+// ==================== End Manual Backup ====================
