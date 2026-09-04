@@ -1,9 +1,9 @@
-# Inventory Management
+# Asset Tracker
 
 **Client:** The Birth-Giver
 **Developer:** nemoe7
-**Version:** 0.5
-**Last Updated:** 2026-08-25
+**Version:** 0.6
+**Last Updated:** 2026-09-04
 
 ## 1. Introduction
 
@@ -52,7 +52,7 @@ The application will provide a browser-based interface with separate desktop and
 
 The desktop interface will primarily provide functionality for:
 
-- Inventory management.
+- Asset management.
 - Searching and filtering assets.
 - Managing users and permissions.
 - Managing asset fields.
@@ -92,7 +92,7 @@ The availability of a function shall depend on the user's permissions, not solel
 
 ## 2.2 Typical User Flows
 
-### 2.2.1 Desktop — Inventory Management
+### 2.2.1 Desktop — Asset Tracker
 
 1. The user logs into the application.
 2. The system displays the desktop interface according to the user's permissions.
@@ -676,5 +676,6 @@ The project will be considered complete when:
 | 0.1 | 2026-08-15 | Initial requirements |
 | 0.2 | 2026-08-17 | Defined permission matching. |
 | 0.3 | 2026-08-21 | Expanded authorization requirements. |
-| 0.4 | 2025-08-25 | Refactored feature request codes. |
-| 0.5 | 2025-08-25 | Update requirement priorities per client. |
+| 0.4 | 2026-08-25 | Refactored feature request codes. |
+| 0.5 | 2026-08-25 | Update requirement priorities per client. |
+| 0.6 | 2026-09-04 | Update project name. |
