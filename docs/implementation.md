@@ -59,15 +59,15 @@
 | EXP-002 | P1 | Provide Excel-compatible export. | 🟢 | EXP-001 | — | |
 | EXP-003 | P1 | Allow field selection for exports. | 🟢 | EXP-001 | FLD-014 | |
 | EXP-004 | P1 | Allow filtered inventory exports. | 🟢 | EXP-001, SRH-006 | SRH-002 | |
-| IMP-001 | P1 | Authorized users can import asset records. | 🔴 | AUT-003 | IMP-002–004 | |
-| IMP-002 | P1 | An import requires at minimum an Asset Name. | 🔴 | IMP-001 | AST-007 | |
-| IMP-003 | P1 | Generate an Asset ID for imported assets when one is not provided. | 🔴 | IMP-001, AST-005 | QRC-001 | |
-| IMP-004 | P1 | Optional fields not supplied during import remain unset. | 🔴 | IMP-001 | FLD-001 | |
-| BKP-011 | P1 | Authorized users can create manual backups. | 🔴 | AUT-003 | BKP-014, REL-004, SEC-006 | |
-| BKP-012 | P1 | Authorized users can restore from a valid backup. | 🔴 | AUT-003, BKP-010 | BKP-013, REL-004, SEC-006 | |
-| BKP-013 | P1 | Warn before restoration that may overwrite data. | 🔴 | BKP-012 | USE-005 | |
-| REL-004 | P1 | Valid backup is sufficient to restore required data. | 🔴 | BKP-010, BKP-012 | REL-005 | |
-| REL-005 | P1 | Never report backup success before successful completion. | 🔴 | BKP-011 | BKP-015 | |
+| IMP-001 | P1 | Authorized users can import asset records. | 🟢 | AUT-003 | IMP-002–004 | |
+| IMP-002 | P1 | An import requires at minimum an Asset Name. | 🟢 | IMP-001 | AST-007 | |
+| IMP-003 | P1 | Generate an Asset ID for imported assets when one is not provided. | 🟢 | IMP-001, AST-005 | QRC-001 | |
+| IMP-004 | P1 | Optional fields not supplied during import remain unset. | 🟢 | IMP-001 | FLD-001 | |
+| BKP-011 | P1 | Authorized users can create manual backups. | 🟢 | AUT-003 | BKP-014, REL-004, SEC-006 | |
+| BKP-012 | P1 | Authorized users can restore from a valid backup. | 🟢 | AUT-003, BKP-010 | BKP-013, REL-004, SEC-006 | |
+| BKP-013 | P1 | Warn before restoration that may overwrite data. | 🟢 | BKP-012 | USE-005 | |
+| REL-004 | P1 | Valid backup is sufficient to restore required data. | 🟢 | BKP-010, BKP-012 | REL-005 | |
+| REL-005 | P1 | Never report backup success before successful completion. | 🟢 | BKP-011 | BKP-015 | |
 | USE-002 | P1 | Provide a desktop-oriented management experience. | 🟢 | — | USE-003 | |
 | USE-003 | P1 | Provide a mobile-oriented checking/scanning experience. | 🟢 | QRC-004, CHK-001 | CMP-002, CMP-003 | |
 
@@ -77,14 +77,14 @@
 | ----- | :---: | ----- | :---: | ----- | ----- | -------- |
 | AUD-005 | P3 | Record custom-field creation/modification/deactivation. | 🟢 | FLD-002, FLD-009, FLD-010 | FLD-015 | |
 | AUD-006 | P3 | Record user/role/permission changes. | 🟡 | USR-001–007 | USR-013 | UI pending |
-| AUD-007 | P3 | Record backup/restoration events. | 🔴 | BKP-011, BKP-012 | BKP-014 | |
+| AUD-007 | P3 | Record backup/restoration events. | 🟢 | BKP-011, BKP-012 | BKP-014 | |
 | AUD-008 | P3 | Record user responsible for each event. | 🟢 | — | CHK-004 | |
 | AUD-010 | P3 | Record affected field and previous/new values. | 🟢 | AUD-002 | CHK-008 | |
 | AUD-011 | P3 | Authorized users can view audit/activity logs on desktop/mobile. | 🔴 | AUT-003 | USR-012, AUD-012 | route/UI pending |
 | AUD-013 | P3 | Audit logs cannot be edited normally. | 🟢 | — | SEC-005 | |
 | BKP-007 | P3 | Perform missed scheduled backup on next startup. | 🔴 | BKP-006 | REL-007 | |
 | BKP-010 | P3 | System backup includes all required application data. | 🔴 | — | REL-004 | |
-| BKP-014 | P3 | Record backup/restoration events. | 🔴 | BKP-011, BKP-012 | AUD-007 | |
+| BKP-014 | P3 | Record backup/restoration events. | 🟢 | BKP-011, BKP-012 | AUD-007 | |
 | CMP-001 | P3 | Support current common desktop browsers. | 🟡 | USE-001 | — | Test browser compatibility |
 | CMP-002 | P3 | Support modern mobile browsers. | 🟡 | USE-003 | QRC-004 | Test mobile browser compatibility |
 | CMP-003 | P3 | QR scanning works through supported mobile cameras/browser functionality. | 🟢 | QRC-004 | CHK-001 | |
@@ -136,7 +136,7 @@
 | EXP-008 | P4 | Export templates support custom fields. | 🔴 | EXP-005, FLD-014 | — | |
 | IMP-005 | P4 | Validate imported values against field types/requirements. | 🔴 | IMP-001, FLD-005, FLD-008, FLD-012 | REL-001 | |
 | IMP-006 | P4 | Report rejected records without corrupting inventory. | 🔴 | IMP-001, REL-001 | — | |
-| IMP-007 | P4 | Record imports in the audit log. | 🔴 | IMP-001 | AUD-006 | |
+| IMP-007 | P4 | Record imports in the audit log. | 🟢 | IMP-001 | AUD-006 | |
 | REL-001 | P4 | Invalid input does not corrupt inventory data. | 🟢 | AST-007 | IMP-006, REL-003 | |
 
 ### P5
