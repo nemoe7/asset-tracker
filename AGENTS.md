@@ -2,7 +2,7 @@
 
 ## Project
 
-- Repo: `nemoe7/inventory-management`.
+- Repo: `nemoe7/asset-tracker`.
 - Inspect the repo before changes.
 - `docs/` is the source of truth for requirements, architecture, conventions, schema, and implementation status.
 - Follow documented architecture/conventions and existing project patterns.
@@ -62,8 +62,9 @@
 ## Git
 
 - Keep commits focused; exclude unrelated changes.
-- Follow the repository's existing Conventional Commit style:
+- Follow Conventional Commits:
   `<type>(optional scope): <short description>`
 - Prefer existing scopes.
 - Use imperative wording, lowercase after `:`, no period, and under 72 characters.
-- Describe what changed and why; avoid vague messages.
+- Keep the subject focused on what changed.
+- Avoid vague messages.
