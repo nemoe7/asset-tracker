@@ -41,6 +41,18 @@
         "panel": "shared"
       },
       "runOptions": { "runOn": "folderOpen" }
+    },
+    {
+      "label": "Compose Up (dev)",
+      "type": "shell",
+      "command": "docker compose -f compose.dev.yml up -d",
+      "problemMatcher": []
+    },
+    {
+      "label": "Compose Down -v (dev)",
+      "type": "shell",
+      "command": "docker compose -f compose.dev.yml down -v",
+      "problemMatcher": []
     }
   ]
 }
