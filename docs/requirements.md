@@ -2,7 +2,7 @@
 
 **Client:** The Birth-Giver
 **Developer:** nemoe7
-**Version:** 0.6
+**Version:** 0.7
 **Last Updated:** 2026-09-04
 
 ## 1. Introduction
@@ -220,6 +220,10 @@ The system shall maintain records for office assets.
 - **AST-011** `[P1]`: The system shall not permanently delete an asset through normal inventory management functions.
 - **AST-012** `[P1]`: Authorized users shall be able to restore an archived asset to an active state.
 - **AST-013** `[P1]`: The system shall retain relevant asset information required for inventory and insurance purposes.
+- **AST-014** `[P5]`: The system shall require an archival reason when an asset is archived, and shall restrict the archival reason to the defined values: invalid, damaged, disposed.
+- **AST-015** `[P5]`: The system shall allow authorized users to provide free-format notes when archiving an asset.
+- **AST-016** `[P5]`: The system shall retain an archived asset's archival reason and notes while the asset remains archived, and shall include them in the archival audit event.
+- **AST-017** `[P5]`: When an archived asset is restored to an active state, the system shall clear its archival reason and notes. The restoration event recorded in the audit log shall include the archival reason and notes recorded for the archived asset.
 
 ### 3.4 Configurable Asset Fields
 
@@ -425,8 +429,12 @@ The system shall provide a minimum set of built-in asset fields. Additional fiel
 | Location | Current location of the asset | Yes |
 | Created At | Date and time the record was created | Yes |
 | Updated At | Date and time the record was last modified | Yes |
+| Archival Reason | Reason the asset was archived; one of invalid, damaged, disposed; set when the asset is archived | No |
+| Archival Notes | Free-format notes recorded when the asset is archived | No |
 
 Location shall support a value representing an unset or unknown location.
+
+Archival Reason and Archival Notes apply to archived assets; the archival reason is required when archiving an asset, and both are cleared when the asset is restored.
 
 The system may provide additional built-in fields where required by the project's initial implementation.
 
@@ -511,6 +519,7 @@ For a containerized deployment, the default backup location shall be a directory
 - Asset IDs shall not be duplicated.
 - An imported asset shall require a Name; fields not supplied shall remain unset unless otherwise required.
 - Archived assets shall remain available according to the agreed retention policy.
+- An archived asset's archival reason and notes shall be recorded at archival, included in the audit trail, and cleared when the asset is restored.
 - Audit records shall be retained according to the agreed retention policy.
 - Backup data shall be protected from unauthorized access.
 - Data restoration shall preserve relationships between assets, users, custom fields, permissions, and logs.
@@ -621,6 +630,10 @@ The project will be considered complete when:
 - [ ] Office Admins can configure per-user permission overrides.
 - [ ] Office Admins can configure which asset fields Checkers can view and edit.
 - [ ] Authorized users can create, view, edit, archive, and restore assets as permitted.
+- [ ] Authorized users provide an archival reason when archiving an asset.
+- [ ] Archival reasons are restricted to the agreed values (invalid, damaged, disposed).
+- [ ] Archival notes can be recorded as free text when archiving an asset.
+- [ ] Restoring an archived asset clears its archival reason and notes, and the restoration log entry includes them.
 - [ ] Each asset receives a unique system-generated UUID as its Asset ID.
 - [ ] The Asset ID is encoded in the asset's QR code.
 - [ ] A supported mobile device can scan an asset QR code and open the corresponding asset.
@@ -659,7 +672,7 @@ The project will be considered complete when:
 
 | ID | Issue | Status |
 | --- | --- | --- |
-| OI-001 | Confirm any additional built-in fields required beyond Asset ID, Name, Location, Created At, and Updated At | Open |
+| OI-001 | Confirm any additional built-in fields required beyond Asset ID, Name, Location, Created At, and Updated At | Resolved (v0.7) |
 | OI-002 | Final role definitions and default permissions to be confirmed | Open |
 | OI-003 | Final custom field types required for the initial implementation to be confirmed | Open |
 | OI-004 | Audit-log retention period to be confirmed | Open |
@@ -679,3 +692,4 @@ The project will be considered complete when:
 | 0.4 | 2026-08-25 | Refactored feature request codes. |
 | 0.5 | 2026-08-25 | Update requirement priorities per client. |
 | 0.6 | 2026-09-04 | Update project name. |
+| 0.7 | 2026-09-04 | Add archival reason and notes fields. |
