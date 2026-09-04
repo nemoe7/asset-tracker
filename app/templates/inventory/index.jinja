@@ -56,6 +56,12 @@
             </a>
             {% endif %}
 
+            <button type="button" id="import-button"
+              class="block w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
+              <i class="bi bi-upload mr-1" aria-hidden="true"></i>
+              Import
+            </button>
+
             <button type="button" id="export-button"
               class="block w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
               Export CSV
@@ -155,6 +161,7 @@
 {# ==================== End Inventory Page ==================== #}
 
 {% include "inventory/modals/filter_item.jinja" %}
+{% include "inventory/modals/import.jinja" %}
 {% include "inventory/modals/export.jinja" %}
 {% include "inventory/modals/add_item.jinja" %}
 {% include "inventory/modals/edit_item.jinja" %}
