@@ -117,7 +117,7 @@ CREATE TABLE backup_history (
   user_id INTEGER,
   scheduled_at TEXT,
   completed_at TEXT NOT NULL,
-  path TEXT NOT NULL,
+  path TEXT,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE
   SET NULL
 );
