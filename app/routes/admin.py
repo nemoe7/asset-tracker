@@ -46,9 +46,11 @@ admin = Blueprint(
 
 _LOCATION_TAB = "locations"
 _CUSTOM_FIELDS_TAB = "custom-fields"
+_BACKUPS_TAB = "backups"
 _VALID_TABS = (
   _LOCATION_TAB,
   _CUSTOM_FIELDS_TAB,
+  _BACKUPS_TAB,
 )
 
 
@@ -68,6 +70,10 @@ def _render_settings(
     error=error,
     can_manage_locations=check_permission(user_id, "locations.manage"),
     can_manage_custom_fields=check_permission(user_id, "custom_fields.manage"),
+    can_manage_backups=(
+      check_permission(user_id, "backups.create")
+      or check_permission(user_id, "backups.restore")
+    ),
     **context,
   )
 
@@ -99,13 +105,14 @@ def settings():
   active_tab = _get_active_tab()
 
   permission_by_tab = {
-    _LOCATION_TAB: "locations.manage",
-    _CUSTOM_FIELDS_TAB: "custom_fields.manage",
+    _LOCATION_TAB: ("locations.manage",),
+    _CUSTOM_FIELDS_TAB: ("custom_fields.manage",),
+    _BACKUPS_TAB: ("backups.create", "backups.restore"),
   }
 
-  if not check_permission(
-    session.get("user_id"),
-    permission_by_tab[active_tab],
+  if not any(
+    check_permission(session.get("user_id"), permission_name)
+    for permission_name in permission_by_tab[active_tab]
   ):
     abort(403)
 
