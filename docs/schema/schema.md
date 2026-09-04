@@ -105,7 +105,7 @@ erDiagram
         integer user_id FK "nullable, ON DELETE SET NULL"
         text scheduled_at
         text completed_at "NOT NULL"
-        text path "NOT NULL"
+        text path
     }
 
     users ||--o{ user_roles : "has"

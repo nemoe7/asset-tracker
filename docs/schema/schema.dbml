@@ -121,7 +121,7 @@ Table backup_history {
   user_id integer
   scheduled_at text
   completed_at text [not null]
-  path text [not null]
+  path text
 }
 
 
