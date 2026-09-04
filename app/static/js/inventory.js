@@ -72,6 +72,8 @@ async function loadInventory(page = 1) {
 
   params.set('page', page);
 
+  saveInventoryFilters();
+
   // params.set('per_page', 2);
 
   try {
@@ -419,7 +421,7 @@ function appendCustomFieldHint(element, field) {
 
   const typeBadge = document.createElement('span');
 
-  typeBadge.className = 'rounded bg-zinc-700 px-1.5 py-0.5 text-xs text-zinc-300';
+  typeBadge.className = 'rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400';
   typeBadge.textContent = CUSTOM_FIELD_TYPE_LABELS[field.field_type];
 
   hint.append(typeBadge);
@@ -427,7 +429,7 @@ function appendCustomFieldHint(element, field) {
   if (field.required) {
     const badge = document.createElement('span');
 
-    badge.className = 'rounded bg-zinc-700 px-1.5 py-0.5 text-xs text-zinc-300';
+    badge.className = 'rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400';
     badge.textContent = 'Required';
 
     hint.append(badge);
@@ -1502,6 +1504,132 @@ document
 // ==================== End Search ====================
 
 
+// ==================== Filter Persistence ====================
+
+const FILTERS_STORAGE_KEY = 'inventory-filters';
+
+function loadSavedInventoryFilters() {
+  try {
+    const raw = sessionStorage.getItem(FILTERS_STORAGE_KEY);
+
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    console.error('Failed to load saved inventory filters:', error);
+    return null;
+  }
+}
+
+function saveInventoryFilters() {
+  try {
+    const params = getInventoryParams();
+
+    sessionStorage.setItem(
+      FILTERS_STORAGE_KEY,
+      JSON.stringify({
+        page: currentInventoryPage,
+        search: params.get('search') ?? '',
+        include_archived: params.get('include_archived') === 'true',
+        sort_by: params.get('sort_by') ?? 'name',
+        sort_order: params.get('sort_order') ?? 'asc',
+        location_id: params.get('location_id') ?? '',
+        f_field: params.getAll('f_field'),
+        f_op: params.getAll('f_op'),
+        f_value: params.getAll('f_value')
+      })
+    );
+  } catch (error) {
+    console.error('Failed to save inventory filters:', error);
+  }
+}
+
+function clearSavedInventoryFilters() {
+  try {
+    sessionStorage.removeItem(FILTERS_STORAGE_KEY);
+  } catch (error) {
+    console.error('Failed to clear saved inventory filters:', error);
+  }
+}
+
+async function applyInventoryFilters(saved) {
+  if (!saved) {
+    return;
+  }
+
+  if (searchInput) {
+    searchInput.value = saved.search ?? '';
+  }
+
+  if (includeArchived) {
+    includeArchived.checked = saved.include_archived === true;
+  }
+
+  if (filterLocation && saved.location_id !== undefined && saved.location_id !== '') {
+    await loadLocations();
+    filterLocation.value = saved.location_id;
+  }
+
+  const fields = await loadCustomFields();
+
+  if (filterSortBy) {
+    populateFilterSortBy(fields);
+    filterSortBy.value = saved.sort_by ?? 'name';
+  }
+
+  const sortOrder = document.querySelector(
+    `input[name="sort_order"][value="${saved.sort_order === 'desc' ? 'desc' : 'asc'}"]`
+  );
+
+  if (sortOrder) {
+    sortOrder.checked = true;
+  }
+
+  if (!customFieldFilterRows || (saved.f_field ?? []).length === 0) {
+    return;
+  }
+
+  // Rebuild the custom-field filter rows from the saved triplets. Rows for
+  // fields that no longer exist are skipped.
+  for (let index = 0; index < saved.f_field.length; index++) {
+    const fieldId = saved.f_field[index];
+
+    if (!fields.some((field) => String(field.id) === String(fieldId))) {
+      continue;
+    }
+
+    const row = buildFilterRow(fields);
+    const fieldSelect = row.querySelector('.cf-filter-field');
+
+    fieldSelect.value = String(fieldId);
+    fieldSelect.dispatchEvent(new Event('change'));
+
+    const opSelect = row.querySelector('.cf-filter-op');
+
+    if (opSelect && saved.f_op[index]) {
+      const isKnown = [...opSelect.options].some(
+        (option) => option.value === saved.f_op[index]
+      );
+
+      if (isKnown) {
+        opSelect.value = saved.f_op[index];
+        opSelect.dispatchEvent(new Event('change'));
+      }
+    }
+
+    // The first (non-hidden) control holds the real value; the hidden
+    // sentinel backstops the "no stored value" operator.
+    const valueControl = row.querySelector('[name="f_value"]');
+
+    if (valueControl && valueControl.type !== 'hidden') {
+      valueControl.value = saved.f_value[index] ?? '';
+    }
+
+    customFieldFilterRows.append(row);
+  }
+}
+
+// ==================== End Filter Persistence ====================
+
+
 // ==================== Initial Load ====================
 
 function resetInventoryFilters() {
@@ -1524,334 +1652,22 @@ function resetInventoryFilters() {
   if (filterLocation) {
     filterLocation.value = '';
   }
+
+  clearSavedInventoryFilters();
 }
 
-resetInventoryFilters();
-loadInventory();
+// Restore saved filters on refresh, otherwise start with defaults.
+
+(async () => {
+  const saved = loadSavedInventoryFilters();
+
+  if (saved) {
+    await applyInventoryFilters(saved);
+    loadInventory(saved.page ?? 1);
+  } else {
+    resetInventoryFilters();
+    loadInventory();
+  }
+})();
 
 // ==================== End Initial Load ====================
-
-
-// ==================== Export Modal ====================
-
-// Keep in sync with _BUILTIN_COLUMNS in app/services/export.py.
-const BUILTIN_EXPORT_FIELDS = [
-  ['id', 'ID'],
-  ['name', 'Name'],
-  ['description', 'Description'],
-  ['location', 'Location'],
-  ['created_at', 'Created at'],
-  ['updated_at', 'Updated at']
-];
-
-const exportItemModal = document.getElementById('export-item-modal');
-const exportForm = document.getElementById('export-form');
-const exportColumnRows = document.getElementById('export-column-rows');
-const exportColumnOptions = document.getElementById(
-  'export-column-options'
-);
-const addExportColumn = document.getElementById('add-export-column');
-const addExportColumnError = document.getElementById(
-  'add-export-column-error'
-);
-const exportColumnsReset = document.getElementById('export-columns-reset');
-const addExportColumnButton = document.getElementById(
-  'add-export-column-button'
-);
-
-// Full list of available column names; the datalist excludes the columns
-// that are already selected.
-let exportColumnChoices = [];
-
-// Columns contributed by the currently active filters: the location filter
-// contributes "location", each field-filter row contributes its custom
-// field, and "id" and "name" are always included alongside them so
-// exported rows stay identifiable. Empty when no field-bearing filter is
-// active.
-async function collectActiveFilterColumns() {
-  const columns = [];
-
-  if (getInventoryParams().get('location_id')) {
-    columns.push('location');
-  }
-
-  const fields = await loadCustomFields();
-  const fieldsById = new Map(
-    fields.map((field) => [String(field.id), field])
-  );
-
-  for (const row of customFieldFilterRows?.querySelectorAll(
-    '.cf-filter-row'
-  ) ?? []) {
-    const field = fieldsById.get(row.querySelector('.cf-filter-field')?.value);
-
-    // Rows without a chosen field are not active filters.
-    if (field && field.field_type !== 'user' && !columns.includes(field.name)) {
-      columns.push(field.name);
-    }
-  }
-
-  if (columns.length > 0) {
-    // Exported rows must stay identifiable.
-    columns.unshift('id', 'name');
-  }
-
-  return columns;
-}
-
-function buildExportColumnRow(name) {
-  // Pill-style row: short names share a line and wrap naturally; a name
-  // wider than the container gets its own row (max-w-full) with the label
-  // truncated instead of overflowing.
-  const row = document.createElement('div');
-
-  row.className =
-    'export-column-row flex w-fit max-w-full items-center gap-1.5 rounded-full border border-zinc-700 py-1 pl-3 pr-1.5';
-
-  const label = document.createElement('span');
-
-  label.className = 'export-column-name min-w-0 truncate text-sm text-zinc-200';
-  label.textContent = name;
-
-  const removeButton = document.createElement('button');
-
-  removeButton.type = 'button';
-  removeButton.className =
-    'export-column-remove flex size-5 shrink-0 items-center justify-center rounded-full text-red-400 hover:bg-red-950 hover:text-red-300';
-  removeButton.title = 'Remove column';
-  removeButton.setAttribute('aria-label', 'Remove column');
-  removeButton.innerHTML =
-    '<i class="bi bi-x-lg block" aria-hidden="true"></i>';
-
-  removeButton.addEventListener('click', () => {
-    row.remove();
-    refreshExportColumnOptions();
-  });
-
-  row.append(label, removeButton);
-
-  return row;
-}
-
-function setExportColumns(names) {
-  exportColumnRows?.replaceChildren(
-    ...names.map((name) => buildExportColumnRow(name))
-  );
-
-  refreshExportColumnOptions();
-}
-
-function resetExportColumns() {
-  setExportColumns([]);
-
-  if (addExportColumn) {
-    addExportColumn.value = '';
-  }
-
-  addExportColumnError?.classList.add('hidden');
-}
-
-function populateExportColumnOptions(fields) {
-  exportColumnChoices = [
-    ...BUILTIN_EXPORT_FIELDS.map(([name]) => name),
-    ...fields
-      .filter((field) => field.field_type !== 'user')
-      .map((field) => field.name)
-  ];
-
-  refreshExportColumnOptions();
-}
-
-// Rebuild the datalist from all available column names minus the ones
-// already selected as rows.
-function refreshExportColumnOptions() {
-  if (!exportColumnOptions) {
-    return;
-  }
-
-  const selected = new Set(
-    [...exportColumnRows.querySelectorAll('.export-column-name')].map(
-      (label) => label.textContent.toLowerCase()
-    )
-  );
-
-  exportColumnOptions.replaceChildren(
-    ...exportColumnChoices
-      .filter((name) => !selected.has(name.toLowerCase()))
-      .map((name) => new Option(name, name))
-  );
-}
-
-function addExportColumnByName(rawName) {
-  const name = rawName.trim();
-
-  if (!name) {
-    return;
-  }
-
-  const available = new Set(
-    exportColumnChoices.map((choice) => choice.toLowerCase())
-  );
-
-  const existing = new Set(
-    [...exportColumnRows.querySelectorAll('.export-column-name')].map(
-      (label) => label.textContent.toLowerCase()
-    )
-  );
-
-  const valid = available.has(name.toLowerCase()) && !existing.has(name.toLowerCase());
-
-  addExportColumnError?.classList.toggle('hidden', valid);
-
-  if (!valid) {
-    return;
-  }
-
-  exportColumnRows?.append(buildExportColumnRow(name));
-
-  refreshExportColumnOptions();
-
-  addExportColumn.value = '';
-}
-
-// Open Export modal.
-
-document
-  .getElementById('export-button')
-  ?.addEventListener('click', async () => {
-    loadLocations();
-
-    populateExportColumnOptions(await loadCustomFields());
-    resetExportColumns();
-    setExportColumns(await collectActiveFilterColumns());
-
-    openModal(exportItemModal);
-  });
-
-
-function submitExportColumn() {
-  addExportColumnByName(addExportColumn.value);
-}
-
-// Hide the error while typing a new value.
-addExportColumn?.addEventListener('input', () => {
-  addExportColumnError?.classList.add('hidden');
-});
-
-// Add a column when Enter is pressed instead of submitting the form.
-
-addExportColumn?.addEventListener('keydown', (event) => {
-  if (event.key !== 'Enter') {
-    return;
-  }
-
-  event.preventDefault();
-
-  submitExportColumn();
-});
-
-// Add a column via the explicit Add button.
-
-addExportColumnButton?.addEventListener('click', submitExportColumn);
-
-
-// Reset to all fields.
-
-exportColumnsReset?.addEventListener('click', resetExportColumns);
-
-
-// Trigger the export with the current filters and selected columns.
-
-exportForm?.addEventListener('submit', (event) => {
-  event.preventDefault();
-
-  const params = getInventoryParams();
-
-  for (const label of exportColumnRows.querySelectorAll(
-    '.export-column-name'
-  )) {
-    params.append('fields', label.textContent);
-  }
-
-  const queryString = params.toString();
-
-  window.location.assign(
-    queryString ? `/inventory/export?${queryString}` : '/inventory/export'
-  );
-
-  closeModal();
-});
-
-// ==================== End Export Modal ====================
-
-// ==================== Import Modal ====================
-
-const importItemModal = document.getElementById('import-item-modal');
-const importForm = document.getElementById('import-form');
-const importFile = document.getElementById('import-file');
-const importError = document.getElementById('import-error');
-const importSubmitButton = document.getElementById('import-submit-button');
-
-function showImportError(message) {
-  if (!importError) {
-    return;
-  }
-
-  importError.textContent = message;
-  importError.classList.remove('hidden');
-}
-
-document
-  .getElementById('import-button')
-  ?.addEventListener('click', () => {
-    if (importForm) {
-      importForm.reset();
-    }
-
-    importError?.classList.add('hidden');
-    importFile?.classList.remove('opacity-50');
-
-    openModal(importItemModal);
-  });
-
-importForm?.addEventListener('submit', async (event) => {
-  event.preventDefault();
-
-  if (!importFile?.files?.length) {
-    showImportError('Choose a CSV or .xlsx file to import.');
-    return;
-  }
-
-  const formData = new FormData();
-
-  formData.append('file', importFile.files[0]);
-
-  importSubmitButton?.setAttribute('disabled', '');
-  importFile.classList.add('opacity-50');
-  importError?.classList.add('hidden');
-
-  try {
-    const response = await fetch('/inventory/import', {
-      method: 'POST',
-      body: formData,
-    });
-
-    const payload = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      showImportError(payload.error || 'Import failed.');
-      return;
-    }
-
-    closeModal();
-
-    await loadInventory();
-  } catch {
-    showImportError('Import failed.');
-  } finally {
-    importSubmitButton?.removeAttribute('disabled');
-    importFile.classList.remove('opacity-50');
-  }
-});
-
-// ==================== End Import Modal ====================

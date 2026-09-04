@@ -27,7 +27,7 @@
 
         {# ==================== QR Scanner Button ==================== #}
         <button type="button" id="qr-scanner-button"
-          class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+          class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 md:hidden">
           <i class="bi bi-qr-code-scan mr-1" aria-hidden="true"></i>
           <span class="">Scan</span>
         </button>
@@ -49,27 +49,16 @@
               @{{ username }}
             </div>
 
-            {% if can_manage_locations or can_manage_custom_fields %}
             <a href="{{ url_for('admin.settings') }}"
               class="block rounded-md px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
-              Admin Panel
+              <i class="bi bi-gear mr-1" aria-hidden="true"></i>
+              Management
             </a>
-            {% endif %}
-
-            <button type="button" id="import-button"
-              class="block w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
-              <i class="bi bi-upload mr-1" aria-hidden="true"></i>
-              Import
-            </button>
-
-            <button type="button" id="export-button"
-              class="block w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
-              Export CSV
-            </button>
 
             <form method="post" action="{{ url_for('auth.logout') }}">
               <button type="submit"
                 class="block w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
+                <i class="bi bi-box-arrow-right mr-1" aria-hidden="true"></i>
                 Log out
               </button>
             </form>
@@ -161,8 +150,6 @@
 {# ==================== End Inventory Page ==================== #}
 
 {% include "inventory/modals/filter_item.jinja" %}
-{% include "inventory/modals/import.jinja" %}
-{% include "inventory/modals/export.jinja" %}
 {% include "inventory/modals/add_item.jinja" %}
 {% include "inventory/modals/edit_item.jinja" %}
 {% include "inventory/modals/view_item.jinja" %}

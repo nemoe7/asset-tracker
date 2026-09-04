@@ -15,7 +15,7 @@ def test_menu_contains_admin_panel_link(page, live_server, logged_in):
   menu.locator("summary").click()
 
   expect(
-    page.get_by_role("link", name="Admin Panel", exact=True)
+    page.get_by_role("link", name="Management", exact=True)
   ).to_be_visible()
 
   # The individual tab links are no longer in the menu.
@@ -28,7 +28,7 @@ def test_menu_admin_panel_opens_admin_page(page, live_server, logged_in):
   menu = page.locator("details")
   menu.locator("summary").click()
 
-  page.get_by_role("link", name="Admin Panel", exact=True).click()
+  page.get_by_role("link", name="Management", exact=True).click()
 
   page.wait_for_url(f"{live_server}/admin")
 
@@ -164,8 +164,39 @@ def test_admin_page_has_hamburger_menu(page, live_server, logged_in):
   menu.locator("summary").click()
 
   expect(menu.get_by_text("@test_admin", exact=True)).to_be_visible()
-  expect(page.get_by_role("link", name="Admin Panel", exact=True)).to_be_visible()
+  expect(page.get_by_role("link", name="Management", exact=True)).to_be_visible()
   expect(page.get_by_role("button", name="Log out")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_admin_page_data_tab_is_reachable(page, live_server, logged_in):
+  page.goto(f"{live_server}/admin?tab=data")
+
+  expect(page.locator("#tab-data")).to_be_visible()
+  expect(page.locator("#import-button")).to_be_visible()
+  expect(page.locator("#export-button")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_admin_page_required_column_shows_x_icon(page, live_server, logged_in):
+  response = page.request.post(
+    f"{live_server}/admin/custom-fields",
+    form={
+      "name": "Condition",
+      "field_type": "text",
+    },
+    max_redirects=0,
+  )
+
+  assert response.status == 302
+
+  page.goto(f"{live_server}/admin?tab=custom-fields")
+
+  row = page.locator("#tab-custom-fields tbody tr").filter(has_text="Condition")
+
+  expect(row).to_be_visible()
+  expect(row.locator(".bi-x-lg")).to_be_visible()
+  expect(row.locator(".bi-check-lg")).to_have_count(0)
 
 
 @pytest.mark.e2e

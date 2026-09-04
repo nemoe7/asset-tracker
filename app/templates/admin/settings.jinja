@@ -2,7 +2,7 @@
 
 {% from "shared/_modal.jinja" import modal %}
 
-{% block title %}Admin{% endblock %}
+{% block title %}Management{% endblock %}
 
 {% block body %}
 
@@ -22,7 +22,7 @@
         </a>
 
         <h1 class="text-xl font-semibold tracking-tight">
-          Admin
+          Management
         </h1>
 
       </div>
@@ -44,16 +44,16 @@
               @{{ session.username }}
             </div>
 
-            {% if can_manage_locations or can_manage_custom_fields %}
             <a href="{{ url_for('admin.settings') }}"
               class="block rounded-md px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
-              Admin Panel
+              <i class="bi bi-gear mr-1" aria-hidden="true"></i>
+              Management
             </a>
-            {% endif %}
 
             <form method="post" action="{{ url_for('auth.logout') }}">
               <button type="submit"
                 class="block w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
+                <i class="bi bi-box-arrow-right mr-1" aria-hidden="true"></i>
                 Log out
               </button>
             </form>
@@ -98,6 +98,11 @@
       </button>
       {% endif %}
 
+      <button type="button" data-tab-button="data"
+        class="admin-tab rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100">
+        Data
+      </button>
+
       {% if can_manage_backups %}
       <button type="button" data-tab-button="backups"
         class="admin-tab rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100">
@@ -123,60 +128,61 @@
       </div>
 
       {% call modal("add-location-dialog", "Add location") %}
-        <form method="post" action="{{ url_for('admin.create_location_route') }}">
-          <div class="mt-4">
-            <label for="add-location-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
-            <input id="add-location-name" name="name" type="text" required value="{{ location_name or '' }}"
-              class="form-input">
-          </div>
+      <form method="post" action="{{ url_for('admin.create_location_route') }}">
+        <div class="mt-4">
+          <label for="add-location-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
+          <input id="add-location-name" name="name" type="text" required value="{{ location_name or '' }}"
+            class="form-input">
+        </div>
 
-          <div class="mt-4">
-            <label for="add-location-description" class="mb-2 block text-sm font-medium text-zinc-300">Description</label>
-            <input id="add-location-description" name="description" type="text"
-              value="{{ location_description or '' }}" class="form-input">
-          </div>
+        <div class="mt-4">
+          <label for="add-location-description" class="mb-2 block text-sm font-medium text-zinc-300">Description</label>
+          <input id="add-location-description" name="description" type="text" value="{{ location_description or '' }}"
+            class="form-input">
+        </div>
 
-          <div class="mt-6 flex justify-end gap-3">
-            <button type="button" id="cancel-add-location"
-              class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
-              Cancel
-            </button>
-            <button type="submit"
-              class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
-              <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
-              Add location
-            </button>
-          </div>
-        </form>
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" id="cancel-add-location"
+            class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+            Cancel
+          </button>
+          <button type="submit"
+            class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+            <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
+            Add location
+          </button>
+        </div>
+      </form>
       {% endcall %}
       {# ==================== End Add Location ==================== #}
 
 
       {# ==================== Edit Location ==================== #}
       {% call modal("edit-location-dialog", "Edit location") %}
-        <form method="post" action="">
-          <div>
-            <label for="edit-location-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
-            <input id="edit-location-name" name="name" type="text" required class="form-input">
-          </div>
+      <form method="post" action="">
+        <div>
+          <label for="edit-location-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
+          <input id="edit-location-name" name="name" type="text" required class="form-input">
+        </div>
 
-          <div class="mt-4">
-            <label for="edit-location-description" class="mb-2 block text-sm font-medium text-zinc-300">Description</label>
-            <input id="edit-location-description" name="description" type="text" class="form-input">
-          </div>
+        <div class="mt-4">
+          <label for="edit-location-description"
+            class="mb-2 block text-sm font-medium text-zinc-300">Description</label>
+          <input id="edit-location-description" name="description" type="text" class="form-input">
+        </div>
 
-          <div class="mt-6 flex justify-end gap-3">
-            <button type="button" id="cancel-edit-location"
-              class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
-              Cancel
-            </button>
-            <button type="submit"
-              class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
-              <i class="bi bi-pencil mr-1" aria-hidden="true"></i>
-              Save changes
-            </button>
-          </div>
-        </form>
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" id="cancel-edit-location"
+            class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+            Cancel
+          </button>
+          <button type="submit"
+            class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+            <i class="bi bi-pencil mr-1" aria-hidden="true"></i>
+            Save changes
+          </button>
+        </div>
+      </form>
       {% endcall %}
       {# ==================== End Edit Location ==================== #}
 
@@ -200,9 +206,6 @@
               <tr>
                 <td class="px-5 py-4 font-medium text-zinc-100">
                   <div class="flex items-center gap-3">
-                    <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400">
-                      <i class="bi bi-geo-alt text-sm" aria-hidden="true"></i>
-                    </div>
                     <span class="truncate" title="{{ location.name }}">{{ location.name }}</span>
                   </div>
                 </td>
@@ -211,7 +214,8 @@
                 </td>
                 <td class="px-5 py-4">
                   <div class="flex justify-end gap-1">
-                    <button type="button" class="edit-location rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+                    <button type="button"
+                      class="edit-location rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                       data-location-id="{{ location.id }}" data-location-name="{{ location.name }}"
                       data-location-description="{{ location.description or '' }}"
                       data-update-url="{{ url_for('admin.update_location_route', location_id=location.id) }}"
@@ -221,7 +225,8 @@
                     <form method="post" action="{{ url_for('admin.delete_location_route', location_id=location.id) }}"
                       data-delete-location>
                       <input type="hidden" name="confirm" value="true">
-                      <button type="submit" class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
+                      <button type="submit"
+                        class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
                         title="Delete location" aria-label="Delete location">
                         <i class="bi bi-trash" aria-hidden="true"></i>
                       </button>
@@ -239,9 +244,6 @@
           {% for location in locations %}
           <div class="flex items-center justify-between gap-3 px-4 py-3">
             <div class="flex min-w-0 items-center gap-3">
-              <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400">
-                <i class="bi bi-geo-alt text-sm" aria-hidden="true"></i>
-              </div>
               <div class="min-w-0">
                 <p class="truncate text-sm font-medium text-zinc-100">{{ location.name }}</p>
                 {% if location.description %}
@@ -250,7 +252,8 @@
               </div>
             </div>
             <div class="flex shrink-0 gap-1">
-              <button type="button" class="edit-location rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+              <button type="button"
+                class="edit-location rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                 data-location-id="{{ location.id }}" data-location-name="{{ location.name }}"
                 data-location-description="{{ location.description or '' }}"
                 data-update-url="{{ url_for('admin.update_location_route', location_id=location.id) }}"
@@ -292,7 +295,8 @@
 
     {# ==================== Custom Fields Panel ==================== #}
     {% if can_manage_custom_fields %}
-    <section id="tab-custom-fields" data-tab-panel="custom-fields" class="{{ 'hidden' if active_tab != 'custom-fields' }}">
+    <section id="tab-custom-fields" data-tab-panel="custom-fields"
+      class="{{ 'hidden' if active_tab != 'custom-fields' }}">
 
       {# ==================== Add Custom Field ==================== #}
       <div class="mb-6 flex justify-end">
@@ -304,135 +308,133 @@
       </div>
 
       {% call modal("add-field-dialog", "Add custom field") %}
-        <form method="post" action="{{ url_for('admin.create_custom_field_route') }}">
-          <div>
-            <label for="add-field-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
-            <input id="add-field-name" name="name" type="text" required value="{{ field_name or '' }}"
-              class="form-input">
-          </div>
+      <form method="post" action="{{ url_for('admin.create_custom_field_route') }}">
+        <div>
+          <label for="add-field-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
+          <input id="add-field-name" name="name" type="text" required value="{{ field_name or '' }}" class="form-input">
+        </div>
 
-          <div class="mt-4">
-            <label for="add-field-type" class="mb-2 block text-sm font-medium text-zinc-300">Type</label>
+        <div class="mt-4">
+          <label for="add-field-type" class="mb-2 block text-sm font-medium text-zinc-300">Type</label>
 
-            <select id="add-field-type" name="field_type" data-enum-toggle class="form-input">
-              <option value="text" {{ 'selected' if field_type == 'text' }}>Text</option>
-              <option value="integer" {{ 'selected' if field_type == 'integer' }}>Integer</option>
-              <option value="decimal" {{ 'selected' if field_type == 'decimal' }}>Decimal</option>
-              <option value="boolean" {{ 'selected' if field_type == 'boolean' }}>Boolean</option>
-              <option value="date" {{ 'selected' if field_type == 'date' }}>Date</option>
-              <option value="enum" {{ 'selected' if field_type == 'enum' }}>Enum</option>
-              <option value="user" {{ 'selected' if field_type == 'user' }}>User</option>
-            </select>
-          </div>
+          <select id="add-field-type" name="field_type" data-enum-toggle class="form-input">
+            <option value="text" {{ 'selected' if field_type=='text' }}>Text</option>
+            <option value="integer" {{ 'selected' if field_type=='integer' }}>Integer</option>
+            <option value="decimal" {{ 'selected' if field_type=='decimal' }}>Decimal</option>
+            <option value="boolean" {{ 'selected' if field_type=='boolean' }}>Boolean</option>
+            <option value="date" {{ 'selected' if field_type=='date' }}>Date</option>
+            <option value="enum" {{ 'selected' if field_type=='enum' }}>Enum</option>
+            <option value="user" {{ 'selected' if field_type=='user' }}>User</option>
+          </select>
+        </div>
 
-          <div class="mt-4">
-            <label for="add-field-description" class="mb-2 block text-sm font-medium text-zinc-300">Description</label>
-            <input id="add-field-description" name="description" type="text"
-              value="{{ field_description or '' }}" class="form-input">
-          </div>
+        <div class="mt-4">
+          <label for="add-field-description" class="mb-2 block text-sm font-medium text-zinc-300">Description</label>
+          <input id="add-field-description" name="description" type="text" value="{{ field_description or '' }}"
+            class="form-input">
+        </div>
 
-          <div class="mt-4 flex items-center gap-3">
-            <input id="add-field-required" name="required" type="checkbox" value="true"
-              {{ 'checked' if field_required }}
-              class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500">
+        <div class="mt-4 flex items-center gap-3">
+          <input id="add-field-required" name="required" type="checkbox" value="true" {{ 'checked' if field_required }}
+            class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500">
 
-            <label for="add-field-required" class="text-sm font-medium text-zinc-300">
-              Required
-            </label>
-          </div>
+          <label for="add-field-required" class="text-sm font-medium text-zinc-300">
+            Required
+          </label>
+        </div>
 
-          <div class="mt-4" data-enum-values>
-            <label for="add-field-enum-values" class="mb-2 block text-sm font-medium text-zinc-300">
-              Enum values
-            </label>
+        <div class="mt-4" data-enum-values>
+          <label for="add-field-enum-values" class="mb-2 block text-sm font-medium text-zinc-300">
+            Enum values
+          </label>
 
-            <textarea id="add-field-enum-values" name="enum_values" rows="4" placeholder="One value per line"
-              class="form-input !resize-y">{{ field_enum_values or '' }}</textarea>
+          <textarea id="add-field-enum-values" name="enum_values" rows="4" placeholder="One value per line"
+            class="form-input !resize-y">{{ field_enum_values or '' }}</textarea>
 
-            <p class="mt-1 text-xs text-zinc-500">
-              Define the allowed values for this Enum field, one per line.
-            </p>
-          </div>
+          <p class="mt-1 text-xs text-zinc-500">
+            Define the allowed values for this Enum field, one per line.
+          </p>
+        </div>
 
-          <div class="mt-6 flex justify-end gap-3">
-            <button type="button" id="cancel-add-field"
-              class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
-              Cancel
-            </button>
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" id="cancel-add-field"
+            class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+            Cancel
+          </button>
 
-            <button type="submit"
-              class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
-              <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
-              Add field
-            </button>
-          </div>
-        </form>
+          <button type="submit"
+            class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+            <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
+            Add field
+          </button>
+        </div>
+      </form>
       {% endcall %}
       {# ==================== End Add Custom Field ==================== #}
 
 
       {# ==================== Edit Custom Field ==================== #}
       {% call modal("edit-field-dialog", "Edit custom field") %}
-        <form method="post" action="">
-          <div>
-            <label for="edit-field-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
-            <input id="edit-field-name" name="name" type="text" required class="form-input">
-          </div>
+      <form method="post" action="">
+        <div>
+          <label for="edit-field-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
+          <input id="edit-field-name" name="name" type="text" required class="form-input">
+        </div>
 
-          <div class="mt-4">
-            <label for="edit-field-type" class="mb-2 block text-sm font-medium text-zinc-300">Type</label>
+        <div class="mt-4">
+          <label for="edit-field-type" class="mb-2 block text-sm font-medium text-zinc-300">Type</label>
 
-            <select id="edit-field-type" name="field_type" data-enum-toggle class="form-input">
-              <option value="text">Text</option>
-              <option value="integer">Integer</option>
-              <option value="decimal">Decimal</option>
-              <option value="boolean">Boolean</option>
-              <option value="date">Date</option>
-              <option value="enum">Enum</option>
-              <option value="user">User</option>
-            </select>
-          </div>
+          <select id="edit-field-type" name="field_type" data-enum-toggle class="form-input">
+            <option value="text">Text</option>
+            <option value="integer">Integer</option>
+            <option value="decimal">Decimal</option>
+            <option value="boolean">Boolean</option>
+            <option value="date">Date</option>
+            <option value="enum">Enum</option>
+            <option value="user">User</option>
+          </select>
+        </div>
 
-          <div class="mt-4">
-            <label for="edit-field-description" class="mb-2 block text-sm font-medium text-zinc-300">Description</label>
-            <input id="edit-field-description" name="description" type="text" class="form-input">
-          </div>
+        <div class="mt-4">
+          <label for="edit-field-description" class="mb-2 block text-sm font-medium text-zinc-300">Description</label>
+          <input id="edit-field-description" name="description" type="text" class="form-input">
+        </div>
 
-          <div class="mt-4 flex items-center gap-3">
-            <input id="edit-field-required" name="required" type="checkbox" value="true"
-              class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500">
+        <div class="mt-4 flex items-center gap-3">
+          <input id="edit-field-required" name="required" type="checkbox" value="true"
+            class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500">
 
-            <label for="edit-field-required" class="text-sm font-medium text-zinc-300">
-              Required
-            </label>
-          </div>
+          <label for="edit-field-required" class="text-sm font-medium text-zinc-300">
+            Required
+          </label>
+        </div>
 
-          <div class="mt-4" data-enum-values>
-            <label for="edit-field-enum-values" class="mb-2 block text-sm font-medium text-zinc-300">
-              Enum values
-            </label>
+        <div class="mt-4" data-enum-values>
+          <label for="edit-field-enum-values" class="mb-2 block text-sm font-medium text-zinc-300">
+            Enum values
+          </label>
 
-            <textarea id="edit-field-enum-values" name="enum_values" rows="4" placeholder="One value per line"
-              class="form-input !resize-y"></textarea>
+          <textarea id="edit-field-enum-values" name="enum_values" rows="4" placeholder="One value per line"
+            class="form-input !resize-y"></textarea>
 
-            <p class="mt-1 text-xs text-zinc-500">
-              Define the allowed values for this Enum field, one per line.
-            </p>
-          </div>
+          <p class="mt-1 text-xs text-zinc-500">
+            Define the allowed values for this Enum field, one per line.
+          </p>
+        </div>
 
-          <div class="mt-6 flex justify-end gap-3">
-            <button type="button" id="cancel-edit-field"
-              class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
-              Cancel
-            </button>
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" id="cancel-edit-field"
+            class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+            Cancel
+          </button>
 
-            <button type="submit"
-              class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
-              <i class="bi bi-pencil mr-1" aria-hidden="true"></i>
-              Save changes
-            </button>
-          </div>
-        </form>
+          <button type="submit"
+            class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+            <i class="bi bi-pencil mr-1" aria-hidden="true"></i>
+            Save changes
+          </button>
+        </div>
+      </form>
       {% endcall %}
       {# ==================== End Edit Custom Field ==================== #}
 
@@ -447,8 +449,8 @@
             <thead class="border-b border-zinc-800">
               <tr>
                 <th class="px-5 py-3 font-medium text-zinc-400">Name</th>
-                <th class="px-5 py-3 font-medium text-zinc-400">Type</th>
-                <th class="px-5 py-3 font-medium text-zinc-400">Required</th>
+                <th class="w-px whitespace-nowrap px-5 py-3 font-medium text-zinc-400">Type</th>
+                <th class="w-px whitespace-nowrap px-5 py-3 font-medium text-zinc-400">Required</th>
                 <th class="w-px whitespace-nowrap px-5 py-3 text-center font-medium text-zinc-400">Actions</th>
               </tr>
             </thead>
@@ -457,15 +459,11 @@
               <tr>
                 <td class="px-5 py-4 font-medium text-zinc-100">
                   <div class="flex items-center gap-3">
-                    <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400">
-                      <i class="bi bi-input-cursor-text text-sm" aria-hidden="true"></i>
-                    </div>
                     <div class="min-w-0">
                       <span class="block truncate" title="{{ field.name }}">{{ field.name }}</span>
 
                       {% if field.description %}
-                      <span class="block truncate text-xs font-normal text-zinc-500"
-                        title="{{ field.description }}">
+                      <span class="block truncate text-xs font-normal text-zinc-500" title="{{ field.description }}">
                         {{ field.description }}
                       </span>
                       {% endif %}
@@ -473,7 +471,8 @@
                   </div>
                 </td>
                 <td class="px-5 py-4">
-                  <span class="rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">
+                  <span
+                    class="rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">
                     {{ field.field_type }}
                   </span>
                 </td>
@@ -482,15 +481,16 @@
                   <i class="bi bi-check-lg text-zinc-300" aria-hidden="true"></i>
                   <span class="sr-only">Yes</span>
                   {% else %}
-                  —
+                  <i class="bi bi-x-lg text-zinc-500" aria-hidden="true"></i>
+                  <span class="sr-only">No</span>
                   {% endif %}
                 </td>
                 <td class="px-5 py-4">
                   <div class="flex justify-end gap-1">
-                    <button type="button" class="edit-field rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+                    <button type="button"
+                      class="edit-field rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                       data-field-id="{{ field.id }}" data-field-name="{{ field.name }}"
-                      data-field-type="{{ field.field_type }}"
-                      data-field-description="{{ field.description or '' }}"
+                      data-field-type="{{ field.field_type }}" data-field-description="{{ field.description or '' }}"
                       data-field-required="{{ 'true' if field.required else 'false' }}"
                       data-field-enum-values="{{ field.enum_values | join('\n') if field.enum_values else '' }}"
                       data-update-url="{{ url_for('admin.update_custom_field_route', field_id=field.id) }}"
@@ -499,7 +499,8 @@
                     </button>
                     <form method="post" action="{{ url_for('admin.archive_custom_field_route', field_id=field.id) }}"
                       data-archive-field>
-                      <button type="submit" class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
+                      <button type="submit"
+                        class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
                         title="Archive custom field" aria-label="Archive custom field">
                         <i class="bi bi-archive" aria-hidden="true"></i>
                       </button>
@@ -517,13 +518,11 @@
           {% for field in custom_fields %}
           <div class="flex items-center justify-between gap-3 px-4 py-3">
             <div class="flex min-w-0 items-center gap-3">
-              <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400">
-                <i class="bi bi-input-cursor-text text-sm" aria-hidden="true"></i>
-              </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-2">
                   <p class="truncate text-sm font-medium text-zinc-100">{{ field.name }}</p>
-                  <span class="shrink-0 rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">
+                  <span
+                    class="shrink-0 rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">
                     {{ field.field_type }}
                   </span>
                 </div>
@@ -534,10 +533,10 @@
               </div>
             </div>
             <div class="flex shrink-0 gap-1">
-              <button type="button" class="edit-field rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+              <button type="button"
+                class="edit-field rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                 data-field-id="{{ field.id }}" data-field-name="{{ field.name }}"
-                data-field-type="{{ field.field_type }}"
-                data-field-description="{{ field.description or '' }}"
+                data-field-type="{{ field.field_type }}" data-field-description="{{ field.description or '' }}"
                 data-field-required="{{ 'true' if field.required else 'false' }}"
                 data-field-enum-values="{{ field.enum_values | join('\n') if field.enum_values else '' }}"
                 data-update-url="{{ url_for('admin.update_custom_field_route', field_id=field.id) }}"
@@ -577,20 +576,23 @@
       {% if archived_fields %}
       <div class="mt-8">
         <details class="group">
-          <summary class="flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-500 transition hover:text-zinc-300">
+          <summary
+            class="flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-500 transition hover:text-zinc-300">
             <i class="bi bi-chevron-right text-xs transition group-open:rotate-90" aria-hidden="true"></i>
             Archived fields ({{ archived_fields | length }})
           </summary>
 
           <div class="mt-3 space-y-2">
             {% for field in archived_fields %}
-            <div class="flex items-center justify-between gap-3 rounded-lg border border-zinc-800/60 bg-zinc-900/40 px-4 py-3">
+            <div
+              class="flex items-center justify-between gap-3 rounded-lg border border-zinc-800/60 bg-zinc-900/40 px-4 py-3">
               <div class="min-w-0">
                 <div class="flex items-center gap-2">
                   <p class="truncate text-sm font-medium text-zinc-400 line-through">
                     {{ field.name }}
                   </p>
-                  <span class="shrink-0 rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-500">
+                  <span
+                    class="shrink-0 rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-500">
                     {{ field.field_type }}
                   </span>
                 </div>
@@ -620,6 +622,69 @@
     </section>
     {% endif %}
     {# ==================== End Custom Fields Panel ==================== #}
+
+
+    {# ==================== Data Panel ==================== #}
+    <section id="tab-data" data-tab-panel="data" class="{{ 'hidden' if active_tab != 'data' }}">
+
+      {# ==================== Import ==================== #}
+      <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+
+        <div class="flex items-start justify-between gap-4">
+
+          <div>
+            <h2 class="text-lg font-semibold">Import</h2>
+
+            <p class="mt-1 text-sm text-zinc-400">
+              Import asset records from a CSV or .xlsx file. A unique Asset ID is
+              generated for every row; each row requires at least a
+              <code class="text-zinc-300">name</code> column.
+            </p>
+          </div>
+
+          <button type="button" id="import-button"
+            class="shrink-0 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
+            <i class="bi bi-upload mr-1" aria-hidden="true"></i>
+            Import items
+          </button>
+
+        </div>
+
+        <p id="import-status" class="mt-3 hidden text-sm"></p>
+
+      </div>
+      {# ==================== End Import ==================== #}
+
+      {# ==================== Export ==================== #}
+      <div class="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+
+        <div class="flex items-start justify-between gap-4">
+
+          <div>
+            <h2 class="text-lg font-semibold">Export</h2>
+
+            <p class="mt-1 text-sm text-zinc-400">
+              Export inventory items to a CSV file. Choose specific columns or
+              leave the selection empty to include all fields.
+            </p>
+          </div>
+
+          <button type="button" id="export-button"
+            class="shrink-0 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
+            <i class="bi bi-download mr-1" aria-hidden="true"></i>
+            Export CSV
+          </button>
+
+        </div>
+
+      </div>
+      {# ==================== End Export ==================== #}
+
+      {% include "inventory/modals/import.jinja" %}
+      {% include "inventory/modals/export.jinja" %}
+
+    </section>
+    {# ==================== End Data Panel ==================== #}
 
 
     {# ==================== Backups Panel ==================== #}
@@ -683,16 +748,7 @@
             </label>
 
             <input id="restore-file" name="file" type="file" required accept=".db"
-              class="block w-full text-sm text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-zinc-300 file:transition hover:file:bg-zinc-700">
-          </div>
-
-          <div>
-            <label for="restore-password" class="mb-2 block text-sm font-medium text-zinc-300">
-              Confirm your password
-            </label>
-
-            <input id="restore-password" name="password" type="password" required autocomplete="current-password"
-              class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+              class="block text-sm text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-zinc-300 file:transition hover:file:bg-zinc-700">
           </div>
 
           <p id="restore-status" class="hidden text-sm"></p>
@@ -711,6 +767,55 @@
     </section>
     {% endif %}
     {# ==================== End Backups Panel ==================== #}
+
+
+    {# ==================== Restore Backup Confirmation ==================== #}
+    <div id="restore-confirm-dialog" class="hidden p-6">
+
+      <div class="flex items-start gap-4">
+
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-950 text-red-400">
+          <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+        </div>
+
+        <div>
+          <h2 class="text-lg font-semibold">
+            Restore backup?
+          </h2>
+
+          <p class="mt-1 text-sm text-zinc-400">
+            Restoring overwrites all current data. Enter your password to confirm.
+          </p>
+        </div>
+
+      </div>
+
+      <form id="restore-confirm-form" class="mt-6">
+        <label for="restore-confirm-password" class="mb-2 block text-sm font-medium text-zinc-300">
+          Confirm your password
+        </label>
+
+        <input id="restore-confirm-password" name="password" type="password" required autocomplete="current-password"
+          class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+
+        <p id="restore-confirm-status" class="mt-2 hidden text-sm"></p>
+
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" id="cancel-restore-confirm"
+            class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+            Cancel
+          </button>
+
+          <button type="submit" id="restore-confirm-button"
+            class="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-500">
+            <i class="bi bi-arrow-counterclockwise mr-1" aria-hidden="true"></i>
+            Restore backup
+          </button>
+        </div>
+      </form>
+
+    </div>
+    {# ==================== End Restore Backup Confirmation ==================== #}
 
 
     {# ==================== Delete Location Confirmation ==================== #}
@@ -799,5 +904,6 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/modal-manager.js') }}"></script>
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script src="{{ url_for('static', filename='js/data.js') }}"></script>
 {% endblock %}
 {# ==================== End Scripts Block ==================== #}
