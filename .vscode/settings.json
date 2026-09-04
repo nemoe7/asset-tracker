@@ -8,5 +8,6 @@
       "name": "inventory-management-dev",
       "database": "./.data/inventory.db"
     }
-  ]
+  ],
+  "sqltools.useNodeRuntime": true
 }
