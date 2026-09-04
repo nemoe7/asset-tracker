@@ -41,7 +41,7 @@ services:
           zrok2 list shares --json 2>/dev/null |
             jq -e --arg name "$${ZROK2_SHARE_NAME}" '
               .shares |
-              any(.[]; .frontendEndpoints[]? | contains($name + ".shares.zrok.io"))
+              any(.[]; .frontendEndpoints[]? | contains($$name + ".shares.zrok.io"))
             ' >/dev/null
       interval: 5s
       timeout: 5s
@@ -67,6 +67,7 @@ services:
         if [ ! -f /mnt/.zrok2/environment.json ]; then
           zrok2-enable
           chown -R 2171:2171 /mnt
+          zrok2 delete name "$${ZROK2_SHARE_NAME}" || true
           zrok2 create name "$${ZROK2_SHARE_NAME}"
         fi
 
