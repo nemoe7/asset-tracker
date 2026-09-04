@@ -10,8 +10,12 @@ from flask import (
 
 from ..services.auth.authentication import login_required
 from ..services.auth.authorization import permission_required
-from ..services.data.backups import create_backup
-from ..services.exceptions.data.backups import BackupError
+from ..services.data.backups import create_backup, restore_backup
+from ..services.data.users import verify_password
+from ..services.exceptions.data.backups import (
+  BackupError,
+  InvalidBackupError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,4 +50,23 @@ def create():
 @login_required
 @permission_required("backups.restore")
 def restore():
+  password = request.form.get("password")
+  file = request.files.get("file")
+
+  if not password or file is None:
+    return jsonify({"error": "Backup file and password are required"}), 400
+
+  # Verified before any destructive action is taken (BKP-013).
+  if not verify_password(session["user_id"], password):
+    return jsonify({"error": "Incorrect password"}), 400
+
+  try:
+    restore_backup(file)
+  except InvalidBackupError as error:
+    return jsonify({"error": str(error)}), 400
+  except BackupError:
+    logger.exception("Backup restore failed")
+
+    return jsonify({"error": "Restore failed"}), 500
+
   return jsonify({"status": "ok"})
