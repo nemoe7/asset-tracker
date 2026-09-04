@@ -629,40 +629,40 @@ The project will be considered complete when:
 - [ ] Office Admins can assign roles to users.
 - [ ] Office Admins can configure per-user permission overrides.
 - [ ] Office Admins can configure which asset fields Checkers can view and edit.
-- [ ] Authorized users can create, view, edit, archive, and restore assets as permitted.
+- [x] Authorized users can create, view, edit, archive, and restore assets as permitted.
 - [ ] Authorized users provide an archival reason when archiving an asset.
 - [ ] Archival reasons are restricted to the agreed values (invalid, damaged, disposed).
 - [ ] Archival notes can be recorded as free text when archiving an asset.
 - [ ] Restoring an archived asset clears its archival reason and notes, and the restoration log entry includes them.
-- [ ] Each asset receives a unique system-generated UUID as its Asset ID.
-- [ ] The Asset ID is encoded in the asset's QR code.
-- [ ] A supported mobile device can scan an asset QR code and open the corresponding asset.
-- [ ] Asset location is available as a built-in field and supports an unset value.
-- [ ] Asset checks and relevant changes are recorded.
-- [ ] Asset changes include appropriate audit information.
-- [ ] Office Admins can create and configure custom asset fields.
+- [x] Each asset receives a unique system-generated UUID as its Asset ID.
+- [x] The Asset ID is encoded in the asset's QR code.
+- [x] A supported mobile device can scan an asset QR code and open the corresponding asset.
+- [x] Asset location is available as a built-in field and supports an unset value.
+- [x] Asset checks and relevant changes are recorded.
+- [x] Asset changes include appropriate audit information.
+- [x] Office Admins can create and configure custom asset fields.
 - [ ] Custom fields support the implemented data types required by the project.
-- [ ] Custom field values are validated according to their configured types.
+- [x] Custom field values are validated according to their configured types.
 - [ ] Authorized users can view relevant logs from supported desktop and mobile devices.
 - [ ] Log visibility respects effective user permissions.
-- [ ] Users can search, filter, and view inventory records.
-- [ ] Custom fields can be used in applicable searches, filters, and exports.
-- [ ] Authorized users can import inventory data with at least a Name provided for each asset.
-- [ ] Missing optional imported values remain unset.
-- [ ] Authorized users can export inventory data in an agreed Excel-compatible format.
+- [x] Users can search, filter, and view inventory records.
+- [x] Custom fields can be used in applicable searches, filters, and exports.
+- [x] Authorized users can import inventory data with at least a Name provided for each asset.
+- [x] Missing optional imported values remain unset.
+- [x] Authorized users can export inventory data in an agreed Excel-compatible format.
 - [ ] Export templates can save and apply predefined filters.
-- [ ] The system can create manual backups.
+- [x] The system can create manual backups.
 - [ ] Automatic backups are disabled by default.
 - [ ] The system prompts the Admin to configure automatic backups during first-time initialization.
 - [ ] Admins can configure the automatic backup schedule.
 - [ ] The system detects missed scheduled backups.
 - [ ] A missed scheduled backup is performed on the next application startup.
 - [ ] The system avoids duplicate execution of the same scheduled backup.
-- [ ] Backups contain all required inventory, user, permission, custom field, and log data.
+- [x] Backups contain all required inventory, user, permission, custom field, and log data.
 - [ ] Backup files are stored in the configured backup location.
 - [ ] The configured backup location can be accessed outside the application runtime environment.
-- [ ] A valid backup can be restored successfully.
-- [ ] Backup and restoration activities are appropriately recorded.
+- [x] A valid backup can be restored successfully.
+- [x] Backup and restoration activities are appropriately recorded.
 - [ ] The application works on the agreed desktop and mobile browsers.
 - [ ] The client has reviewed and accepted the completed application.
 
