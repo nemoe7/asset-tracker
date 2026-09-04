@@ -27,6 +27,7 @@ logs/
 # Misc.
 **/.diff
 **/*.session.sql
+implementation_plan.md
 
 # Node
 node_modules/
