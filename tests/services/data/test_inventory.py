@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 
+from app.services.auth.context import reset_current_user, set_current_user
 from app.services.data.audit import get_audit_logs
 from app.services.data.custom_field_values import set_custom_field_value
 from app.services.data.custom_fields import create_custom_field
@@ -11,6 +12,7 @@ from app.services.data.inventory import (
   get_item,
   get_items,
   get_items_paginated,
+  import_items,
   restore_item,
   update_item,
 )
@@ -1225,3 +1227,143 @@ def test_get_items_paginated_rejects_invalid_per_page(
 ):
   with pytest.raises(InvalidInputError):
     get_items_paginated(per_page=0)
+
+
+# ==================== import_items ====================
+
+
+def test_import_items_generates_uuid_ids(gen_test_data_admin):
+  result = import_items(
+    [
+      {"name": "Alpha", "description": None, "location": None, "custom_fields": {}},
+      {"name": "Beta", "description": None, "location": None, "custom_fields": {}},
+    ],
+  )
+
+  assert result["imported_count"] == 2
+  assert len(result["item_ids"]) == 2
+
+  for item_id in result["item_ids"]:
+    assert get_item(item_id) is not None
+
+  assert all("-" in item_id for item_id in result["item_ids"])
+  assert len(set(result["item_ids"])) == 2
+
+
+def test_import_items_requires_name(gen_test_data_admin):
+  with pytest.raises(InvalidInputError):
+    import_items(
+      [{"name": None, "description": None, "location": None, "custom_fields": {}}],
+    )
+
+
+def test_import_items_leaves_unsupplied_fields_unset(gen_test_data_admin):
+  result = import_items(
+    [{"name": "Alpha", "description": None, "location": None, "custom_fields": {}}],
+  )
+
+  item = get_item(result["item_ids"][0])
+
+  assert item["description"] is None
+  assert item["location_name"] is None
+  assert item["custom_fields"] == {}
+
+
+def test_import_items_resolves_location_by_name(gen_test_data_admin):
+  token = set_current_user(gen_test_data_admin)
+
+  try:
+    create_location("Office")
+  finally:
+    reset_current_user(token)
+
+  result = import_items(
+    [
+      {
+        "name": "Alpha",
+        "description": None,
+        "location": "Office",
+        "custom_fields": {},
+      },
+    ],
+  )
+
+  item = get_item(result["item_ids"][0])
+
+  assert item["location_name"] == "Office"
+
+
+def test_import_items_sets_custom_fields_skips_user_type(
+  gen_test_data_admin,
+):
+  token = set_current_user(gen_test_data_admin)
+
+  try:
+    serial_id = create_custom_field("Serial", "text")
+    owner_id = create_custom_field("Owner", "user")
+  finally:
+    reset_current_user(token)
+
+  result = import_items(
+    [
+      {
+        "name": "Alpha",
+        "description": None,
+        "location": None,
+        "custom_fields": {"Serial": "SN-1", "Owner": "test_admin"},
+      },
+    ],
+  )
+
+  item = get_item(result["item_ids"][0])
+
+  assert item["custom_fields"]["Serial"] == "SN-1"
+  assert "Owner" not in item["custom_fields"]
+
+
+def test_import_items_unknown_location_rejects_atomically(gen_test_data_admin):
+  with pytest.raises(LocationNotFoundError):
+    import_items(
+      [
+        {"name": "Alpha", "description": None, "location": None, "custom_fields": {}},
+        {"name": "Beta", "description": None, "location": "Nope", "custom_fields": {}},
+      ],
+    )
+
+  assert get_items() == []
+  assert not any(log["action"] == "imported" for log in get_audit_logs())
+
+
+def test_import_items_unknown_custom_field_rejects_atomically(
+  gen_test_data_admin,
+):
+  with pytest.raises(InvalidInputError):
+    import_items(
+      [
+        {
+          "name": "Alpha",
+          "description": None,
+          "location": None,
+          "custom_fields": {"Nope": "x"},
+        },
+      ],
+    )
+
+  assert get_items() == []
+  assert not any(log["action"] == "imported" for log in get_audit_logs())
+
+
+def test_import_items_creates_imported_audit_log(gen_test_data_admin):
+  result = import_items(
+    [{"name": "Alpha", "description": None, "location": None, "custom_fields": {}}],
+  )
+
+  imported = [
+    log
+    for log in get_audit_logs()
+    if log["action"] == "imported"
+  ]
+
+  assert len(imported) == 1
+  assert imported[0]["details"] == {"item_count": len(result["item_ids"])}
+  assert imported[0]["user_id"] == gen_test_data_admin
