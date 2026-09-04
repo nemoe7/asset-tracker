@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/nemoe7/inventory-management:latest
+    image: ghcr.io/nemoe7/asset-tracker:latest
     container_name: ${ZROK2_SHARE_NAME}
     restart: unless-stopped
     depends_on:
