@@ -174,6 +174,10 @@
 | SEC-006 | P5 | Restrict backup/restore to authorized users. | 🔴 | BKP-011, BKP-012, AUT-003 | SEC-001 | |
 | USE-005 | P5 | Archive/restore require confirmation. | 🟢 | AST-004, AST-012 | BKP-013 | |
 | USE-006 | P5 | Backup UI shows enabled state and next scheduled backup. | 🔴 | BKP-015 | BKP-004 | |
+| AST-014 | P5 | Archiving an asset requires a reason from the defined values. | 🔴 | AST-004 | AST-015, USE-005 | |
+| AST-015 | P5 | Archiving an asset can include free-format notes. | 🔴 | AST-004 | AST-014 | |
+| AST-016 | P5 | Archived assets retain archival reason/notes; archival audit event includes them. | 🔴 | AST-014, AUD-003 | AST-017 | When implemented, viewing an archived asset should also display the archival reason and notes |
+| AST-017 | P5 | Restoring an archived asset clears reason/notes; restoration audit event includes them. | 🔴 | AST-012, AST-016 | AUD-003 | |
 | AUT-007 | — | Support exact permission grants. | 🟢 | — | AUT-017 | |
 | AUT-008 | — | Support `namespace.*` wildcard grants. | 🟢 | — | AUT-009, AUT-012 | |
 | AUT-009 | — | Namespace wildcard grants all concrete namespace permissions. | 🟢 | AUT-008 | AUT-012 | |
