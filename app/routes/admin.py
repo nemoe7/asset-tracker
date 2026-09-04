@@ -46,10 +46,12 @@ admin = Blueprint(
 
 _LOCATION_TAB = "locations"
 _CUSTOM_FIELDS_TAB = "custom-fields"
+_DATA_TAB = "data"
 _BACKUPS_TAB = "backups"
 _VALID_TABS = (
   _LOCATION_TAB,
   _CUSTOM_FIELDS_TAB,
+  _DATA_TAB,
   _BACKUPS_TAB,
 )
 
@@ -107,12 +109,16 @@ def settings():
   permission_by_tab = {
     _LOCATION_TAB: ("locations.manage",),
     _CUSTOM_FIELDS_TAB: ("custom_fields.manage",),
+    _DATA_TAB: (),
     _BACKUPS_TAB: ("backups.create", "backups.restore"),
   }
 
-  if not any(
+  tab_permissions = permission_by_tab[active_tab]
+
+  # Tabs with no required permissions (the data tab) stay login-gated only.
+  if tab_permissions and not any(
     check_permission(session.get("user_id"), permission_name)
-    for permission_name in permission_by_tab[active_tab]
+    for permission_name in tab_permissions
   ):
     abort(403)
 

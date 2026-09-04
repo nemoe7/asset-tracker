@@ -13,7 +13,7 @@ def test_backups_tab_shows_manual_backup_controls(page, live_server, setup_admin
 
 
 @pytest.mark.e2e
-def test_restore_section_shows_warning_password_and_file_inputs(
+def test_restore_section_shows_file_input_and_restore_button(
   page,
   live_server,
   setup_admin,
@@ -22,11 +22,39 @@ def test_restore_section_shows_warning_password_and_file_inputs(
 
   expect(page.get_by_text("Restore from backup")).to_be_visible()
   expect(
-    page.get_by_text("overwrites", exact=False)
+    page.locator("#tab-backups").get_by_text("overwrites", exact=False)
   ).to_contain_text("all current data")
   expect(page.locator("#restore-file")).to_be_visible()
-  expect(page.locator("#restore-password")).to_be_visible()
   expect(page.locator("#restore-button")).to_be_visible()
+
+  # The password prompt moved into the confirmation modal.
+  expect(page.locator("#restore-confirm-dialog")).to_be_hidden()
+
+
+@pytest.mark.e2e
+def test_restore_opens_password_modal_after_choosing_file(
+  page,
+  live_server,
+  setup_admin,
+  tmp_path,
+):
+  backup_file = tmp_path / "backup.db"
+
+  backup_file.write_bytes(b"SQLite format 3\x00" + b"\x00" * 64)
+
+  page.goto(f"{live_server}/admin?tab=backups")
+
+  page.locator("#restore-file").set_input_files(backup_file)
+  page.locator("#restore-button").click()
+
+  dialog = page.locator("#restore-confirm-dialog")
+  expect(dialog).to_be_visible()
+  expect(page.locator("#restore-confirm-password")).to_be_visible()
+
+  # Cancelling closes the modal without restoring.
+  page.get_by_role("button", name="Cancel", exact=True).click()
+
+  expect(dialog).to_be_hidden()
 
 
 @pytest.mark.e2e
@@ -43,13 +71,17 @@ def test_restore_with_wrong_password_shows_error(
   page.goto(f"{live_server}/admin?tab=backups")
 
   page.locator("#restore-file").set_input_files(backup_file)
-  page.locator("#restore-password").fill("wrong-password")
-
-  page.on("dialog", lambda dialog: dialog.accept())
-
   page.locator("#restore-button").click()
 
-  expect(page.locator("#restore-status")).to_contain_text("Incorrect password")
+  dialog = page.locator("#restore-confirm-dialog")
+  expect(dialog).to_be_visible()
+
+  page.locator("#restore-confirm-password").fill("wrong-password")
+
+  dialog.get_by_role("button", name="Restore backup").click()
+
+  expect(page.locator("#restore-confirm-status")).to_contain_text("Incorrect password")
+  expect(dialog).to_be_visible()
 
 
 

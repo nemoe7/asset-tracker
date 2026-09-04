@@ -44,3 +44,84 @@ def create_location(page, live_server):
     return response.json()
 
   return _create
+
+
+@pytest.fixture
+def create_item(page, live_server):
+  def _create(name, location_id=None):
+    response = page.request.post(
+      f"{live_server}/inventory",
+      form={
+        "name": name,
+        "location_id": location_id or "",
+      },
+      headers={
+        "Accept": "application/json",
+      },
+      max_redirects=0,
+    )
+
+    assert response.status == 200
+    assert response.json()["id"]
+
+    return response.json()
+
+  return _create
+
+
+@pytest.fixture
+def create_custom_field(page, live_server):
+  def _create(name, field_type, required=False, enum_values=None, description=None):
+    data = {
+      "name": name,
+      "field_type": field_type,
+    }
+
+    response = page.request.post(
+      f"{live_server}/custom-fields",
+      form=data,
+      max_redirects=0,
+    )
+
+    assert response.status == 302
+
+    fields = page.request.get(f"{live_server}/custom-fields").json()
+    field = next(candidate for candidate in fields if candidate["name"] == name)
+
+    if required or description is not None:
+      update = {}
+
+      if required:
+        update["required"] = "true"
+
+      if description is not None:
+        update["description"] = description
+
+      page.request.post(
+        f"{live_server}/custom-fields/{field['id']}",
+        form=update,
+        max_redirects=0,
+      )
+
+      fields = page.request.get(f"{live_server}/custom-fields").json()
+      field = next(candidate for candidate in fields if candidate["id"] == field["id"])
+
+    return field
+
+  return _create
+
+
+@pytest.fixture
+def set_item_custom_field(page, live_server):
+  def _set(item_id, name, value):
+    response = page.request.post(
+      f"{live_server}/inventory/{item_id}",
+      form={
+        f"f_{name}": value,
+      },
+      max_redirects=0,
+    )
+
+    assert response.status == 302
+
+  return _set

@@ -250,9 +250,13 @@ backupButton?.addEventListener('click', async () => {
 
 const restoreForm = document.getElementById('restore-form');
 const restoreFile = document.getElementById('restore-file');
-const restorePassword = document.getElementById('restore-password');
 const restoreStatus = document.getElementById('restore-status');
-const restoreButton = document.getElementById('restore-button');
+const restoreConfirmDialog = document.getElementById('restore-confirm-dialog');
+const restoreConfirmForm = document.getElementById('restore-confirm-form');
+const restoreConfirmPassword = document.getElementById('restore-confirm-password');
+const restoreConfirmStatus = document.getElementById('restore-confirm-status');
+const restoreConfirmButton = document.getElementById('restore-confirm-button');
+const cancelRestoreConfirm = document.getElementById('cancel-restore-confirm');
 
 function showRestoreStatus(message, isError) {
   if (!restoreStatus) {
@@ -265,7 +269,19 @@ function showRestoreStatus(message, isError) {
   restoreStatus.classList.toggle('text-emerald-400', !isError);
 }
 
-restoreForm?.addEventListener('submit', async (event) => {
+function showRestoreConfirmError(message) {
+  if (!restoreConfirmStatus) {
+    return;
+  }
+
+  restoreConfirmStatus.textContent = message;
+  restoreConfirmStatus.classList.remove('hidden');
+  restoreConfirmStatus.classList.add('text-red-400');
+}
+
+// Choosing a file opens the password confirmation modal.
+
+restoreForm?.addEventListener('submit', (event) => {
   event.preventDefault();
 
   if (!restoreFile?.files?.length) {
@@ -273,21 +289,29 @@ restoreForm?.addEventListener('submit', async (event) => {
     return;
   }
 
-  const confirmed = window.confirm(
-    'Restoring will permanently overwrite all current data. Continue?'
-  );
-
-  if (!confirmed) {
-    return;
+  if (restoreConfirmPassword) {
+    restoreConfirmPassword.value = '';
   }
+
+  restoreConfirmStatus?.classList.add('hidden');
+
+  openModal(restoreConfirmDialog);
+});
+
+cancelRestoreConfirm?.addEventListener('click', () => {
+  closeModal();
+});
+
+restoreConfirmForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
 
   const formData = new FormData();
 
   formData.append('file', restoreFile.files[0]);
-  formData.append('password', restorePassword?.value ?? '');
+  formData.append('password', restoreConfirmPassword?.value ?? '');
 
-  restoreButton?.setAttribute('disabled', '');
-  restoreStatus?.classList.add('hidden');
+  restoreConfirmButton?.setAttribute('disabled', '');
+  restoreConfirmStatus?.classList.add('hidden');
 
   try {
     const response = await fetch('/backups/restore', {
@@ -298,18 +322,18 @@ restoreForm?.addEventListener('submit', async (event) => {
     const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      showRestoreStatus(payload.error || 'Restore failed.', true);
+      showRestoreConfirmError(payload.error || 'Restore failed.');
       return;
     }
 
-    // The database was replaced; the current session is no longer valid.
-    showRestoreStatus('Backup restored. Redirecting to login...', false);
+    closeModal();
 
+    // The database was replaced; the current session is no longer valid.
     window.location.assign('/auth/login');
   } catch {
-    showRestoreStatus('Restore failed.', true);
+    showRestoreConfirmError('Restore failed.');
   } finally {
-    restoreButton?.removeAttribute('disabled');
+    restoreConfirmButton?.removeAttribute('disabled');
   }
 });
 

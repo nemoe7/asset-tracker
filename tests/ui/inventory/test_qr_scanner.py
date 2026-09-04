@@ -2,6 +2,15 @@ import pytest
 from playwright.sync_api import expect
 
 
+@pytest.fixture(autouse=True)
+def qr_scanner_mobile_viewport(page):
+  # The Scan button is hidden on desktop (md:hidden); QR tests run on a
+  # mobile-sized viewport where it is visible.
+  page.set_viewport_size({"width": 375, "height": 667})
+
+  yield
+
+
 @pytest.mark.e2e
 def test_qr_scanner_button_opens_modal(page, live_server):
   page.add_init_script("""

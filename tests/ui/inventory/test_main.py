@@ -224,7 +224,7 @@ def test_main_page_desktop_header_actions(page, live_server, setup_admin):
   page.set_viewport_size({"width": 1280, "height": 720})
   page.goto(f"{live_server}/")
 
-  expect(page.locator("#qr-scanner-button")).to_be_visible()
+  expect(page.locator("#qr-scanner-button")).to_be_hidden()
   expect(page.locator("#search-form")).to_be_visible()
 
   # The menu is available on desktop and its contents are initially hidden.
