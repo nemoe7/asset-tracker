@@ -54,16 +54,16 @@ _ALLOWED_FETCH_SITES = ("same-origin", "none")
 
 def _csrf_protect():
   if request.method in _SAFE_METHODS:
-    return None
+    return
 
   sec_fetch_site = request.headers.get("Sec-Fetch-Site")
 
   if sec_fetch_site is None:
     # Older browsers do not send the header; SameSite=Lax still protects them.
-    return None
+    return
 
   if sec_fetch_site in _ALLOWED_FETCH_SITES:
-    return None
+    return
 
   raise Forbidden("Cross-site request blocked")
 
