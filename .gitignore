@@ -28,6 +28,7 @@ logs/
 **/.diff
 **/*.session.sql
 implementation_plan.md
+code_review.md
 
 # Node
 node_modules/
