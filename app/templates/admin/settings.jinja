@@ -653,6 +653,61 @@
       </div>
       {# ==================== End Manual Backup ==================== #}
 
+
+      {# ==================== Restore From Backup ==================== #}
+      <div class="mt-6 rounded-xl border border-red-900/50 bg-zinc-900/50 p-6">
+
+        <div class="flex items-start gap-4">
+
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-950 text-red-400">
+            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+          </div>
+
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold">Restore from backup</h2>
+
+            <p class="mt-1 text-sm text-red-300">
+              Restoring a backup overwrites <strong>all current data</strong> —
+              inventory, custom fields, users, and audit history. This cannot
+              be undone. Download a fresh backup first if you are unsure.
+            </p>
+          </div>
+
+        </div>
+
+        <form id="restore-form" class="mt-5 space-y-4">
+
+          <div>
+            <label for="restore-file" class="mb-2 block text-sm font-medium text-zinc-300">
+              Backup file
+            </label>
+
+            <input id="restore-file" name="file" type="file" required accept=".db"
+              class="block w-full text-sm text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-zinc-300 file:transition hover:file:bg-zinc-700">
+          </div>
+
+          <div>
+            <label for="restore-password" class="mb-2 block text-sm font-medium text-zinc-300">
+              Confirm your password
+            </label>
+
+            <input id="restore-password" name="password" type="password" required autocomplete="current-password"
+              class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+          </div>
+
+          <p id="restore-status" class="hidden text-sm"></p>
+
+          <button type="submit" id="restore-button"
+            class="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
+            <i class="bi bi-arrow-counterclockwise mr-1" aria-hidden="true"></i>
+            Restore backup
+          </button>
+
+        </form>
+
+      </div>
+      {# ==================== End Restore From Backup ==================== #}
+
     </section>
     {% endif %}
     {# ==================== End Backups Panel ==================== #}

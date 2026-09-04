@@ -245,3 +245,72 @@ backupButton?.addEventListener('click', async () => {
 });
 
 // ==================== End Manual Backup ====================
+
+// ==================== Restore From Backup ====================
+
+const restoreForm = document.getElementById('restore-form');
+const restoreFile = document.getElementById('restore-file');
+const restorePassword = document.getElementById('restore-password');
+const restoreStatus = document.getElementById('restore-status');
+const restoreButton = document.getElementById('restore-button');
+
+function showRestoreStatus(message, isError) {
+  if (!restoreStatus) {
+    return;
+  }
+
+  restoreStatus.textContent = message;
+  restoreStatus.classList.remove('hidden');
+  restoreStatus.classList.toggle('text-red-400', isError);
+  restoreStatus.classList.toggle('text-emerald-400', !isError);
+}
+
+restoreForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  if (!restoreFile?.files?.length) {
+    showRestoreStatus('Choose a backup .db file to restore.', true);
+    return;
+  }
+
+  const confirmed = window.confirm(
+    'Restoring will permanently overwrite all current data. Continue?'
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  const formData = new FormData();
+
+  formData.append('file', restoreFile.files[0]);
+  formData.append('password', restorePassword?.value ?? '');
+
+  restoreButton?.setAttribute('disabled', '');
+  restoreStatus?.classList.add('hidden');
+
+  try {
+    const response = await fetch('/backups/restore', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      showRestoreStatus(payload.error || 'Restore failed.', true);
+      return;
+    }
+
+    // The database was replaced; the current session is no longer valid.
+    showRestoreStatus('Backup restored. Redirecting to login...', false);
+
+    window.location.assign('/auth/login');
+  } catch {
+    showRestoreStatus('Restore failed.', true);
+  } finally {
+    restoreButton?.removeAttribute('disabled');
+  }
+});
+
+// ==================== End Restore From Backup ====================
