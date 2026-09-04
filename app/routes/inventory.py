@@ -36,7 +36,10 @@ from ..services.exceptions.data.inventory import (
 )
 from ..services.exceptions.data.locations import LocationNotFoundError
 from ..services.export import build_export
+from ..services.import_svc import parse_import_file
+from ..services.data.inventory import import_items
 from ..services.auth.authentication import login_required
+from ..services.auth.authorization import permission_required
 
 logger = logging.getLogger(__name__)
 
@@ -378,3 +381,21 @@ def check(item_id):
     return jsonify({"error": str(error)}), 400
 
   return jsonify(item)
+
+
+@inventory.route("/import", methods=["POST"])
+@login_required
+@permission_required("inventory.import")
+def import_items_route():
+  file = request.files.get("file")
+
+  if file is None:
+    return jsonify({"error": "No import file provided"}), 400
+
+  try:
+    rows = parse_import_file(file)
+    result = import_items(rows)
+  except (InvalidInputError, LocationNotFoundError) as error:
+    return jsonify({"error": str(error)}), 400
+
+  return jsonify({"imported_count": result["imported_count"]})
