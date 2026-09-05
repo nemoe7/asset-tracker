@@ -1,6 +1,6 @@
 {% from "shared/_modal.jinja" import modal %}
 
-{% call modal("add-item-modal", "Add Item") %}
+{% call modal("add-item-modal", "Add Asset") %}
 
 <form method="post" action="{{ url_for('inventory.create') }}">
   {# ==================== Add Item Fields ==================== #}
@@ -74,7 +74,7 @@
     <button type="submit"
       class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-900">
       <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
-      Add item
+      Add asset
     </button>
 
   </div>

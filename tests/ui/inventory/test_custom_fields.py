@@ -119,7 +119,7 @@ def test_add_item_persists_custom_field_values(
   modal.locator('select[name="f_Active"]').select_option("true")
   modal.locator('select[name="f_Category"]').select_option("Electronics")
 
-  modal.get_by_role("button", name="Add item").click()
+  modal.get_by_role("button", name="Add asset").click()
 
   row = page.get_by_role("row").filter(has_text="Labeled Asset")
 
@@ -148,7 +148,7 @@ def test_add_item_required_custom_field_blocks_submit(
   modal = page.get_by_role("dialog")
 
   modal.locator("#item-name").fill("Blocked Asset")
-  modal.get_by_role("button", name="Add item").click()
+  modal.get_by_role("button", name="Add asset").click()
 
   expect(page.get_by_role("row").filter(has_text="Blocked Asset")).to_have_count(0)
   expect(modal.locator('[name="f_Serial Number"]')).to_be_visible()
@@ -419,7 +419,7 @@ def test_decimal_custom_field_accepts_fractional_value(
   modal.locator("#item-name").fill("Decimal Asset 2")
   modal.locator('input[name="f_Price"]').fill("12.99")
 
-  modal.get_by_role("button", name="Add item").click()
+  modal.get_by_role("button", name="Add asset").click()
 
   page.get_by_role("row").filter(has_text="Decimal Asset 2").click()
 
