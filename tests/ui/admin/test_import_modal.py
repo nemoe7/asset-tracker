@@ -14,7 +14,7 @@ def open_import_modal(page, live_server):
 def test_import_button_opens_import_modal(page, live_server, setup_admin):
   modal = open_import_modal(page, live_server)
 
-  expect(modal.get_by_role("heading", name="Import items")).to_be_visible()
+  expect(modal.get_by_role("heading", name="Import assets")).to_be_visible()
   expect(page.locator("#import-file")).to_be_visible()
   expect(page.locator("#import-submit-button")).to_be_visible()
 

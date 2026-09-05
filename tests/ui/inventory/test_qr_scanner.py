@@ -36,7 +36,7 @@ def test_qr_scanner_button_opens_modal(page, live_server):
   expect(modal).to_be_visible()
   expect(modal.get_by_role("heading", name="Scan QR code")).to_be_visible()
 
-  expect(modal.get_by_text("Scan an inventory item QR code.")).to_be_visible()
+  expect(modal.get_by_text("Scan an asset QR code.")).to_be_visible()
 
   expect(page.locator("#qr-reader")).to_be_visible()
 

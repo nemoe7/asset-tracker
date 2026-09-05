@@ -61,7 +61,7 @@ def test_inventory_search_shows_no_results(
 
   page.locator("#search").fill("Does Not Exist")
 
-  expect(page.get_by_role("heading", name="No inventory items")).to_be_visible()
+  expect(page.get_by_role("heading", name="No assets")).to_be_visible()
 
 
 @pytest.mark.e2e
@@ -179,4 +179,4 @@ def test_inventory_search_with_empty_inventory(
 
   page.locator("#search").fill("Test Asset")
 
-  expect(page.get_by_role("heading", name="No inventory items")).to_be_visible()
+  expect(page.get_by_role("heading", name="No assets")).to_be_visible()

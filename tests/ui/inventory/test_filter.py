@@ -212,4 +212,10 @@ def test_filter_returns_no_results_when_nothing_matches(
 
   page.get_by_role("button", name="Apply").click()
 
-  expect(page.get_by_role("heading", name="No inventory items")).to_be_visible()
+  expect(page.get_by_role("heading", name="No assets")).to_be_visible()
+
+  expect(
+    page.get_by_role("paragraph").filter(
+      has_text="No assets found in the selected location."
+    )
+  ).to_be_visible()

@@ -22,7 +22,7 @@ def test_main_page_loads(page, live_server):
 def test_main_page_shows_empty_inventory(page, live_server):
   page.goto(f"{live_server}/")
 
-  expect(page.get_by_role("heading", name="No inventory items")).to_be_visible()
+  expect(page.get_by_role("heading", name="No assets")).to_be_visible()
 
 
 @pytest.mark.e2e
@@ -46,7 +46,7 @@ def test_main_page_search_has_correct_input(page, live_server):
   expect(search).to_be_visible()
   expect(search).to_have_attribute("name", "search")
   expect(search).to_have_attribute("type", "search")
-  expect(search).to_have_attribute("placeholder", "Search inventory...")
+  expect(search).to_have_attribute("placeholder", "Search assets...")
 
 
 @pytest.mark.e2e
@@ -93,7 +93,7 @@ def test_main_page_add_item_modal_opens_and_closes(page, live_server):
   modal = page.locator("#add-item-modal")
   expect(modal).to_be_visible()
 
-  expect(modal.get_by_role("heading", name="Add item")).to_be_visible()
+  expect(modal.get_by_role("heading", name="Add Asset")).to_be_visible()
 
   expect(page.locator("#item-name")).to_be_visible()
   expect(page.locator("#item-description")).to_be_visible()
@@ -128,7 +128,7 @@ def test_add_item_with_description(page, live_server):
   page.locator("#item-name").fill("Test Asset")
   page.locator("#item-description").fill("Test asset description")
 
-  page.get_by_role("button", name="Add item", exact=True).last.click()
+  page.get_by_role("button", name="Add asset", exact=True).last.click()
 
   page.wait_for_url(f"{live_server}/")
 
@@ -186,7 +186,7 @@ def test_add_item_modal_requires_name(page, live_server):
   modal = page.locator("#add-item-modal")
   expect(modal).to_be_visible()
 
-  page.get_by_role("button", name="Add item", exact=True).last.click()
+  page.get_by_role("button", name="Add asset", exact=True).last.click()
 
   expect(modal).to_be_visible()
   expect(page.locator("#item-name")).to_have_attribute("required", "")
@@ -274,4 +274,3 @@ def test_main_page_mobile_menu_contains_user_actions(
 
   expect(menu.get_by_text(f"@{setup_admin['username']}", exact=True)).to_be_visible()
   expect(menu.locator('form[action="/auth/logout"]')).to_be_visible()
-
