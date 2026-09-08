@@ -64,6 +64,27 @@ def test_parse_csv_ignores_id_and_timestamp_columns():
   ]
 
 
+def test_parse_csv_invalid_utf8_raises():
+  upload = FileStorage(
+    stream=io.BytesIO(b"\xff\xfe"),
+    filename="items.csv",
+    content_type="text/csv",
+  )
+
+  with pytest.raises(InvalidInputError):
+    parse_import_file(upload)
+
+
+def test_parse_csv_malformed_raises():
+  upload = make_upload(
+    "items.csv",
+    "name,description\n" + "A" * 131073 + ",Beta",
+  )
+
+  with pytest.raises(InvalidInputError):
+    parse_import_file(upload)
+
+
 def make_xlsx_upload(rows):
   from openpyxl import Workbook
 
