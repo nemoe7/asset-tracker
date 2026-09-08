@@ -3,7 +3,8 @@ from decimal import Decimal, InvalidOperation
 
 from ..constants import UNSET as _UNSET
 from ..exceptions.data.common import InvalidInputError
-from ..exceptions.data.inventory import *  # noqa: F403 -- intentional: full exception surface
+from ..exceptions.data.custom_field_values import InvalidCustomFieldValueError
+from ..exceptions.data.inventory import *
 from ..exceptions.data.locations import LocationNotFoundError
 from .audit import create_audit_log
 from .custom_field_filters import EMPTY_FILTER_VALUE
@@ -167,9 +168,7 @@ def _field_filter_conditions(connection, custom_field_filters):
         equality_conditions.append(condition)
         parameters.extend(row_parameters)
 
-      row_conditions.append(
-        f"({' OR '.join(equality_conditions)})"
-      )
+      row_conditions.append(f"({' OR '.join(equality_conditions)})")
 
     for op, value in rows:
       if op not in _ORDERING_OPS and op not in _NEGATED_OPS:
@@ -360,13 +359,11 @@ def create_item(name, description=None, location_id=None):
 
 def import_items(rows):
   with db_transaction() as _connection:
-    custom_fields = {
-      field["name"]: field for field in get_custom_fields()
-    }
+    custom_fields = {field["name"]: field for field in get_custom_fields()}
 
     item_ids = []
 
-    for row in rows:
+    for index, row in enumerate(rows):
       name = row["name"]
 
       if not isinstance(name, str) or not name.strip():
@@ -395,7 +392,12 @@ def import_items(rows):
         if field["field_type"] == "user":
           continue
 
-        set_custom_field_value(item_id, field["id"], value)
+        try:
+          set_custom_field_value(item_id, field["id"], value)
+        except InvalidCustomFieldValueError as e:
+          raise InvalidCustomFieldValueError(
+            f"Invalid value for field {field_name}, Row: {index + 2}, {e.args[0]}"
+          )
 
       item_ids.append(item_id)
 

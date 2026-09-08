@@ -18,6 +18,7 @@ from app.services.data.inventory import (
 )
 from app.services.data.locations import create_location
 from app.services.exceptions.data.common import InvalidInputError
+from app.services.exceptions.data.custom_field_values import InvalidCustomFieldValueError
 from app.services.exceptions.data.inventory import *
 from app.services.exceptions.data.locations import LocationNotFoundError
 
@@ -1367,3 +1368,131 @@ def test_import_items_creates_imported_audit_log(gen_test_data_admin):
   assert len(imported) == 1
   assert imported[0]["details"] == {"item_count": len(result["item_ids"])}
   assert imported[0]["user_id"] == gen_test_data_admin
+
+
+def test_import_items_coerces_integer_custom_field(gen_test_data_admin):
+  token = set_current_user(gen_test_data_admin)
+
+  try:
+    quantity_id = create_custom_field("Quantity", "integer")
+  finally:
+    reset_current_user(token)
+
+  result = import_items(
+    [
+      {
+        "name": "Alpha",
+        "description": None,
+        "location": None,
+        "custom_fields": {"Quantity": "5"},
+      },
+    ],
+  )
+
+  item = get_item(result["item_ids"][0])
+
+  assert item["custom_fields"]["Quantity"] == 5
+
+
+def test_import_items_coerces_decimal_custom_field(gen_test_data_admin):
+  token = set_current_user(gen_test_data_admin)
+
+  try:
+    price_id = create_custom_field("Price", "decimal")
+  finally:
+    reset_current_user(token)
+
+  result = import_items(
+    [
+      {
+        "name": "Alpha",
+        "description": None,
+        "location": None,
+        "custom_fields": {"Price": "12.5"},
+      },
+    ],
+  )
+
+  item = get_item(result["item_ids"][0])
+
+  assert item["custom_fields"]["Price"] == 12.5
+
+
+def test_import_items_coerces_boolean_custom_field(gen_test_data_admin):
+  token = set_current_user(gen_test_data_admin)
+
+  try:
+    active_id = create_custom_field("Active", "boolean")
+  finally:
+    reset_current_user(token)
+
+  for raw, expected in [
+    ("true", True),
+    ("false", False),
+    ("1", True),
+    ("0", False),
+  ]:
+    result = import_items(
+      [
+        {
+          "name": "Alpha",
+          "description": None,
+          "location": None,
+          "custom_fields": {"Active": raw},
+        },
+      ],
+    )
+
+    item = get_item(result["item_ids"][0])
+
+    assert item["custom_fields"]["Active"] == expected, f"Failed for {raw}"
+
+
+def test_import_items_validates_enum_custom_field(gen_test_data_admin):
+  token = set_current_user(gen_test_data_admin)
+
+  try:
+    create_custom_field(
+      "Condition",
+      "enum",
+      enum_values=["New", "Used"],
+    )
+  finally:
+    reset_current_user(token)
+
+  with pytest.raises(InvalidCustomFieldValueError) as exc_info:
+    import_items(
+      [
+        {
+          "name": "Alpha",
+          "description": None,
+          "location": None,
+          "custom_fields": {"Condition": "Broken"},
+        },
+      ],
+    )
+
+  assert "Row: 2" in str(exc_info.value)
+
+
+def test_import_items_row_number_in_error_message(gen_test_data_admin):
+  token = set_current_user(gen_test_data_admin)
+
+  try:
+    create_custom_field("Quantity", "integer")
+  finally:
+    reset_current_user(token)
+
+  with pytest.raises(InvalidCustomFieldValueError) as exc_info:
+    import_items(
+      [
+        {
+          "name": "Alpha",
+          "description": None,
+          "location": None,
+          "custom_fields": {"Quantity": "not-a-number"},
+        },
+      ],
+    )
+
+  assert "Row: 2" in str(exc_info.value)

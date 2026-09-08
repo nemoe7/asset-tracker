@@ -1,5 +1,6 @@
 import json
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
 from ..exceptions.data.custom_field_values import *  # noqa: F403 -- intentional: full exception surface
 from ..exceptions.data.custom_fields import (
@@ -18,36 +19,58 @@ def _validate_value(field, value):
   if value is None:
     if field["required"]:
       raise RequiredCustomFieldError()
-    return
+    return None
 
   if field_type == "text":
     if not isinstance(value, str):
       raise InvalidCustomFieldValueError("Value must be a string")
 
   elif field_type == "integer":
-    if isinstance(value, bool) or not isinstance(value, int):
-      raise InvalidCustomFieldValueError("Value must be an integer")
+    if isinstance(value, bool):
+      raise InvalidCustomFieldValueError(f"Value {value} must be an integer")
+
+    if not isinstance(value, int):
+      try:
+        value = int(value)
+      except ValueError:
+        raise InvalidCustomFieldValueError(f"Value {value} must be an integer")
 
   elif field_type == "decimal":
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-      raise InvalidCustomFieldValueError("Value must be a decimal")
+    if isinstance(value, bool):
+      raise InvalidCustomFieldValueError(f"Value {value} must be a decimal")
+
+    if not isinstance(value, (int, float)):
+      try:
+        value = Decimal(value)
+      except InvalidOperation:
+        raise InvalidCustomFieldValueError(f"Value {value} must be a decimal")
 
   elif field_type == "boolean":
     if not isinstance(value, bool):
-      raise InvalidCustomFieldValueError("Value must be a boolean")
+      if value in ("0", "false", "False"):
+        value = False
+      elif value in ("1", "true", "True"):
+        value = True
+      else:
+        raise InvalidCustomFieldValueError(f"Value {value} must be a boolean.")
 
+  # TODO: verify weird date formats
   elif field_type == "date":
     if not isinstance(value, str):
-      raise InvalidCustomFieldValueError("Value must be a date in YYYY-MM-DD format")
+      raise InvalidCustomFieldValueError(
+        f"Value {value} must be a date in YYYY-MM-DD format"
+      )
 
     try:
       date.fromisoformat(value)
     except ValueError:
-      raise InvalidCustomFieldValueError("Value must be a date in YYYY-MM-DD format")
+      raise InvalidCustomFieldValueError(
+        f"Value {value} must be a date in YYYY-MM-DD format"
+      )
 
   elif field_type == "enum":
     if not isinstance(value, str):
-      raise InvalidCustomFieldEnumValueError("Value must be a string")
+      raise InvalidCustomFieldEnumValueError(f"Value {value} must be a string")
 
     enum_values = json.loads(field["enum_values"])
 
@@ -58,12 +81,14 @@ def _validate_value(field, value):
 
   elif field_type == "user":
     if isinstance(value, bool) or not isinstance(value, int):
-      raise InvalidCustomFieldValueError("Value must be a user ID")
+      raise InvalidCustomFieldValueError(f"Value {value} must be a valid user ID")
 
     user = get_user(value)
 
     if user is None:
       raise InvalidCustomFieldValueError(f"User with ID {value} does not exist")
+
+  return value
 
 
 def _serialize_value(field_type, value):
@@ -110,7 +135,7 @@ def set_custom_field_value(item_id, field_id, value):
     if field["archived_at"] is not None:
       raise CustomFieldIsArchivedError()
 
-    _validate_value(
+    value = _validate_value(
       field,
       value,
     )
