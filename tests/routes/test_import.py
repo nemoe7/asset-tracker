@@ -48,12 +48,13 @@ def test_import_requires_inventory_import_permission(
     },
   )
 
-  with pytest.raises(PermissionDeniedError):
-    gen_test_client.post(
-      "/inventory/import",
-      data={"file": (io.BytesIO(b"name\nAlpha\n"), "items.csv")},
-      content_type="multipart/form-data",
-    )
+  response = gen_test_client.post(
+    "/inventory/import",
+    data={"file": (io.BytesIO(b"name\nAlpha\n"), "items.csv")},
+    content_type="multipart/form-data",
+  )
+
+  assert response.status_code == 403
 
 
 def test_import_returns_imported_count(gen_test_admin_client):
