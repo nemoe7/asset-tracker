@@ -571,8 +571,87 @@ def test_set_boolean_custom_field_value_rejects_invalid_value(
     set_custom_field_value(
       item_id,
       field_id,
-      "true",
+      "maybe",
     )
+
+
+def test_set_integer_custom_field_value_accepts_string(gen_test_data_admin):
+  field_id = create_custom_field(
+    name="Quantity",
+    field_type="integer",
+  )
+  item_id = create_item(
+    name="Test Item",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "42",
+  )
+
+  value = get_custom_field_value(
+    item_id,
+    field_id,
+  )
+
+  assert value["value"] == "42"
+
+
+def test_set_decimal_custom_field_value_accepts_string(gen_test_data_admin):
+  field_id = create_custom_field(
+    name="Weight",
+    field_type="decimal",
+  )
+  item_id = create_item(
+    name="Test Item",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "12.5",
+  )
+
+  value = get_custom_field_value(
+    item_id,
+    field_id,
+  )
+
+  assert value["value"] == "12.5"
+
+
+def test_set_boolean_custom_field_value_accepts_string_representations(
+  gen_test_data_admin,
+):
+  field_id = create_custom_field(
+    name="Active",
+    field_type="boolean",
+  )
+  item_id = create_item(
+    name="Test Item",
+  )
+
+  for raw, expected in [
+    ("true", "1"),
+    ("True", "1"),
+    ("1", "1"),
+    ("false", "0"),
+    ("False", "0"),
+    ("0", "0"),
+  ]:
+    set_custom_field_value(
+      item_id,
+      field_id,
+      raw,
+    )
+
+    value = get_custom_field_value(
+      item_id,
+      field_id,
+    )
+
+    assert value["value"] == expected, f"Failed for {raw}"
 
 
 def test_set_date_custom_field_value(gen_test_data_admin):
