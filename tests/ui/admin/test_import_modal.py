@@ -35,7 +35,7 @@ def test_import_uploads_csv_and_creates_items(
   page.locator("#import-file").set_input_files(import_file)
   page.locator("#import-submit-button").click()
 
-  expect(page.locator("#import-status")).to_contain_text("Imported 1 item.")
+  expect(page.locator("#import-status")).to_contain_text("Imported 1 asset.")
   expect(modal).not_to_be_visible()
 
 

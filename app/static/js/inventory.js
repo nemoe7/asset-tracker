@@ -89,7 +89,7 @@ async function loadInventory(page = 1) {
         inventoryContent.innerHTML = `
           <div class="flex flex-col items-center justify-center py-12 text-center">
             <p class="text-sm text-zinc-400">
-              Invalid inventory filters.
+              Invalid asset filters.
             </p>
 
             <button
@@ -112,7 +112,7 @@ async function loadInventory(page = 1) {
         inventoryContent.innerHTML = `
           <div class="flex flex-col items-center justify-center py-12 text-center">
             <p class="text-sm text-zinc-400">
-              Failed to load inventory.
+              Failed to load assets.
             </p>
 
             <button

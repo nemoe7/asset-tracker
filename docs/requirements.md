@@ -9,9 +9,9 @@
 
 ### 1.1 Purpose
 
-The purpose of the system is to maintain a complete and organized record of office inventory, including equipment, furniture, IT equipment, and other high-value assets.
+The purpose of the system is to maintain a complete and organized record of office assets, including equipment, furniture, IT equipment, and other high-value assets.
 
-The system will provide a central inventory database, simplify physical asset checking and identification, maintain an audit trail of system activity and asset changes, and provide export, backup, and restoration capabilities. The inventory data may also be used as supporting documentation for insurance purposes.
+The system will provide a central asset database, simplify physical asset checking and identification, maintain an audit trail of system activity and asset changes, and provide export, backup, and restoration capabilities. The asset data may also be used as supporting documentation for insurance purposes.
 
 ### 1.2 Scope
 
@@ -37,7 +37,7 @@ The system will support:
 
 The system will have a single user role:
 
-- **Admins** — manage inventory, users, permissions, asset fields, exports, backups, restoration, and system configuration.
+- **Admins** — manage assets, users, permissions, asset fields, exports, backups, restoration, and system configuration.
 
 The Admin role is granted all permissions by default through the global wildcard grant (`*`). No other roles are defined (OI-002, resolved).
 
@@ -148,7 +148,7 @@ The availability of a function shall depend on the user's permissions, not solel
 
 ### 2.2.7 Export
 
-1. An authorized user opens the inventory view.
+1. An authorized user opens the list view.
 2. The user applies filters and/or selects the fields to export.
 3. The user selects a saved export template or configures the filters manually.
 4. The system generates the export file.
@@ -220,14 +220,14 @@ The system shall maintain records for office assets.
 - **AST-008** `[P1]`: The system shall prevent duplicate Asset IDs.
 - **AST-009** `[P1]`: Archived assets shall remain available to authorized users for historical reference.
 - **AST-010** `[P1]`: Archived assets shall be distinguishable from active assets.
-- **AST-011** `[P1]`: The system shall not permanently delete an asset through normal inventory management functions.
+- **AST-011** `[P1]`: The system shall not permanently delete an asset through normal asset management functions.
 - **AST-012** `[P1]`: Authorized users shall be able to restore an archived asset to an active state.
-- **AST-013** `[P1]`: The system shall retain relevant asset information required for inventory and insurance purposes.
+- **AST-013** `[P1]`: The system shall retain relevant asset information required for records and insurance purposes.
 - **AST-014** `[P5]`: The system shall require an archival reason when an asset is archived, and shall restrict the archival reason to the defined values: invalid, damaged, disposed.
 - **AST-015** `[P5]`: The system shall allow authorized users to provide free-format notes when archiving an asset.
 - **AST-016** `[P5]`: The system shall retain an archived asset's archival reason and notes while the asset remains archived, and shall include them in the archival audit event.
 - **AST-017** `[P5]`: When an archived asset is restored to an active state, the system shall clear its archival reason and notes. The restoration event recorded in the audit log shall include the archival reason and notes recorded for the archived asset.
-- **AST-018** `[P-TBD]`: The system shall expose the built-in Updated At timestamp for each inventory item in the applicable inventory views.
+- **AST-018** `[P-TBD]`: The system shall expose the built-in Updated At timestamp for each asset in the applicable list views.
 
 ### 3.4 Configurable Asset Fields
 
@@ -275,7 +275,7 @@ Each asset shall be identified using its Asset ID, which is encoded in its QR co
 
 ### 3.6 Asset Checking and Scanning
 
-The system shall support physical inventory checking through QR scanning.
+The system shall support physical asset checking through QR scanning.
 
 - **CHK-001** `[P1]`: A Checker shall be able to scan an asset QR code using a supported mobile device.
 - **CHK-002** `[P1]`: The system shall identify the asset from the scanned Asset ID.
@@ -288,15 +288,15 @@ The system shall support physical inventory checking through QR scanning.
 - **CHK-009** `[P1]`: Archived assets shall be handled according to their status and the user's permissions when scanned.
 - **CHK-010** `[P-TBD]`: An asset check shall update the checked asset's Updated At timestamp.
 
-### 3.7 Search, Filtering, and Inventory Views
+### 3.7 Search, Filtering, and List Views
 
-The system shall provide database-like inventory views.
+The system shall provide database-like list views.
 
 - **SRH-001** `[P1]`: Users shall be able to search for assets.
 - **SRH-002** `[P1]`: Users shall be able to filter assets using available asset fields.
 - **SRH-003** `[P1]`: Users shall be able to sort asset results using available fields.
-- **SRH-004** `[P1]`: The system shall display asset information in a tabular or equivalent inventory view.
-- **SRH-005** `[P1]`: The system shall allow users to open an individual asset from an inventory view.
+- **SRH-004** `[P1]`: The system shall display asset information in a tabular or equivalent list view.
+- **SRH-005** `[P1]`: The system shall allow users to open an individual asset from a list view.
 - **SRH-006** `[P1]`: Applied filters shall affect the displayed results and filtered exports where applicable.
 - **SRH-007** `[P3]`: Custom fields shall be available as search and filter criteria where applicable.
 
@@ -316,17 +316,17 @@ The system shall maintain an audit trail of relevant system activity.
 - **AUD-010** `[P3]`: For applicable asset changes, the system shall record the affected field and its previous and new values.
 - **AUD-011** `[P3]`: Authorized users shall be able to view relevant audit and activity logs from supported desktop and mobile devices.
 - **AUD-012** `[P5]`: The system shall restrict log visibility according to the user's permissions.
-- **AUD-013** `[P3]`: Audit logs shall not be editable through normal inventory management functions.
+- **AUD-013** `[P3]`: Audit logs shall not be editable through normal asset management functions.
 - **AUD-014** `[P-TBD]`: The view-asset interface shall provide a button that opens the audit and activity log page pre-filtered to the selected asset.
 
 ### 3.9 Export
 
-The system shall allow inventory information to be exported.
+The system shall allow asset information to be exported.
 
-- **EXP-001** `[P1]`: Authorized users shall be able to export inventory data.
+- **EXP-001** `[P1]`: Authorized users shall be able to export asset data.
 - **EXP-002** `[P1]`: The system shall provide an Excel-compatible export format.
 - **EXP-003** `[P1]`: Users shall be able to select which fields are included in an export where supported.
-- **EXP-004** `[P1]`: Users shall be able to export filtered inventory results.
+- **EXP-004** `[P1]`: Users shall be able to export filtered asset results.
 - **EXP-005** `[P4]`: Authorized users shall be able to create saved export templates.
 - **EXP-006** `[P4]`: An export template shall consist of a predefined set of filters and applicable export field selections.
 - **EXP-007** `[P4]`: Users shall be able to apply a saved export template before generating an export.
@@ -337,14 +337,14 @@ Note: only CSV export is supported.
 
 ### 3.10 Import
 
-The system shall support importing existing inventory data.
+The system shall support importing existing asset data.
 
 - **IMP-001** `[P1]`: Authorized users shall be able to import asset records.
 - **IMP-002** `[P1]`: An import shall require, at minimum, an Asset Name for each imported asset.
 - **IMP-003** `[P1]`: The system shall automatically generate an Asset ID for imported assets where one is not provided.
 - **IMP-004** `[P1]`: Optional fields not supplied during import shall remain unset.
 - **IMP-005** `[P4]`: The system shall validate imported values against the corresponding field types and requirements.
-- **IMP-006** `[P4]`: The system shall report invalid or rejected records without corrupting existing inventory data.
+- **IMP-006** `[P4]`: The system shall report invalid or rejected records without corrupting existing asset data.
 - **IMP-007** `[P4]`: Import operations shall be recorded in the audit log.
 
 ### 3.11 Backup and Restore
@@ -385,7 +385,7 @@ The system shall support scheduled and manual backups and full-system restoratio
 
 ### 4.1 Performance
 
-- **PER-001** `[P3]`: Normal inventory operations shall respond within a reasonable time under the expected number of users and assets.
+- **PER-001** `[P3]`: Normal asset operations shall respond within a reasonable time under the expected number of users and assets.
 - **PER-002** `[P3]`: Asset searches and filtering shall not require the user to manually reload the application.
 - **PER-003** `[P3]`: QR scanning shall open the corresponding asset record without unnecessary intermediate steps.
 
@@ -417,7 +417,7 @@ The system shall support scheduled and manual backups and full-system restoratio
 
 ### 4.5 Reliability and Recovery
 
-- **REL-001** `[P4]`: The system shall handle invalid user input without corrupting existing inventory data.
+- **REL-001** `[P4]`: The system shall handle invalid user input without corrupting existing asset data.
 - **REL-002** `[P5]`: Failed operations shall provide an appropriate error message.
 - **REL-003** `[P3]`: The system shall maintain data integrity when creating or modifying records.
 - **REL-004** `[P1]`: A valid backup shall be sufficient to restore the required application data.
@@ -549,7 +549,7 @@ The application shall provide:
 
 - A desktop management interface.
 - A mobile asset-checking interface.
-- Inventory search and filtering.
+- Asset search and filtering.
 - Individual asset pages.
 - QR scanning functionality.
 - User and permission management for Office Admins.
@@ -574,7 +574,7 @@ Potential external services may be added if required for:
 - Backup storage.
 - Other integrations agreed with the client.
 
-Any external service that stores or processes inventory data shall be reviewed and agreed upon before implementation.
+Any external service that stores or processes asset data shall be reviewed and agreed upon before implementation.
 
 ### 6.3 Hardware
 
@@ -605,7 +605,7 @@ The system shall support:
 - Mobile users will have access to a device with a functioning camera when QR scanning is required.
 - Office Admins will be responsible for maintaining users, permissions, asset fields, and system-level configuration.
 - Office Admins may define additional asset fields beyond the minimum built-in fields.
-- Imported inventory requires at minimum a Name; other fields may be left unset.
+- Imported assets require at minimum a Name; other fields may be left unset.
 - Automatic backups are disabled by default.
 - The system will prompt an Admin to configure automatic backups during first-time initialization.
 - The backup schedule is configurable by an Office Admin when automatic backups are enabled.
@@ -664,11 +664,11 @@ The project will be considered complete when:
 - [ ] Viewing an asset provides a button that opens its audit and activity logs pre-filtered to that asset.
 - [ ] Authorized users can view relevant logs from supported desktop and mobile devices.
 - [ ] Log visibility respects effective user permissions.
-- [x] Users can search, filter, and view inventory records.
+- [x] Users can search, filter, and view asset records.
 - [x] Custom fields can be used in applicable searches, filters, and exports.
-- [x] Authorized users can import inventory data with at least a Name provided for each asset.
+- [x] Authorized users can import asset data with at least a Name provided for each asset.
 - [x] Missing optional imported values remain unset.
-- [x] Authorized users can export inventory data in an agreed Excel-compatible format.
+- [x] Authorized users can export asset data in an agreed Excel-compatible format.
 - [ ] Export templates can save and apply predefined filters.
 - [x] The system can create manual backups.
 - [ ] Automatic backups are disabled by default.
@@ -677,7 +677,7 @@ The project will be considered complete when:
 - [ ] The system detects missed scheduled backups.
 - [ ] A missed scheduled backup is performed on the next application startup.
 - [ ] The system avoids duplicate execution of the same scheduled backup.
-- [x] Backups contain all required inventory, user, permission, custom field, and log data.
+- [x] Backups contain all required asset, user, permission, custom field, and log data.
 - [ ] Backup files are stored in the configured backup location.
 - [ ] The configured backup location can be accessed outside the application runtime environment.
 - [x] A valid backup can be restored successfully.

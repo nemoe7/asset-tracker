@@ -16,7 +16,7 @@ Edit the file before starting Astra.
 |---|---|---|---|
 | `TZ` | Yes | `Asia/Manila` | Timezone used by Astra |
 | `FLASK_SKIP_DOTENV` | Yes | `1` | Prevents Flask from loading `.env` independently |
-| `DATABASE_PATH` | Yes | `data/inventory.db` | Path to the SQLite database |
+| `DATABASE_PATH` | Yes | `data/assets.db` | Path to the SQLite database |
 | `ZROK2_ENABLE_TOKEN` | Yes* | — | zrok enable token |
 | `ZROK2_SHARE_NAME` | Yes* | — | Name used for the zrok share and application container |
 | `TRUST_PROXY` | No | `0` | Trust forwarded client IP information from a reverse proxy |
@@ -44,7 +44,7 @@ Using the correct timezone ensures that application timestamps are interpreted c
 `DATABASE_PATH` specifies the location of Astra's SQLite database.
 
 ```env
-DATABASE_PATH=data/inventory.db
+DATABASE_PATH=data/assets.db
 ```
 
 The database contains application data including assets, users, permissions, audit records, export configurations, and backup history.
@@ -165,7 +165,7 @@ A basic configuration using the included zrok deployment might look like:
 ```env
 TZ=Asia/Manila
 FLASK_SKIP_DOTENV=1
-DATABASE_PATH=data/inventory.db
+DATABASE_PATH=data/assets.db
 
 ZROK2_ENABLE_TOKEN=your-enable-token
 ZROK2_SHARE_NAME=astra

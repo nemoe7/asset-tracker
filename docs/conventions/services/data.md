@@ -202,7 +202,7 @@ Examples include:
 
 - Locations ordered by ID.
 - Users ordered by username.
-- Inventory ordered by name and then ID.
+- Assets ordered by name and then ID.
 
 Callers should not rely on unspecified database ordering.
 
@@ -222,12 +222,12 @@ Pagination may be introduced later as an explicit API feature rather than being 
 
 Filtering belongs in the data service responsible for the corresponding domain.
 
-For example, inventory filtering may include:
+For example, asset filtering may include:
 
 - Search.
 - Location.
 - Archived status.
-- Other supported inventory fields.
+- Other supported asset fields.
 
 Filtering shall use explicitly supported parameters.
 
@@ -462,7 +462,7 @@ Services should validate referenced entities when doing so allows them to provid
 
 The database shall still enforce the foreign-key relationship.
 
-For example, inventory operations that reference a location may first look up the location using the same transaction connection.
+For example, asset operations that reference a location may first look up the location using the same transaction connection.
 
 ---
 
@@ -500,7 +500,7 @@ active → deleted
 
 Locations are an example of an entity that may be permanently deleted.
 
-Inventory assets and other archival entities shall not be permanently deleted through normal data-service operations.
+Assets and other archival entities shall not be permanently deleted through normal data-service operations.
 
 ---
 
@@ -606,8 +606,8 @@ Data services may still enforce domain/data integrity rules that are independent
 
 For example:
 
-- Authorization determines whether a user may update an inventory item.
-- The inventory data service determines whether the item exists, whether it is archived, and whether the supplied data is valid.
+- Authorization determines whether a user may update an asset.
+- The asset data service determines whether the asset exists, whether it is archived, and whether the supplied data is valid.
 
 This keeps permission logic centralized and prevents duplication across data services.
 
@@ -676,7 +676,7 @@ The serialization rules shall be determined by the configured custom-field type.
 
 ## 38. Custom Field Value Absence
 
-Sparse custom-field values represent whether an inventory item has a value for a particular custom field.
+Sparse custom-field values represent whether an asset has a value for a particular custom field.
 
 For such fields:
 
