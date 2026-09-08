@@ -21,6 +21,9 @@ services:
       retries: 3
       start_period: 10s
 
+    volumes:
+      - app_data:/home/appuser/data
+
   zrok:
     image: docker.io/openziti/zrok2
     container_name: ${ZROK2_SHARE_NAME}-zrok
@@ -107,3 +110,4 @@ services:
 
 volumes:
   zrok_env:
+  app_data:
