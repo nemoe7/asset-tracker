@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from flask import (
   Flask,
+  jsonify,
   request,
 )
 from werkzeug.exceptions import Forbidden
@@ -16,6 +17,7 @@ from .services.data.db import (
   init_db,
 )
 from .services.data.setup import is_first_run
+from .services.exceptions.auth.authorization import PermissionDeniedError
 from .templatetags import format_datetime
 
 
@@ -80,6 +82,7 @@ def create_app():
   app.config.from_object("config")
   app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
   app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+  app.config["MAX_CONTENT_LENGTH"] = 256 * 1024 * 1024
 
   if _trust_proxy():
     # Behind a reverse proxy (e.g. zrok), trust one X-Forwarded-For hop so
@@ -87,6 +90,20 @@ def create_app():
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 
   app.before_request(_csrf_protect)
+
+  @app.errorhandler(PermissionDeniedError)
+  def handle_permission_denied(error):
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": "Forbidden"}), 403
+
+    return "Forbidden", 403
+
+  @app.errorhandler(413)
+  def handle_request_entity_too_large(error):
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": "Upload too large"}), 413
+
+    return "Upload too large", 413
 
   app.jinja_env.filters["datetime"] = format_datetime
 

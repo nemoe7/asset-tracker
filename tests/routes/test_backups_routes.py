@@ -52,8 +52,9 @@ def test_create_backup_requires_backups_create_permission(
     },
   )
 
-  with pytest.raises(PermissionDeniedError):
-    gen_test_client.post("/backups/create")
+  response = gen_test_client.post("/backups/create")
+
+  assert response.status_code == 403
 
 
 def test_create_backup_returns_backup_file_download_to_requester(
@@ -162,13 +163,14 @@ def test_restore_requires_backups_restore_permission(
 
   login_restricted_user(gen_test_client)
 
-  with pytest.raises(PermissionDeniedError):
-    gen_test_client.post(
-      "/backups/restore",
-      data=multipart(
-        make_backup_upload(b"unused") | {"password": "test_admin"},
-      ),
-    )
+  response = gen_test_client.post(
+    "/backups/restore",
+    data=multipart(
+      make_backup_upload(b"unused") | {"password": "test_admin"},
+    ),
+  )
+
+  assert response.status_code == 403
 
 
 def make_backup_bytes(gen_test_admin):
