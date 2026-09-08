@@ -5,16 +5,16 @@ from .common import (
 
 
 class InvalidItemNameError(InvalidInputError):
-  default_message = "Item name cannot be empty"
+  default_message = "Asset name cannot be empty"
 
 
 class ItemNotFoundError(ServiceError):
-  default_message = "Item does not exist"
+  default_message = "Asset does not exist"
 
 
 class ItemIsArchivedError(ServiceError):
-  default_message = "Item is archived"
+  default_message = "Asset is archived"
 
 
 class ItemIsNotArchivedError(ServiceError):
-  default_message = "Item is already archived"
+  default_message = "Asset is already archived"

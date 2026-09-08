@@ -75,7 +75,7 @@ importForm?.addEventListener('submit', async (event) => {
     const importedCount = payload.imported_count ?? 0;
 
     showImportStatus(
-      `Imported ${importedCount} item${importedCount === 1 ? '' : 's'}.`,
+      `Imported ${importedCount} asset${importedCount === 1 ? '' : 's'}.`,
       false
     );
   } catch {

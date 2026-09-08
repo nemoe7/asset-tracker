@@ -183,7 +183,7 @@ def test_qr_scanner_reports_unknown_item(page, live_server):
 
   page.locator("#qr-scanner-button").click()
 
-  expect(page.locator("#qr-scanner-error")).to_have_text("Item does not exist")
+  expect(page.locator("#qr-scanner-error")).to_have_text("Asset does not exist")
   expect(page.locator("#qr-scanner-modal")).to_be_visible()
   expect(page.locator("#view-item-modal")).to_be_hidden()
   assert page.evaluate("window.qrScannerStopCalled") is False
@@ -220,7 +220,7 @@ def test_qr_scanner_reports_archived_item(page, live_server, create_item):
 
   page.locator("#qr-scanner-button").click()
 
-  expect(page.locator("#qr-scanner-error")).to_have_text("Item is archived")
+  expect(page.locator("#qr-scanner-error")).to_have_text("Asset is archived")
   expect(page.locator("#qr-scanner-modal")).to_be_visible()
   expect(page.locator("#view-item-modal")).to_be_hidden()
   assert page.evaluate("window.qrScannerStopCalled") is False
@@ -261,7 +261,7 @@ def test_qr_scanner_error_hides_after_scan(page, live_server, create_item):
     """
   )
 
-  expect(page.locator("#qr-scanner-error")).to_have_text("Item does not exist")
+  expect(page.locator("#qr-scanner-error")).to_have_text("Asset does not exist")
 
   page.evaluate(
     f"""

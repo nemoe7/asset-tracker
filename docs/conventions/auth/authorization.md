@@ -620,7 +620,7 @@ shall not modify:
 - Roles.
 - Permissions.
 - Sessions.
-- Inventory.
+- Assets.
 - Audit records.
 
 Authorization checks shall have no application-level side effects.

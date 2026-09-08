@@ -23,9 +23,9 @@
 | AST-008 | P1 | Prevent duplicate Asset IDs. | 🟢 | AST-005 | QRC-003 | |
 | AST-009 | P1 | Archived assets remain available to authorized users. | 🟢 | AST-004, AUT-004 | AST-010, CHK-009 | |
 | AST-010 | P1 | Archived assets are distinguishable from active assets. | 🟢 | AST-004 | AST-009, CHK-009 | |
-| AST-011 | P1 | Normal inventory functions cannot permanently delete assets. | 🟢 | AST-004 | — | |
+| AST-011 | P1 | Normal asset functions cannot permanently delete assets. | 🟢 | AST-004 | — | |
 | AST-012 | P1 | Authorized users can restore archived assets. | 🟢 | AST-004, AUT-003 | AUD-003, USE-005 | |
-| AST-013 | P1 | Retain asset information needed for inventory/insurance. | 🟢 | FLD-001 | — | |
+| AST-013 | P1 | Retain asset information needed for records/insurance. | 🟢 | FLD-001 | — | |
 | FLD-001 | P1 | Provide required built-in asset fields. | 🟢 | — | AST-001, AST-007, AST-013 | |
 | FLD-002 | P1 | Admins can create custom asset fields. | 🟢 | — | FLD-003 | |
 | FLD-003 | P1 | Admins can name custom fields. | 🟢 | FLD-002 | — | |
@@ -47,18 +47,18 @@
 | SRH-001 | P1 | Users can search assets. | 🟢 | AST-002 | SRH-004 | |
 | SRH-002 | P1 | Users can filter assets using available fields. | 🟢 | AST-002 | SRH-006 | |
 | SRH-003 | P1 | Users can sort asset results. | 🟢 | AST-002 | SRH-004 | |
-| SRH-004 | P1 | Display assets in a tabular/equivalent inventory view. | 🟢 | AST-002 | SRH-001, SRH-003 | |
-| SRH-005 | P1 | Open an individual asset from the inventory view. | 🟢 | AST-002 | QRC-005 | |
+| SRH-004 | P1 | Display assets in a tabular/equivalent list view. | 🟢 | AST-002 | SRH-001, SRH-003 | |
+| SRH-005 | P1 | Open an individual asset from the list view. | 🟢 | AST-002 | QRC-005 | |
 | SRH-006 | P1 | Filters affect displayed results and applicable exports. | 🟢 | SRH-002 | EXP-004 | |
 | AUD-001 | P1 | Record asset creation events. | 🟢 | AST-001 | AUD-009 | |
 | AUD-002 | P1 | Record asset modification events. | 🟢 | AST-003 | CHK-008 | |
 | AUD-003 | P1 | Record asset archival/restoration events. | 🟢 | AST-004, AST-012 | USE-005 | |
 | AUD-004 | P1 | Record asset QR scan events. | 🟢 | CHK-003 | CHK-004, CHK-005 | |
 | AUD-009 | P1 | Record date/time for each audit event. | 🟢 | AUD-001–004 | CHK-005 | |
-| EXP-001 | P1 | Authorized users can export inventory. | 🟢 | AUT-003 | EXP-002 | |
+| EXP-001 | P1 | Authorized users can export assets. | 🟢 | AUT-003 | EXP-002 | |
 | EXP-002 | P1 | Provide Excel-compatible export. | 🟢 | EXP-001 | — | |
 | EXP-003 | P1 | Allow field selection for exports. | 🟢 | EXP-001 | FLD-014 | |
-| EXP-004 | P1 | Allow filtered inventory exports. | 🟢 | EXP-001, SRH-006 | SRH-002 | |
+| EXP-004 | P1 | Allow filtered asset exports. | 🟢 | EXP-001, SRH-006 | SRH-002 | |
 | IMP-001 | P1 | Authorized users can import asset records. | 🟢 | AUT-003 | IMP-002–004 | |
 | IMP-002 | P1 | An import requires at minimum an Asset Name. | 🟢 | IMP-001 | AST-007 | |
 | IMP-003 | P1 | Generate an Asset ID for imported assets when one is not provided. | 🟢 | IMP-001, AST-005 | QRC-001 | |
@@ -92,7 +92,7 @@
 | FLD-008 | P3 | Admins can mark custom fields required. | 🟢 | FLD-002, FLD-004 | FLD-012 | |
 | FLD-011 | P3 | Deactivating a field preserves existing values. | 🟢 | FLD-010 | — | |
 | FLD-015 | P3 | Record changes to custom-field definitions. | 🟢 | FLD-002, FLD-009, FLD-010 | AUD-005 | |
-| PER-001 | P3 | Normal inventory operations respond reasonably. | 🟡 | — | PER-002, PER-003 | No explicit performance target/test established |
+| PER-001 | P3 | Normal asset operations respond reasonably. | 🟡 | — | PER-002, PER-003 | No explicit performance target/test established |
 | PER-002 | P3 | Search/filtering does not require manual reload. | 🟢 | SRH-001, SRH-002 | — | |
 | PER-003 | P3 | QR scanning opens the asset without unnecessary steps. | 🟢 | QRC-005 | CHK-001 | |
 | SEC-001 | P3 | Protected functions require authentication. | 🟢 | AUT-006 | — | |
@@ -135,9 +135,9 @@
 | EXP-007 | P4 | Users can apply saved export templates. | 🔴 | EXP-005, EXP-006 | — | |
 | EXP-008 | P4 | Export templates support custom fields. | 🔴 | EXP-005, FLD-014 | — | |
 | IMP-005 | P4 | Validate imported values against field types/requirements. | 🔴 | IMP-001, FLD-005, FLD-008, FLD-012 | REL-001 | |
-| IMP-006 | P4 | Report rejected records without corrupting inventory. | 🔴 | IMP-001, REL-001 | — | |
+| IMP-006 | P4 | Report rejected records without corrupting asset data. | 🔴 | IMP-001, REL-001 | — | |
 | IMP-007 | P4 | Record imports in the audit log. | 🟢 | IMP-001 | AUD-006 | |
-| REL-001 | P4 | Invalid input does not corrupt inventory data. | 🟢 | AST-007 | IMP-006, REL-003 | |
+| REL-001 | P4 | Invalid input does not corrupt asset data. | 🟢 | AST-007 | IMP-006, REL-003 | |
 
 ### P5
 

@@ -367,7 +367,7 @@ def import_items(rows):
       name = row["name"]
 
       if not isinstance(name, str) or not name.strip():
-        raise InvalidInputError("Import requires an item name")
+        raise InvalidInputError("Import requires an asset name")
 
       location = None
 
