@@ -51,6 +51,8 @@ The database contains application data including assets, users, permissions, aud
 
 The database should be included in your backup strategy.
 
+The `app_data` volume stores `data/assets.db` and `secret_key`. Back it up.
+
 ## Secret Key
 
 `SECRET_KEY` is used by Flask for session and security-related functionality.
