@@ -270,3 +270,20 @@ def test_restore_invalid_file_leaves_live_db_untouched(gen_test_data_admin):
   assert not any(
     log["action"] == "restored" for log in get_audit_logs()
   )
+
+
+def test_restore_truncated_backup_raises_invalid_input(gen_test_data_admin):
+  from app.services.data.backups import restore_backup
+  from app.services.exceptions.data.common import InvalidInputError
+
+  connection = sqlite3.connect(":memory:")
+
+  connection.execute("CREATE TABLE users (id INTEGER PRIMARY KEY)")
+  connection.execute("CREATE TABLE roles (id INTEGER PRIMARY KEY)")
+
+  connection.commit()
+  data = connection.serialize()
+  connection.close()
+
+  with pytest.raises(InvalidInputError):
+    restore_backup(make_upload(data))
