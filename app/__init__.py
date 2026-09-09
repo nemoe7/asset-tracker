@@ -1,11 +1,14 @@
 import os
+import secrets
 import sqlite3
 from datetime import timedelta
 
 from flask import (
   Flask,
+  current_app,
   jsonify,
   request,
+  session,
 )
 from werkzeug.exceptions import Forbidden
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -62,12 +65,23 @@ def _csrf_protect():
 
   if sec_fetch_site is None:
     # Older browsers do not send the header; SameSite=Lax still protects them.
+    pass
+  elif sec_fetch_site in _ALLOWED_FETCH_SITES:
+    pass
+  else:
+    raise Forbidden("Cross-site request blocked")
+
+  # Skip form/header token enforcement in tests so existing test clients
+  # don't need to send a CSRF token.
+  if current_app.config.get("TESTING"):
     return
 
-  if sec_fetch_site in _ALLOWED_FETCH_SITES:
-    return
-
-  raise Forbidden("Cross-site request blocked")
+  # Also check form token or header token for POST requests
+  if request.method == "POST":
+    token = request.form.get("csrf_token") or request.headers.get("X-CSRF-Token")
+    session_token = session.get("csrf_token")
+    if not token or token != session_token:
+      raise Forbidden("Invalid CSRF token")
 
 
 def _trust_proxy():
@@ -105,7 +119,21 @@ def create_app():
 
     return "Upload too large", 413
 
+  @app.before_request
+  def _ensure_csrf_token():
+    if "csrf_token" not in session:
+      session["csrf_token"] = secrets.token_hex(32)
+
+  app.jinja_env.globals["csrf_token"] = lambda: session.get("csrf_token", "")
+
   app.jinja_env.filters["datetime"] = format_datetime
+
+  @app.after_request
+  def _add_security_headers(resp):
+    resp.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Referrer-Policy"] = "same-origin"
+    return resp
 
   if not _database_initialized():
     app.logger.warning("Database not initialized.")

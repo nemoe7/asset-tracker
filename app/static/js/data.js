@@ -49,9 +49,7 @@ importForm?.addEventListener('submit', async (event) => {
     return;
   }
 
-  const formData = new FormData();
-
-  formData.append('file', importFile.files[0]);
+  const formData = new FormData(importForm);
 
   importSubmitButton?.setAttribute('disabled', '');
   importFile.classList.add('opacity-50');

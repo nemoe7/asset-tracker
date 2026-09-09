@@ -34,6 +34,7 @@
 
     {# ==================== Login Form ==================== #}
     <form method="post" class="mt-6 space-y-5">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       {# Username #}
       <div>

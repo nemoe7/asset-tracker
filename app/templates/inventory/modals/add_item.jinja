@@ -3,6 +3,7 @@
 {% call modal("add-item-modal", "Add Asset") %}
 
 <form method="post" action="{{ url_for('inventory.create') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {# ==================== Add Item Fields ==================== #}
   <div class="space-y-5">
 

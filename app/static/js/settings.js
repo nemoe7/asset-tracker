@@ -213,7 +213,10 @@ backupButton?.addEventListener('click', async () => {
   backupStatus?.classList.add('hidden');
 
   try {
-    const response = await fetch('/backups/create', { method: 'POST' });
+    const response = await fetch('/backups/create', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value ?? '' }
+    });
 
     if (!response.ok) {
       showBackupStatus('Backup failed. No backup was created.', true);
@@ -309,6 +312,7 @@ restoreConfirmForm?.addEventListener('submit', async (event) => {
 
   formData.append('file', restoreFile.files[0]);
   formData.append('password', restoreConfirmPassword?.value ?? '');
+  formData.append('csrf_token', document.querySelector('input[name="csrf_token"]')?.value ?? '');
 
   restoreConfirmButton?.setAttribute('disabled', '');
   restoreConfirmStatus?.classList.add('hidden');
