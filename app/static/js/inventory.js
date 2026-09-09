@@ -1240,6 +1240,13 @@ editItemForm?.addEventListener('submit', async (event) => {
   );
 
   if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const errorEl = document.getElementById('edit-item-error');
+    if (errorEl) {
+      errorEl.textContent = data.error || 'Save failed';
+      errorEl.classList.remove('hidden');
+    }
+    editItemForm.reportValidity();
     return;
   }
 
@@ -1410,7 +1417,12 @@ confirmArchiveItem?.addEventListener('click', async () => {
   );
 
   if (!response.ok) {
-    closeModal();
+    const data = await response.json().catch(() => ({}));
+    const errorEl = document.getElementById('archive-item-error');
+    if (errorEl) {
+      errorEl.textContent = data.error || 'Archive failed';
+      errorEl.classList.remove('hidden');
+    }
     return;
   }
 
@@ -1471,7 +1483,12 @@ confirmRestoreItem?.addEventListener('click', async () => {
   );
 
   if (!response.ok) {
-    closeModal();
+    const data = await response.json().catch(() => ({}));
+    const errorEl = document.getElementById('restore-item-error');
+    if (errorEl) {
+      errorEl.textContent = data.error || 'Restore failed';
+      errorEl.classList.remove('hidden');
+    }
     return;
   }
 

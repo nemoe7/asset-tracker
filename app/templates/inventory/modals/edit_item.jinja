@@ -21,6 +21,7 @@
 
 <form id="edit-item-form" method="post">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div id="edit-item-error" class="hidden" aria-live="polite"></div>
   {# ==================== Edit Asset Fields ==================== #}
   <div class="overflow-hidden rounded-lg border border-zinc-800">
 
