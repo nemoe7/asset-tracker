@@ -8,6 +8,7 @@ from flask import (
   url_for,
 )
 
+from ..services.auth.authentication import login_required
 from ..services.auth.authorization import (
   check_permission,
   permission_required,
@@ -15,7 +16,6 @@ from ..services.auth.authorization import (
 from ..services.data.custom_fields import (
   archive_custom_field,
   create_custom_field,
-  get_custom_field,
   get_custom_fields,
   restore_custom_field,
   update_custom_field,
@@ -36,7 +36,6 @@ from ..services.exceptions.data.locations import (
   LocationAlreadyExistsError,
   LocationNotFoundError,
 )
-from ..services.auth.authentication import login_required
 
 admin = Blueprint(
   "admin",
