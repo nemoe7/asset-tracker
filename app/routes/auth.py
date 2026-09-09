@@ -8,8 +8,8 @@ from flask import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from ..services.auth.authentication import login_required
 from ..services.auth import rate_limit
+from ..services.auth.authentication import login_required
 from ..services.data.setup import (
   create_initial_admin,
   is_first_run,
@@ -32,6 +32,7 @@ _DUMMY_PASSWORD_HASH = generate_password_hash("dummy-password")
 
 @auth.route("/setup", methods=["GET"])
 def setup():
+  is_first_run.cache_clear()
   if not is_first_run():
     return redirect(url_for("main.index"))
 
