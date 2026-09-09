@@ -51,6 +51,7 @@
             </a>
 
             <form method="post" action="{{ url_for('auth.logout') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit"
                 class="block w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
                 <i class="bi bi-box-arrow-right mr-1" aria-hidden="true"></i>
@@ -129,6 +130,7 @@
 
       {% call modal("add-location-dialog", "Add location") %}
       <form method="post" action="{{ url_for('admin.create_location_route') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mt-4">
           <label for="add-location-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
           <input id="add-location-name" name="name" type="text" required value="{{ location_name or '' }}"
@@ -160,6 +162,7 @@
       {# ==================== Edit Location ==================== #}
       {% call modal("edit-location-dialog", "Edit location") %}
       <form method="post" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div>
           <label for="edit-location-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
           <input id="edit-location-name" name="name" type="text" required class="form-input">
@@ -224,6 +227,7 @@
                     </button>
                     <form method="post" action="{{ url_for('admin.delete_location_route', location_id=location.id) }}"
                       data-delete-location>
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                       <input type="hidden" name="confirm" value="true">
                       <button type="submit"
                         class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
@@ -262,6 +266,7 @@
               </button>
               <form method="post" action="{{ url_for('admin.delete_location_route', location_id=location.id) }}"
                 data-delete-location>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="confirm" value="true">
                 <button type="submit" class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
                   title="Delete location" aria-label="Delete location">
@@ -309,6 +314,7 @@
 
       {% call modal("add-field-dialog", "Add custom field") %}
       <form method="post" action="{{ url_for('admin.create_custom_field_route') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div>
           <label for="add-field-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
           <input id="add-field-name" name="name" type="text" required value="{{ field_name or '' }}" class="form-input">
@@ -376,6 +382,7 @@
       {# ==================== Edit Custom Field ==================== #}
       {% call modal("edit-field-dialog", "Edit custom field") %}
       <form method="post" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div>
           <label for="edit-field-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
           <input id="edit-field-name" name="name" type="text" required class="form-input">
@@ -499,6 +506,7 @@
                     </button>
                     <form method="post" action="{{ url_for('admin.archive_custom_field_route', field_id=field.id) }}"
                       data-archive-field>
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                       <button type="submit"
                         class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
                         title="Archive custom field" aria-label="Archive custom field">
@@ -545,6 +553,7 @@
               </button>
               <form method="post" action="{{ url_for('admin.archive_custom_field_route', field_id=field.id) }}"
                 data-archive-field>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
                   title="Archive custom field" aria-label="Archive custom field">
                   <i class="bi bi-archive" aria-hidden="true"></i>
@@ -605,6 +614,7 @@
               </div>
 
               <form method="post" action="{{ url_for('admin.restore_custom_field_route', field_id=field.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit"
                   class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200">
                   <i class="bi bi-arrow-counterclockwise mr-1" aria-hidden="true"></i>
@@ -741,6 +751,7 @@
         </div>
 
         <form id="restore-form" class="mt-5 space-y-4">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
           <div>
             <label for="restore-file" class="mb-2 block text-sm font-medium text-zinc-300">
@@ -791,6 +802,7 @@
       </div>
 
       <form id="restore-confirm-form" class="mt-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label for="restore-confirm-password" class="mb-2 block text-sm font-medium text-zinc-300">
           Confirm your password
         </label>

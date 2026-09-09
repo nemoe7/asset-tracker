@@ -20,6 +20,7 @@
 {% call modal("edit-item-modal", "Edit Asset", subtitle, buttons) %}
 
 <form id="edit-item-form" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {# ==================== Edit Asset Fields ==================== #}
   <div class="overflow-hidden rounded-lg border border-zinc-800">
 

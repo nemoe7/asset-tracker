@@ -3,6 +3,7 @@
 {% call modal("import-item-modal", "Import assets") %}
 
 <form id="import-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="space-y-5">
 
     <p class="text-sm text-zinc-400">

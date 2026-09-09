@@ -268,7 +268,8 @@ async function startQrScanner() {
       const response = await fetch(
         `/inventory/${encodeURIComponent(itemId)}/check`,
         {
-          method: 'POST'
+          method: 'POST',
+          headers: { 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value ?? '' }
         }
       );
 
@@ -1403,7 +1404,8 @@ confirmArchiveItem?.addEventListener('click', async () => {
   const response = await fetch(
     `/inventory/${currentEditItemId}/archive`,
     {
-      method: 'POST'
+      method: 'POST',
+      headers: { 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value ?? '' }
     }
   );
 
@@ -1463,7 +1465,8 @@ confirmRestoreItem?.addEventListener('click', async () => {
   const response = await fetch(
     `/inventory/${currentRestoreItemId}/restore`,
     {
-      method: 'POST'
+      method: 'POST',
+      headers: { 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value ?? '' }
     }
   );
 
