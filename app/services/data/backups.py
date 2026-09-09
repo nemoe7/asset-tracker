@@ -34,6 +34,7 @@ def _backup_bytes():
 
     try:
       source.backup(target)
+      target.execute("VACUUM")
       return target.serialize()
     finally:
       target.close()
