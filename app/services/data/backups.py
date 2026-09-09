@@ -8,8 +8,24 @@ from ..auth.context import get_current_user
 from .audit import create_audit_log
 from .db import db_connection, db_transaction
 from ..exceptions.data.backups import BackupError, InvalidBackupError
+from ..exceptions.data.common import InvalidInputError
 
-_CORE_TABLES = ("users", "inventory_items", "custom_fields", "audit_log")
+_CORE_TABLES = (
+  "users",
+  "roles",
+  "permissions",
+  "locations",
+  "inventory_items",
+  "custom_fields",
+  "user_roles",
+  "role_permissions",
+  "user_permissions",
+  "inventory_item_fields",
+  "audit_log",
+  "export_templates",
+  "backup_config",
+  "backup_history",
+)
 
 
 def _backup_bytes():
@@ -82,7 +98,7 @@ def _validated_backup_connection(data):
         ).fetchone()
 
         if row is None:
-          raise InvalidBackupError()
+          raise InvalidInputError("backup missing tables")
     except sqlite3.Error as error:
       raise InvalidBackupError() from error
   except Exception:
