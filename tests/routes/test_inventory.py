@@ -250,6 +250,44 @@ def test_admin_can_restore_asset(
   assert response.json["archived_at"] is None
 
 
+def test_admin_cannot_archive_already_archived_asset(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  item_id = gen_test_item(name="Test Asset")
+
+  gen_test_admin_client.post(
+    f"/inventory/{item_id}/archive",
+  )
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}/archive",
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
+def test_admin_cannot_restore_active_asset(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  item_id = gen_test_item(name="Test Asset")
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}/restore",
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
 def test_admin_can_update_asset_custom_field_value(
   gen_test_admin_client,
   gen_test_item,

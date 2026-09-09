@@ -258,3 +258,121 @@ def test_item_ids_are_unique(
   item_b = create_item("Asset B")
 
   assert item_a["id"] != item_b["id"]
+
+
+@pytest.mark.e2e
+def test_edit_item_shows_inline_error_on_validation_failure(
+  page,
+  live_server,
+  create_item,
+  create_custom_field,
+):
+  item = create_item("Test Asset")
+
+  create_custom_field("Serial Number", "text", required=True)
+
+  page.goto(f"{live_server}/")
+
+  page.evaluate("""() => {
+    window._originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+      if (options && options.method === 'POST' && url.includes('/inventory/')) {
+        return Promise.resolve(new Response(JSON.stringify({error: 'Required custom field cannot be unset'}), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+      return window._originalFetch(url, options);
+    };
+  }""")
+
+  page.locator(f'tr .edit-item[data-item-id="{item["id"]}"]').click()
+
+  expect(page.locator("#edit-item-modal")).to_be_visible()
+
+  page.locator("#edit-item-name").fill("Updated")
+
+  page.evaluate("""() => {
+    const serialInput = document.querySelector('input[name="f_Serial Number"], textarea[name="f_Serial Number"], select[name="f_Serial Number"]');
+    if (serialInput) {
+      serialInput.required = false;
+    }
+  }""")
+
+  page.get_by_role(
+    "button",
+    name="Save changes",
+  ).click()
+
+  expect(page.locator("#edit-item-error")).to_be_visible()
+  expect(page.locator("#edit-item-modal")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_archive_item_shows_inline_error_on_failure(
+  page,
+  live_server,
+  create_item,
+):
+  item = create_item("Test Asset")
+
+  page.goto(f"{live_server}/")
+
+  page.locator(f'tr .edit-item[data-item-id="{item["id"]}"]').click()
+
+  page.locator("#archive-item-button").click()
+
+  page.evaluate("""() => {
+    window._originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+      if (options && options.method === 'POST' && url.includes('/archive')) {
+        return Promise.resolve(new Response(JSON.stringify({error: 'Item is already archived'}), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+      return window._originalFetch(url, options);
+    };
+  }""")
+
+  page.get_by_role(
+    "button",
+    name="Archive asset",
+  ).last.click()
+
+  expect(page.locator("#archive-item-error")).to_be_visible()
+  expect(page.locator("#archive-item-modal")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_asset_name_link_opens_view_modal(
+  page,
+  live_server,
+  create_item,
+):
+  item = create_item("Test Asset")
+
+  page.goto(f"{live_server}/")
+
+  page.locator(f"a.view-item-link[data-item-id='{item["id"]}']").first.click()
+
+  expect(page.locator("#view-item-modal")).to_be_visible()
+  expect(page.locator("#view-item-name")).to_have_text("Test Asset")
+
+
+@pytest.mark.e2e
+def test_asset_name_link_is_keyboard_accessible(
+  page,
+  live_server,
+  create_item,
+):
+  item = create_item("Test Asset")
+
+  page.goto(f"{live_server}/")
+
+  page.locator(f"a.view-item-link[data-item-id='{item["id"]}']").first.focus()
+
+  page.locator(f"a.view-item-link[data-item-id='{item["id"]}']").first.press("Enter")
+
+  expect(page.locator("#view-item-modal")).to_be_visible()
+  expect(page.locator("#view-item-name")).to_have_text("Test Asset")
