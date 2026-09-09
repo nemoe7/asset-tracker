@@ -342,3 +342,86 @@ restoreConfirmForm?.addEventListener('submit', async (event) => {
 });
 
 // ==================== End Restore From Backup ====================
+
+// ==================== Reset Database ====================
+
+const resetDatabaseButton = document.getElementById('reset-database-button');
+const resetDatabaseDialog = document.getElementById('reset-database-dialog');
+const resetDatabaseForm = document.getElementById('reset-database-form');
+const resetPassword = document.getElementById('reset-password');
+const resetConfirmPassword = document.getElementById('reset-confirm-password');
+const resetConfirmStatus = document.getElementById('reset-confirm-status');
+const resetConfirmButton = document.getElementById('confirm-reset-database');
+const cancelResetDatabase = document.getElementById('cancel-reset-database');
+
+function showResetStatus(message, isError) {
+  if (!resetConfirmStatus) {
+    return;
+  }
+
+  resetConfirmStatus.textContent = message;
+  resetConfirmStatus.classList.remove('hidden');
+  resetConfirmStatus.classList.toggle('text-red-400', isError);
+  resetConfirmStatus.classList.toggle('text-emerald-400', !isError);
+}
+
+resetDatabaseButton?.addEventListener('click', () => {
+  if (resetPassword) {
+    resetPassword.value = '';
+  }
+
+  if (resetConfirmPassword) {
+    resetConfirmPassword.value = '';
+  }
+
+  resetConfirmStatus?.classList.add('hidden');
+  openModal(resetDatabaseDialog);
+});
+
+cancelResetDatabase?.addEventListener('click', () => {
+  closeModal();
+});
+
+resetDatabaseForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  const password = resetPassword?.value ?? '';
+  const confirmPassword = resetConfirmPassword?.value ?? '';
+
+  if (password !== confirmPassword) {
+    showResetStatus('Passwords do not match.', true);
+    return;
+  }
+
+  const formData = new FormData();
+
+  formData.append('password', password);
+  formData.append('confirm_password', confirmPassword);
+  formData.append('csrf_token', document.querySelector('input[name="csrf_token"]')?.value ?? '');
+
+  resetConfirmButton?.setAttribute('disabled', '');
+  resetConfirmStatus?.classList.add('hidden');
+
+  try {
+    const response = await fetch('/admin/data/reset', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      showResetStatus(payload.error || 'Reset failed.', true);
+      return;
+    }
+
+    closeModal();
+    window.location.assign('/auth/login');
+  } catch {
+    showResetStatus('Reset failed.', true);
+  } finally {
+    resetConfirmButton?.removeAttribute('disabled');
+  }
+});
+
+// ==================== End Reset Database ====================

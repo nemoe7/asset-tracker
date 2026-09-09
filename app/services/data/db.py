@@ -102,5 +102,28 @@ def init_db(logger=None, db_path=None):
     logger.warning(f"Database initialized: {db_path}")
 
 
+def reset_database(db_path=None):
+  db_path = db_path or config.DB_PATH
+  db_path.parent.mkdir(parents=True, exist_ok=True)
+
+  connection = sqlite3.connect(db_path)
+  connection.execute("PRAGMA foreign_keys = ON")
+
+  tables = connection.execute(
+    "SELECT name FROM sqlite_master WHERE type='table'"
+  ).fetchall()
+
+  connection.execute("PRAGMA foreign_keys = OFF")
+
+  for table in tables:
+    connection.execute(f"DROP TABLE IF EXISTS {table[0]}")
+
+  connection.execute("PRAGMA foreign_keys = ON")
+  connection.commit()
+  connection.close()
+
+  init_db(db_path=db_path)
+
+
 if __name__ == "__main__":
   init_db()

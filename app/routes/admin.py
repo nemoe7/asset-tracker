@@ -8,6 +8,8 @@ from flask import (
   url_for,
 )
 
+import config
+
 from ..services.auth.authentication import login_required
 from ..services.auth.authorization import (
   check_permission,
@@ -20,6 +22,7 @@ from ..services.data.custom_fields import (
   restore_custom_field,
   update_custom_field,
 )
+from ..services.data.db import reset_database
 from ..services.data.locations import (
   create_location,
   delete_location,
@@ -27,6 +30,7 @@ from ..services.data.locations import (
   get_locations,
   update_location,
 )
+from ..services.data.users import verify_password
 from ..services.exceptions.data.common import InvalidInputError
 from ..services.exceptions.data.custom_fields import (
   CustomFieldInUseError,
@@ -75,6 +79,7 @@ def _render_settings(
       check_permission(user_id, "backups.create")
       or check_permission(user_id, "backups.restore")
     ),
+    debug=config.DEBUG,
     **context,
   )
 
@@ -308,3 +313,32 @@ def archive_user_route(user_id):
 @permission_required("users.manage")
 def restore_user_route(user_id):
   return redirect(url_for("main.index"))
+
+
+@admin.route("/data/reset", methods=["POST"])
+@login_required
+def reset_database_route():
+  if not config.DEBUG:
+    abort(404)
+
+  password = request.form.get("password", "")
+  confirm_password = request.form.get("confirm_password", "")
+
+  if password != confirm_password:
+    return _render_settings(
+      _DATA_TAB,
+      error="Passwords do not match.",
+    )
+
+  user_id = session.get("user_id")
+
+  if not verify_password(user_id, password):
+    return _render_settings(
+      _DATA_TAB,
+      error="Incorrect password.",
+    )
+
+  reset_database()
+  session.clear()
+
+  return redirect(url_for("auth.setup"))
