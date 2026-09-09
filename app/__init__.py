@@ -130,7 +130,10 @@ def create_app():
 
   @app.after_request
   def _add_security_headers(resp):
-    resp.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'"
+    csp = "default-src 'self'; frame-ancestors 'none'"
+    if current_app.config.get("TESTING"):
+      csp += "; script-src 'self' 'unsafe-eval'"
+    resp.headers["Content-Security-Policy"] = csp
     resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["Referrer-Policy"] = "same-origin"
     return resp
