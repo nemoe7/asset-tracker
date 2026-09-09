@@ -39,7 +39,10 @@ def create():
       field_type=field_type,
     )
   except InvalidInputError as error:
-    return jsonify({"error": str(error)}), 400
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
+
+    return redirect(url_for("admin.settings", tab="custom-fields", error=str(error)))
 
   if request.headers.get("Accept") == "application/json":
     return jsonify(
@@ -50,7 +53,7 @@ def create():
       }
     )
 
-  return redirect(url_for("main.index"))
+  return redirect(url_for("admin.settings", tab="custom-fields"))
 
 
 @custom_fields.route("", methods=["GET"])
@@ -105,11 +108,17 @@ def update(field_id):
       **kwargs,
     )
   except InvalidInputError as error:
-    return jsonify({"error": str(error)}), 400
-  except CustomFieldNotFoundError as error:
-    return jsonify({"error": str(error)}), 404
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
 
-  return redirect(url_for("main.index"))
+    return redirect(url_for("admin.settings", tab="custom-fields", error=str(error)))
+  except CustomFieldNotFoundError as error:
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 404
+
+    return redirect(url_for("admin.settings", tab="custom-fields", error=str(error)))
+
+  return redirect(url_for("admin.settings", tab="custom-fields"))
 
 
 @custom_fields.route("/<int:field_id>/archive", methods=["POST"])
@@ -119,11 +128,17 @@ def archive(field_id):
   try:
     archive_custom_field(field_id)
   except InvalidInputError as error:
-    return jsonify({"error": str(error)}), 400
-  except CustomFieldNotFoundError as error:
-    return jsonify({"error": str(error)}), 404
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
 
-  return redirect(url_for("main.index"))
+    return redirect(url_for("admin.settings", tab="custom-fields", error=str(error)))
+  except CustomFieldNotFoundError as error:
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 404
+
+    return redirect(url_for("admin.settings", tab="custom-fields", error=str(error)))
+
+  return redirect(url_for("admin.settings", tab="custom-fields"))
 
 
 @custom_fields.route("/<int:field_id>/restore", methods=["POST"])
@@ -133,8 +148,14 @@ def restore(field_id):
   try:
     restore_custom_field(field_id)
   except InvalidInputError as error:
-    return jsonify({"error": str(error)}), 400
-  except CustomFieldNotFoundError as error:
-    return jsonify({"error": str(error)}), 404
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
 
-  return redirect(url_for("main.index"))
+    return redirect(url_for("admin.settings", tab="custom-fields", error=str(error)))
+  except CustomFieldNotFoundError as error:
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 404
+
+    return redirect(url_for("admin.settings", tab="custom-fields", error=str(error)))
+
+  return redirect(url_for("admin.settings", tab="custom-fields"))

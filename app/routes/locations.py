@@ -49,9 +49,15 @@ def create():
       description=description,
     )
   except InvalidInputError as error:
-    return jsonify({"error": str(error)}), 400
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
+
+    return redirect(url_for("admin.settings", tab="locations", error=str(error)))
   except LocationAlreadyExistsError as error:
-    return jsonify({"error": str(error)}), 400
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
+
+    return redirect(url_for("admin.settings", tab="locations", error=str(error)))
 
   if request.headers.get("Accept") == "application/json":
     return jsonify(
@@ -62,7 +68,7 @@ def create():
       }
     )
 
-  return redirect(url_for("main.index"))
+  return redirect(url_for("admin.settings", tab="locations"))
 
 
 @locations.route("/<int:location_id>", methods=["GET"])
@@ -93,17 +99,26 @@ def update(location_id):
       description=description,
     )
   except InvalidInputError as error:
-    return jsonify({"error": str(error)}), 400
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
+
+    return redirect(url_for("admin.settings", tab="locations", error=str(error)))
   except LocationAlreadyExistsError as error:
-    return jsonify({"error": str(error)}), 400
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
+
+    return redirect(url_for("admin.settings", tab="locations", error=str(error)))
   except LocationNotFoundError as error:
-    return jsonify({"error": str(error)}), 404
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 404
+
+    return redirect(url_for("admin.settings", tab="locations", error=str(error)))
 
   if request.headers.get("Accept") == "application/json":
     updated = get_location(location_id)
     return jsonify(dict(updated))
 
-  return redirect(url_for("main.index"))
+  return redirect(url_for("admin.settings", tab="locations"))
 
 
 @locations.route("/<int:location_id>/delete", methods=["POST"])
@@ -121,9 +136,12 @@ def delete(location_id):
       confirm=confirm,
     )
   except LocationDeletionConfirmationRequired as error:
-    return jsonify({"error": str(error)}), 400
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
+
+    return redirect(url_for("admin.settings", tab="locations", error=str(error)))
 
   if request.headers.get("Accept") == "application/json":
     return jsonify({"deleted": True, "id": location_id})
 
-  return redirect(url_for("main.index"))
+  return redirect(url_for("admin.settings", tab="locations"))

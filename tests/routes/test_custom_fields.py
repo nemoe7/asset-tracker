@@ -190,6 +190,9 @@ def test_admin_cannot_create_custom_field_without_name(
       "name": "",
       "field_type": "text",
     },
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
@@ -205,6 +208,9 @@ def test_admin_cannot_create_custom_field_with_whitespace_name(
       "name": "   ",
       "field_type": "text",
     },
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
@@ -219,6 +225,9 @@ def test_admin_cannot_create_custom_field_with_invalid_type(
     data={
       "name": "Invalid Field",
       "field_type": "invalid",
+    },
+    headers={
+      "Accept": "application/json",
     },
   )
 
@@ -243,6 +252,9 @@ def test_admin_cannot_create_duplicate_custom_field(
       "name": "Serial Number",
       "field_type": "text",
     },
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
@@ -257,6 +269,9 @@ def test_admin_cannot_update_nonexistent_custom_field(
     data={
       "name": "Updated Field",
     },
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
@@ -268,6 +283,9 @@ def test_admin_cannot_archive_nonexistent_custom_field(
 ):
   response = gen_test_admin_client.post(
     "/custom-fields/999999/archive",
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
@@ -292,6 +310,9 @@ def test_admin_cannot_restore_active_custom_field(
 
   response = gen_test_admin_client.post(
     f"/custom-fields/{field_id}/restore",
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
@@ -320,6 +341,9 @@ def test_admin_cannot_archive_already_archived_custom_field(
 
   response = gen_test_admin_client.post(
     f"/custom-fields/{field_id}/archive",
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
@@ -453,6 +477,9 @@ def test_admin_cannot_update_custom_field_with_empty_name(
     data={
       "name": "",
     },
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
@@ -479,6 +506,9 @@ def test_admin_cannot_update_custom_field_with_invalid_type(
     f"/custom-fields/{field_id}",
     data={
       "field_type": "invalid",
+    },
+    headers={
+      "Accept": "application/json",
     },
   )
 
@@ -515,6 +545,9 @@ def test_admin_cannot_update_custom_field_to_duplicate_name(
     data={
       "name": "Serial Number",
     },
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
@@ -546,6 +579,9 @@ def test_admin_cannot_update_archived_custom_field(
     data={
       "name": "Asset Tag",
     },
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
@@ -570,6 +606,9 @@ def test_admin_cannot_update_custom_field_without_fields(
 
   response = gen_test_admin_client.post(
     f"/custom-fields/{field_id}",
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400

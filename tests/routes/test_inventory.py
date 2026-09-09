@@ -68,6 +68,9 @@ def test_admin_cannot_create_asset_without_name(gen_test_admin_client):
     data={
       "name": "",
     },
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
@@ -568,6 +571,9 @@ def test_admin_cannot_create_asset_missing_required_custom_field(
     data={
       "name": "Test Asset",
     },
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
@@ -584,6 +590,9 @@ def test_admin_cannot_create_asset_with_empty_required_custom_field(
     data={
       "name": "Test Asset",
       "f_Serial Number": "",
+    },
+    headers={
+      "Accept": "application/json",
     },
   )
 
@@ -729,6 +738,9 @@ def test_admin_cannot_edit_asset_missing_required_custom_field(
   response = gen_test_admin_client.post(
     f"/inventory/{item_id}",
     data={},
+    headers={
+      "Accept": "application/json",
+    },
   )
 
   assert response.status_code == 400
