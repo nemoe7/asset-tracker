@@ -18,29 +18,42 @@ def _prune(timestamps, now):
   return [timestamp for timestamp in timestamps if timestamp > cutoff]
 
 
-def is_limited(remote_addr):
+def _key(remote_addr, username):
+  if username:
+    return (remote_addr, username)
+
+  return (remote_addr, "")
+
+
+def is_limited(remote_addr, username=None):
+  key = _key(remote_addr, username)
+
   with _lock:
-    timestamps = _prune(_failures.get(remote_addr, []), time.time())
+    timestamps = _prune(_failures.get(key, []), time.time())
 
     if timestamps:
-      _failures[remote_addr] = timestamps
+      _failures[key] = timestamps
     else:
-      _failures.pop(remote_addr, None)
+      _failures.pop(key, None)
 
     return len(timestamps) >= _MAX_FAILURES
 
 
-def record_failure(remote_addr):
+def record_failure(remote_addr, username=None):
+  key = _key(remote_addr, username)
+
   with _lock:
-    timestamps = _prune(_failures.get(remote_addr, []), time.time())
+    timestamps = _prune(_failures.get(key, []), time.time())
 
     timestamps.append(time.time())
-    _failures[remote_addr] = timestamps
+    _failures[key] = timestamps
 
 
-def clear(remote_addr):
+def clear(remote_addr, username=None):
+  key = _key(remote_addr, username)
+
   with _lock:
-    _failures.pop(remote_addr, None)
+    _failures.pop(key, None)
 
 
 def reset():

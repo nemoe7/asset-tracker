@@ -93,14 +93,17 @@ def login_post():
   if is_first_run():
     return redirect(url_for("auth.setup"))
 
-  if rate_limit.is_limited(request.remote_addr):
-    return render_template(
+  username = request.form["username"].strip()
+
+  if rate_limit.is_limited(request.remote_addr, username=username):
+    response = render_template(
       "auth/login.jinja",
       error="Too many failed login attempts. Try again later.",
-      username=request.form["username"].strip(),
-    ), 429
+      username=username,
+    )
 
-  username = request.form["username"].strip()
+    return response, 429, {"Retry-After": str(rate_limit._WINDOW_SECONDS)}
+
   password = request.form["password"]
 
   user = get_user_by_username(username)
@@ -115,7 +118,7 @@ def login_post():
     or user["archived_at"] is not None
     or not verify_password(user["id"], password)
   ):
-    rate_limit.record_failure(request.remote_addr)
+    rate_limit.record_failure(request.remote_addr, username=username)
 
     return render_template(
       "auth/login.jinja",
@@ -123,7 +126,7 @@ def login_post():
       username=username,
     )
 
-  rate_limit.clear(request.remote_addr)
+  rate_limit.clear(request.remote_addr, username=username)
 
   session.clear()
   session.permanent = request.form.get("remember") == "on"
