@@ -171,6 +171,19 @@ function bindInventoryActions() {
     item.addEventListener('click', handleViewItem);
   }
 
+  for (const link of inventoryContent.querySelectorAll('.view-item-link')) {
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      openViewItem(link.dataset.itemId);
+    });
+    link.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openViewItem(link.dataset.itemId);
+      }
+    });
+  }
+
   for (const button of inventoryContent.querySelectorAll('.inventory-page')) {
     button.addEventListener('click', () => {
       const page = Number(button.dataset.page);
@@ -1315,7 +1328,7 @@ async function openViewItem(itemId) {
 // Handle View Asset.
 
 function handleViewItem(event) {
-  if (event.target.closest('.copy-item-id, .edit-item, .restore-item')) {
+  if (event.target.closest('.copy-item-id, .edit-item, .restore-item, .view-item-link')) {
     return;
   }
 
