@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import (
   Blueprint,
@@ -270,7 +270,7 @@ def export():
   except (InvalidInputError, ValueError) as error:
     return jsonify({"error": str(error)}), 400
 
-  filename = datetime.now().strftime("asset-export-%Y%m%d-%H%M.csv")
+  filename = datetime.now(timezone.utc).strftime("asset-export-%Y%m%d-%H%M.csv")
 
   return Response(
     csv_data,
