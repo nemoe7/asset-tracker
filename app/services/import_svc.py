@@ -6,6 +6,7 @@ from .exceptions.data.common import InvalidInputError
 
 _BUILTIN_COLUMNS = {"name", "description", "location"}
 _IGNORED_COLUMNS = {"id", "created_at", "updated_at"}
+_MAX_IMPORT_ROWS = 5000
 
 
 def _cell(row, column):
@@ -21,6 +22,9 @@ def _build_rows(dict_rows, columns):
   rows = []
 
   for row in dict_rows:
+    if len(rows) >= _MAX_IMPORT_ROWS:
+      raise InvalidInputError(f"Import exceeds {_MAX_IMPORT_ROWS} rows")
+
     custom_fields = {}
 
     for column in columns:
