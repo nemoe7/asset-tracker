@@ -27,6 +27,17 @@ def gen_clean_rate_limit():
   rate_limit.reset()
 
 
+@pytest.fixture(autouse=True)
+def gen_clear_first_run_cache():
+  from app.services.data.setup import is_first_run
+
+  is_first_run.cache_clear()
+
+  yield
+
+  is_first_run.cache_clear()
+
+
 @pytest.fixture
 def gen_test_data_db(tmp_path, monkeypatch):
   db_path = tmp_path / "test.db"
