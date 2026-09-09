@@ -1,4 +1,5 @@
 import sqlite3
+from functools import lru_cache
 
 from werkzeug.security import generate_password_hash
 
@@ -8,6 +9,7 @@ from .db import db_connection, db_transaction, init_db
 from .users import _validate_password, _validate_username
 
 
+@lru_cache(maxsize=1)
 def is_first_run():
   try:
     with db_connection() as connection:

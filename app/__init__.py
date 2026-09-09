@@ -19,7 +19,6 @@ from .services.data.db import (
   get_db,
   init_db,
 )
-from .services.data.setup import is_first_run
 from .services.exceptions.auth.authorization import PermissionDeniedError
 from .templatetags import format_datetime
 
@@ -141,8 +140,6 @@ def create_app():
   if not _database_initialized():
     app.logger.warning("Database not initialized.")
     init_db(app.logger)
-
-  app.config["FIRST_RUN"] = is_first_run()
 
   register_routes(app)
 
