@@ -498,3 +498,103 @@ def test_admin_can_update_custom_field_description_and_required(
 
   assert updated["description"] == "Manufacturer serial number"
   assert updated["required"] == 1
+
+
+# ==================== Data Tab ====================
+
+
+def test_reset_database_requires_login(
+  gen_test_client,
+):
+  response = gen_test_client.post(
+    "/admin/data/reset",
+    data={
+      "password": "test_admin",
+      "confirm_password": "test_admin",
+    },
+  )
+
+  assert response.status_code == 302
+
+
+def test_reset_database_returns_404_when_debug_is_off(
+  gen_test_admin_client,
+  monkeypatch,
+):
+  import config
+
+  monkeypatch.setattr(config, "DEBUG", False)
+
+  response = gen_test_admin_client.post(
+    "/admin/data/reset",
+    data={
+      "password": "test_admin",
+      "confirm_password": "test_admin",
+    },
+  )
+
+  assert response.status_code == 404
+
+
+def test_reset_database_rejects_wrong_password(
+  gen_test_admin_client,
+  monkeypatch,
+):
+  import config
+
+  monkeypatch.setattr(config, "DEBUG", True)
+
+  response = gen_test_admin_client.post(
+    "/admin/data/reset",
+    data={
+      "password": "wrong_password",
+      "confirm_password": "wrong_password",
+    },
+  )
+
+  assert response.status_code == 200
+  assert "Incorrect password" in response.data.decode()
+
+
+def test_reset_database_rejects_mismatched_passwords(
+  gen_test_admin_client,
+  monkeypatch,
+):
+  import config
+
+  monkeypatch.setattr(config, "DEBUG", True)
+
+  response = gen_test_admin_client.post(
+    "/admin/data/reset",
+    data={
+      "password": "test_admin",
+      "confirm_password": "different",
+    },
+  )
+
+  assert response.status_code == 200
+  assert "Passwords do not match" in response.data.decode()
+
+
+def test_reset_database_clears_data(
+  gen_test_admin_client,
+  gen_test_location,
+  monkeypatch,
+):
+  import config
+
+  monkeypatch.setattr(config, "DEBUG", True)
+
+  location_id = gen_test_location()
+
+  response = gen_test_admin_client.post(
+    "/admin/data/reset",
+    data={
+      "password": "test_admin",
+      "confirm_password": "test_admin",
+    },
+  )
+
+  assert response.status_code == 302
+  assert response.location.endswith("/auth/login")
+  assert get_location(location_id) is None
