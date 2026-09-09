@@ -222,9 +222,15 @@ def create():
 
     _apply_custom_field_values(item_id, custom_fields, values)
   except InvalidInputError as error:
-    return jsonify({"error": str(error)}), 400
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
+
+    return redirect(url_for("main.index", error=str(error)))
   except LocationNotFoundError as error:
-    return jsonify({"error": str(error)}), 400
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
+
+    return redirect(url_for("main.index", error=str(error)))
 
   if request.headers.get("Accept") == "application/json":
     return jsonify(
@@ -337,9 +343,15 @@ def update(item_id):
 
     _apply_custom_field_values(item_id, custom_fields, values)
   except (InvalidInputError, ValueError, LocationNotFoundError) as error:
-    return jsonify({"error": str(error)}), 400
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
+
+    return redirect(url_for("main.index", error=str(error)))
   except ItemNotFoundError as error:
-    return jsonify({"error": str(error)}), 404
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 404
+
+    return redirect(url_for("main.index", error=str(error)))
 
   return redirect(url_for("main.index"))
 
@@ -350,9 +362,15 @@ def archive(item_id):
   try:
     archive_item(item_id)
   except ItemNotFoundError as error:
-    return jsonify({"error": str(error)}), 404
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 404
+
+    return redirect(url_for("main.index", error=str(error)))
   except ItemIsArchivedError as error:
-    return jsonify({"error": str(error)}), 400
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
+
+    return redirect(url_for("main.index", error=str(error)))
 
   return redirect(url_for("main.index"))
 
@@ -363,9 +381,15 @@ def restore(item_id):
   try:
     restore_item(item_id)
   except ItemNotFoundError as error:
-    return jsonify({"error": str(error)}), 404
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 404
+
+    return redirect(url_for("main.index", error=str(error)))
   except ItemIsNotArchivedError as error:
-    return jsonify({"error": str(error)}), 400
+    if request.headers.get("Accept") == "application/json":
+      return jsonify({"error": str(error)}), 400
+
+    return redirect(url_for("main.index", error=str(error)))
 
   return redirect(url_for("main.index"))
 
