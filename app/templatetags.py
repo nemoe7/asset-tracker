@@ -1,7 +1,8 @@
+import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-MANILA = ZoneInfo("Asia/Manila")
+DISPLAY_TZ = ZoneInfo(os.getenv("TZ", "Asia/Manila"))
 UTC = ZoneInfo("UTC")
 
 
@@ -15,6 +16,6 @@ def format_datetime(value):
   if value.tzinfo is None:
     value = value.replace(tzinfo=UTC)
 
-  value = value.astimezone(MANILA)
+  value = value.astimezone(DISPLAY_TZ)
 
   return value.strftime("%Y-%m-%d %H:%M:%S")

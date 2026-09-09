@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 
 import config
 
@@ -24,7 +24,7 @@ def _backup_bytes():
 
 
 def create_backup(user_id):
-  filename = f"backup-{datetime.now():%Y%m%d-%H%M%S}.db"
+  filename = f"backup-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}.db"
 
   # Recorded first so the backup file contains the audit entry of its own
   # creation. If the copy fails, the live DB keeps this entry but the
@@ -41,7 +41,7 @@ def create_backup(user_id):
   except sqlite3.Error as error:
     raise BackupError() from error
 
-  completed_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+  completed_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
   # Nothing is stored with the app: history records who requested the
   # backup and when; path stays NULL (scheduled backups are out of scope).
