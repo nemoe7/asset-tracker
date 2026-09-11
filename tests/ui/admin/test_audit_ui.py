@@ -70,13 +70,48 @@ def test_audit_page_filter_narrows_events(
   # Item + location + the /auth/setup audit event for the admin user.
   expect(page.locator("#audit-rows-desktop tr[data-audit-row]")).to_have_count(3)
 
-  page.locator("#audit-entity-type").select_option("location")
-  page.get_by_role("button", name="Apply").click()
+  page.locator("#audit-filter-button").click()
+
+  form = page.locator("#audit-filter-form")
+  expect(form).to_be_visible()
+
+  form.locator("#audit-filter-entity-type").select_option("location")
+  form.get_by_role("button", name="Apply").click()
 
   page.wait_for_url(f"**/admin/audit*entity_type=location*")
 
   expect(page.locator("#audit-rows-desktop tr[data-audit-row]")).to_have_count(1)
-  expect(page.locator("#audit-rows-desktop").get_by_text("location", exact=True)).to_be_visible()
+  expect(page.get_by_text("Type: location")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_audit_page_removes_filter_via_chip(page, live_server, logged_in):
+  page.goto(f"{live_server}/admin/audit?entity_type=location")
+
+  chip = page.locator("[data-filter-chip]")
+  expect(chip).to_be_visible()
+  expect(page.get_by_text("Type: location")).to_be_visible()
+
+  chip.click()
+
+  page.wait_for_url(f"{live_server}/admin/audit")
+
+  expect(page.locator("[data-filter-chip]")).to_have_count(0)
+  expect(page.locator("#audit-rows-desktop tr[data-audit-row]")).to_have_count(1)
+
+
+@pytest.mark.e2e
+def test_audit_filter_modal_closes(page, live_server, logged_in):
+  page.goto(f"{live_server}/admin/audit")
+
+  page.locator("#audit-filter-button").click()
+
+  form = page.locator("#audit-filter-form")
+  expect(form).to_be_visible()
+
+  page.keyboard.press("Escape")
+
+  expect(form).to_be_hidden()
 
 
 @pytest.mark.e2e
