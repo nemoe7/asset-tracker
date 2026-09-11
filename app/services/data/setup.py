@@ -93,4 +93,9 @@ def create_initial_admin(username, name, password):
     finally:
       reset_current_user(token)
 
-    return user_id
+  # The first-run state just changed; drop the cached answer so the next
+  # check re-evaluates against the created admin instead of redirecting
+  # the fresh session back to setup.
+  is_first_run.cache_clear()
+
+  return user_id
