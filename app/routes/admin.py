@@ -53,10 +53,12 @@ admin = Blueprint(
 _LOCATION_TAB = "locations"
 _CUSTOM_FIELDS_TAB = "custom-fields"
 _DATA_TAB = "data"
+_AUDIT_TAB = "audit"
 _VALID_TABS = (
   _LOCATION_TAB,
   _CUSTOM_FIELDS_TAB,
   _DATA_TAB,
+  _AUDIT_TAB,
 )
 
 _AUDIT_PAGE_SIZE = 50
@@ -68,6 +70,28 @@ def _render_settings(
   **context,
 ):
   user_id = session.get("user_id")
+  can_view_audit = check_permission(user_id, "audit.read")
+
+  audit_context = {}
+
+  # The audit panel is rendered (hidden) for every permitted user so the
+  # client-side tab switcher can reveal it without a page load.
+  if can_view_audit:
+    parsed = _parse_audit_filters()
+    result, page = _audit_query(parsed)
+    users = get_users()
+
+    audit_context = {
+      "logs": result["logs"],
+      "total": result["total"],
+      "page": page,
+      "has_more": page * _AUDIT_PAGE_SIZE < result["total"],
+      "entity_types": result["entity_types"],
+      "actions": result["actions"],
+      "users": users,
+      "chips": _audit_filter_chips(parsed, users),
+      "filters": _audit_view_filters(),
+    }
 
   return render_template(
     "admin/settings.jinja",
@@ -82,8 +106,9 @@ def _render_settings(
       check_permission(user_id, "backups.create")
       or check_permission(user_id, "backups.restore")
     ),
-    can_view_audit=check_permission(user_id, "audit.read"),
+    can_view_audit=can_view_audit,
     debug=config.DEBUG,
+    **audit_context,
     **context,
   )
 
@@ -118,6 +143,7 @@ def settings():
     _LOCATION_TAB: ("locations.manage",),
     _CUSTOM_FIELDS_TAB: ("custom_fields.manage",),
     _DATA_TAB: (),
+    _AUDIT_TAB: ("audit.read",),
   }
 
   tab_permissions = permission_by_tab[active_tab]
@@ -461,7 +487,8 @@ def _audit_filter_chips(filters, users):
       {
         "label": f"{prefix}: {value}",
         "remove_url": url_for(
-          "admin.audit_route",
+          "admin.settings",
+          tab=_AUDIT_TAB,
           **{query_names[k]: v for k, v in remaining.items()},
         ),
       }
@@ -470,38 +497,15 @@ def _audit_filter_chips(filters, users):
   return chips
 
 
-@admin.route("/audit", methods=["GET"])
-@login_required
-@permission_required("audit.read")
-def audit_route():
-  parsed = _parse_audit_filters()
-  result, page = _audit_query(parsed)
-
-  total = result["total"]
-  users = get_users()
-
-  return render_template(
-    "admin/audit.jinja",
-    logs=result["logs"],
-    total=total,
-    page=page,
-    has_more=page * _AUDIT_PAGE_SIZE < total,
-    entity_types=result["entity_types"],
-    actions=result["actions"],
-    users=users,
-    chips=_audit_filter_chips(parsed, users),
-    filters={
-      key: value
-      for key, value in {
-        "entity_type": request.args.get("entity_type") or "",
-        "entity_id": request.args.get("entity_id") or "",
-        "action": request.args.get("action") or "",
-        "user_id": request.args.get("user_id") or "",
-        "from": request.args.get("from") or "",
-        "to": request.args.get("to") or "",
-      }.items()
-    },
-  )
+def _audit_view_filters():
+  return {
+    "entity_type": request.args.get("entity_type") or "",
+    "entity_id": request.args.get("entity_id") or "",
+    "action": request.args.get("action") or "",
+    "user_id": request.args.get("user_id") or "",
+    "from": request.args.get("from") or "",
+    "to": request.args.get("to") or "",
+  }
 
 
 @admin.route("/audit/fragment", methods=["GET"])
@@ -515,15 +519,5 @@ def audit_fragment_route():
     logs=result["logs"],
     has_more=page * _AUDIT_PAGE_SIZE < result["total"],
     next_page=page + 1,
-    filters={
-      key: value
-      for key, value in {
-        "entity_type": request.args.get("entity_type") or "",
-        "entity_id": request.args.get("entity_id") or "",
-        "action": request.args.get("action") or "",
-        "user_id": request.args.get("user_id") or "",
-        "from": request.args.get("from") or "",
-        "to": request.args.get("to") or "",
-      }.items()
-    },
+    filters=_audit_view_filters(),
   )
