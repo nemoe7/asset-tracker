@@ -51,7 +51,7 @@
             </a>
 
             {% if can_view_audit %}
-            <a href="{{ url_for('admin.audit_route') }}"
+            <a href="{{ url_for('admin.settings', tab='audit') }}"
               class="block rounded-md px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
               <i class="bi bi-clock-history mr-1" aria-hidden="true"></i>
               Activity
@@ -111,6 +111,13 @@
         class="admin-tab rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100">
         Data
       </button>
+
+      {% if can_view_audit %}
+      <button type="button" data-tab-button="audit"
+        class="admin-tab rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100">
+        Activity
+      </button>
+      {% endif %}
 
     </div>
     {# ==================== End Tabs ==================== #}
@@ -808,6 +815,13 @@
     {# ==================== End Data Panel ==================== #}
 
 
+    {# ==================== Activity Panel ==================== #}
+    {% if can_view_audit %}
+    {% include "admin/_audit_panel.jinja" %}
+    {% endif %}
+    {# ==================== End Activity Panel ==================== #}
+
+
     {# ==================== Restore Backup Confirmation ==================== #}
     <div id="restore-confirm-dialog" class="hidden p-6">
 
@@ -1008,5 +1022,6 @@
 <script src="{{ url_for('static', filename='js/modal-manager.js') }}"></script>
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 <script src="{{ url_for('static', filename='js/data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/audit.js') }}"></script>
 {% endblock %}
 {# ==================== End Scripts Block ==================== #}

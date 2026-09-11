@@ -639,11 +639,11 @@ def _login_restricted_user(gen_test_client):
   )
 
 
-def test_audit_page_requires_login(
+def test_audit_tab_requires_login(
   gen_test_client,
 ):
   response = gen_test_client.get(
-    "/admin/audit",
+    "/admin?tab=audit",
   )
 
   assert response.status_code == 302
@@ -659,13 +659,13 @@ def test_audit_fragment_requires_login(
   assert response.status_code == 302
 
 
-def test_audit_page_requires_audit_read_permission(
+def test_audit_tab_requires_audit_read_permission(
   gen_test_client,
   gen_test_admin,
 ):
   _login_restricted_user(gen_test_client)
 
-  response = gen_test_client.get("/admin/audit")
+  response = gen_test_client.get("/admin?tab=audit")
 
   assert response.status_code == 403
 
@@ -681,13 +681,13 @@ def test_audit_fragment_requires_audit_read_permission(
   assert response.status_code == 403
 
 
-def test_admin_can_view_audit_page(
+def test_admin_can_view_audit_tab(
   gen_test_admin_client,
   gen_test_item,
 ):
   gen_test_item()
 
-  response = gen_test_admin_client.get("/admin/audit")
+  response = gen_test_admin_client.get("/admin?tab=audit")
 
   assert response.status_code == 200
 
@@ -705,47 +705,47 @@ def test_audit_page_applies_entity_type_filter(
   gen_test_item()
   gen_test_location()
 
-  unfiltered = gen_test_admin_client.get("/admin/audit")
+  unfiltered = gen_test_admin_client.get("/admin?tab=audit")
 
   assert unfiltered.data.decode().count('data-audit-row=') == 2
 
   filtered = gen_test_admin_client.get(
-    "/admin/audit?entity_type=location",
+    "/admin?tab=audit&entity_type=location",
   )
 
   assert filtered.status_code == 200
   assert filtered.data.decode().count('data-audit-row=') == 1
 
 
-def test_audit_page_rejects_invalid_page(
+def test_audit_tab_rejects_invalid_page(
   gen_test_admin_client,
 ):
-  response = gen_test_admin_client.get("/admin/audit?page=abc")
+  response = gen_test_admin_client.get("/admin?tab=audit&page=abc")
 
   assert response.status_code == 400
 
 
-def test_audit_page_rejects_zero_page(
+def test_audit_tab_rejects_zero_page(
   gen_test_admin_client,
 ):
-  response = gen_test_admin_client.get("/admin/audit?page=0")
+  response = gen_test_admin_client.get("/admin?tab=audit&page=0")
 
   assert response.status_code == 400
 
 
-def test_audit_page_rejects_invalid_from_date(
+def test_audit_tab_rejects_invalid_from_date(
   gen_test_admin_client,
 ):
-  response = gen_test_admin_client.get("/admin/audit?from=not-a-date")
+  response = gen_test_admin_client.get("/admin?tab=audit&from=not-a-date")
 
   assert response.status_code == 400
 
 
-def test_audit_page_rejects_from_after_to(
+def test_audit_tab_rejects_from_after_to(
   gen_test_admin_client,
 ):
   response = gen_test_admin_client.get(
-    "/admin/audit?from=2026-01-02&to=2026-01-01",
+    "/admin?tab=audit&from=2026-01-02&to=2026-01-01",
   )
 
   assert response.status_code == 400
@@ -755,8 +755,8 @@ def test_audit_page_escapes_reflected_entity_id(
   gen_test_admin_client,
 ):
   response = gen_test_admin_client.get(
-    "/admin/audit",
-    query_string={"entity_id": '" onmouseover="alert(1)'},
+    "/admin",
+    query_string={"tab": "audit", "entity_id": '" onmouseover="alert(1)'},
   )
 
   assert response.status_code == 200
@@ -783,7 +783,7 @@ def test_audit_page_escapes_details_values(
       (gen_test_admin,),
     )
 
-  response = gen_test_admin_client.get("/admin/audit")
+  response = gen_test_admin_client.get("/admin?tab=audit")
 
   html = response.data.decode()
 
@@ -791,11 +791,11 @@ def test_audit_page_escapes_details_values(
   assert '&lt;script&gt;alert(1)&lt;/script&gt;' in html
 
 
-def test_audit_page_shows_active_filter_chips(
+def test_audit_tab_shows_active_filter_chips(
   gen_test_admin_client,
 ):
   response = gen_test_admin_client.get(
-    "/admin/audit?action=created&entity_type=location",
+    "/admin?tab=audit&action=created&entity_type=location",
   )
 
   assert response.status_code == 200
@@ -807,15 +807,16 @@ def test_audit_page_shows_active_filter_chips(
   assert "Clear all" in html
 
   # The type chip's remove link keeps the action filter (and drops type).
-  assert "/admin/audit?action=created" in html
+  # (& is HTML-escaped inside the href attribute.)
+  assert "/admin?tab=audit&amp;action=created" in html
   # The action chip's remove link keeps the type filter (and drops action).
-  assert "/admin/audit?entity_type=location" in html
+  assert "/admin?tab=audit&amp;entity_type=location" in html
 
 
-def test_audit_page_has_no_chips_without_filters(
+def test_audit_tab_has_no_chips_without_filters(
   gen_test_admin_client,
 ):
-  response = gen_test_admin_client.get("/admin/audit")
+  response = gen_test_admin_client.get("/admin?tab=audit")
 
   html = response.data.decode()
 
