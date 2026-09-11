@@ -80,7 +80,7 @@
 | AUD-007 | P3 | Record backup/restoration events. | 🟢 | BKP-011, BKP-012 | BKP-014 | |
 | AUD-008 | P3 | Record user responsible for each event. | 🟢 | — | CHK-004 | |
 | AUD-010 | P3 | Record affected field and previous/new values. | 🟢 | AUD-002 | CHK-008 | |
-| AUD-011 | P3 | Authorized users can view audit/activity logs on desktop/mobile. | 🔴 | AUT-003 | USR-012, AUD-012 | route/UI pending |
+| AUD-011 | P3 | Authorized users can view audit/activity logs on desktop/mobile. | 🟢 | AUT-003 | USR-012, AUD-012 | GET /admin/audit page; gated by audit.read; filters entity_type/action/user/entity_id/date range; infinite scroll |
 | AUD-013 | P3 | Audit logs cannot be edited normally. | 🟢 | — | SEC-005 | |
 | BKP-007 | P3 | Perform missed scheduled backup on next startup. | 🔴 | BKP-006 | REL-007 | |
 | BKP-010 | P3 | System backup includes all required application data. | 🟢 | — | REL-004 | Full SQLite DB snapshot incl. all tables and system config; round-trip restore tested |
