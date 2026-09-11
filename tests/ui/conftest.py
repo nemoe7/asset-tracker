@@ -8,6 +8,7 @@ from werkzeug.serving import make_server
 
 import config
 from app import create_app
+from app.services.data.setup import is_first_run
 
 
 @pytest.fixture(scope="session")
@@ -63,3 +64,8 @@ def reset_e2e_db(e2e_db):
       except Exception as e:
         print(f"Failed to delete {e2e_db}: {e}. Retrying...")
         time.sleep(0.1)
+
+  # The cached answer describes the deleted database; the app's
+  # first-run guard would otherwise redirect or skip setup for every
+  # test after the first on each worker.
+  is_first_run.cache_clear()
