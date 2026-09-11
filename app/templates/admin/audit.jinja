@@ -1,0 +1,225 @@
+{% extends "base.jinja" %}
+
+{% from "admin/_audit_items.jinja" import desktop_row, mobile_card %}
+
+{% block title %}Astra - Activity{% endblock %}
+
+{% block body %}
+
+{# ==================== Activity Page ==================== #}
+<div class="min-h-screen bg-zinc-950 text-zinc-100">
+
+  {# ==================== Header ==================== #}
+  <header class="border-b border-zinc-800 bg-zinc-900">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+
+      <div class="flex items-center gap-4">
+
+        <a href="{{ url_for('main.index') }}"
+          class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+          <i class="bi bi-arrow-left mr-1" aria-hidden="true"></i>
+          Assets
+        </a>
+
+        <h1 class="text-xl font-semibold tracking-tight">
+          Activity
+        </h1>
+
+      </div>
+
+      <div class="flex items-center gap-3">
+
+        {# ==================== Menu ==================== #}
+        <details class="relative">
+
+          <summary class="icon-button cursor-pointer list-none">
+            <i class="bi bi-list block text-xl" aria-hidden="true"></i>
+            <span class="sr-only">Open menu</span>
+          </summary>
+
+          <div
+            class="absolute right-0 top-full z-50 mt-2 min-w-40 rounded-lg border border-zinc-800 bg-zinc-900 p-1 shadow-xl">
+
+            <div class="px-3 py-2 text-sm text-zinc-400">
+              @{{ session.username }}
+            </div>
+
+            <a href="{{ url_for('admin.settings') }}"
+              class="block rounded-md px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
+              <i class="bi bi-gear mr-1" aria-hidden="true"></i>
+              Management
+            </a>
+
+            <form method="post" action="{{ url_for('auth.logout') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit"
+                class="block w-full rounded-md px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
+                <i class="bi bi-box-arrow-right mr-1" aria-hidden="true"></i>
+                Log out
+              </button>
+            </form>
+
+          </div>
+
+        </details>
+        {# ==================== End Menu ==================== #}
+
+      </div>
+
+    </div>
+  </header>
+  {# ==================== End Header ==================== #}
+
+
+  <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+
+    {# ==================== Filters ==================== #}
+    <form method="get" action="{{ url_for('admin.audit_route') }}"
+      class="mb-6 flex flex-wrap items-end gap-3">
+
+      <div>
+        <label for="audit-entity-type" class="mb-2 block text-xs font-medium text-zinc-400">Entity type</label>
+        <select id="audit-entity-type" name="entity_type" class="form-select">
+          <option value="">All</option>
+          {% for entity_type in entity_types %}
+          <option value="{{ entity_type }}" {{ 'selected' if filters['entity_type'] == entity_type }}>
+            {{ entity_type }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="audit-action" class="mb-2 block text-xs font-medium text-zinc-400">Action</label>
+        <select id="audit-action" name="action" class="form-select">
+          <option value="">All</option>
+          {% for action in actions %}
+          <option value="{{ action }}" {{ 'selected' if filters['action'] == action }}>
+            {{ action }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="audit-user" class="mb-2 block text-xs font-medium text-zinc-400">User</label>
+        <select id="audit-user" name="user_id" class="form-select">
+          <option value="">All</option>
+          {% for user in users %}
+          <option value="{{ user['id'] }}" {{ 'selected' if filters['user_id'] == user['id']|string }}>
+            {{ user['username'] }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="audit-entity-id" class="mb-2 block text-xs font-medium text-zinc-400">Entity ID</label>
+        <input id="audit-entity-id" name="entity_id" type="text" value="{{ filters['entity_id'] }}"
+          class="form-input">
+      </div>
+
+      <div>
+        <label for="audit-from" class="mb-2 block text-xs font-medium text-zinc-400">From</label>
+        <input id="audit-from" name="from" type="date" value="{{ filters['from'] }}" class="form-input">
+      </div>
+
+      <div>
+        <label for="audit-to" class="mb-2 block text-xs font-medium text-zinc-400">To</label>
+        <input id="audit-to" name="to" type="date" value="{{ filters['to'] }}" class="form-input">
+      </div>
+
+      <button type="submit"
+        class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+        Apply
+      </button>
+
+      <a href="{{ url_for('admin.audit_route') }}"
+        class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+        Reset
+      </a>
+
+    </form>
+    {# ==================== End Filters ==================== #}
+
+
+    <p id="audit-count" data-shown="{{ logs | length }}" data-total="{{ total }}"
+      class="mb-4 text-sm text-zinc-400">
+      Showing {{ logs | length }} of {{ total }} events
+    </p>
+
+    {# ==================== Activity List ==================== #}
+    <section class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+
+      {# Desktop Table #}
+      <div class="hidden overflow-x-auto md:block">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-zinc-800">
+            <tr>
+              <th class="px-5 py-3 font-medium text-zinc-400">Timestamp</th>
+              <th class="px-5 py-3 font-medium text-zinc-400">User</th>
+              <th class="px-5 py-3 font-medium text-zinc-400">Action</th>
+              <th class="px-5 py-3 font-medium text-zinc-400">Entity type</th>
+              <th class="px-5 py-3 font-medium text-zinc-400">Entity ID</th>
+              <th class="px-5 py-3 font-medium text-zinc-400">Details</th>
+            </tr>
+          </thead>
+          <tbody id="audit-rows-desktop" class="divide-y divide-zinc-800">
+            {% for log in logs %}
+            {{ desktop_row(log) }}
+            {% endfor %}
+            {% if not logs %}
+            <tr>
+              <td colspan="6" class="px-5 py-8 text-center text-sm text-zinc-500">
+                No activity found.
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      {# Mobile Cards #}
+      <div id="audit-rows-mobile" class="divide-y divide-zinc-800 md:hidden">
+        {% for log in logs %}
+        {{ mobile_card(log) }}
+        {% endfor %}
+        {% if not logs %}
+        <p class="px-4 py-8 text-center text-sm text-zinc-500">
+          No activity found.
+        </p>
+        {% endif %}
+      </div>
+
+    </section>
+    {# ==================== End Activity List ==================== #}
+
+
+    {# ==================== Load More / End ==================== #}
+    <div class="mt-6 text-center">
+      {% if has_more %}
+      <a id="audit-load-more"
+        href="{{ url_for('admin.audit_route', page=page + 1, **filters) }}"
+        class="inline-block rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+        Load more
+      </a>
+      <div id="audit-sentinel" data-has-more="true" data-next-page="{{ page + 1 }}"
+        class="h-px w-full" aria-hidden="true"></div>
+      {% else %}
+      <p id="audit-end" class="text-sm text-zinc-500">End of activity &middot; {{ total }} events</p>
+      {% endif %}
+    </div>
+    {# ==================== End Load More / End ==================== #}
+
+
+  </main>
+
+</div>
+{# ==================== End Activity Page ==================== #}
+
+{% endblock %}
+
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/audit.js') }}"></script>
+{% endblock %}

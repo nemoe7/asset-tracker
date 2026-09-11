@@ -2,6 +2,7 @@ from app.services.data.custom_fields import (
   get_custom_field,
   get_custom_fields,
 )
+from app.services.data.db import db_transaction
 from app.services.data.locations import get_location
 
 # ==================== Admin Page ====================
@@ -598,3 +599,195 @@ def test_reset_database_clears_data(
   assert response.status_code == 302
   assert response.location.endswith("/auth/login")
   assert get_location(location_id) is None
+
+
+# ==================== Audit Log ====================
+
+
+def _login_restricted_user(gen_test_client):
+  from werkzeug.security import generate_password_hash
+
+  import sqlite3
+
+  import config
+
+  connection = sqlite3.connect(config.DB_PATH)
+
+  connection.execute(
+    """
+    INSERT INTO users (
+      username,
+      name,
+      password_hash,
+      created_at,
+      updated_at
+    )
+    VALUES (?, ?, ?, datetime('now'), datetime('now'))
+    """,
+    ("restricted_user", "Restricted", generate_password_hash("restricted1")),
+  )
+
+  connection.commit()
+  connection.close()
+
+  gen_test_client.post(
+    "/auth/login",
+    data={
+      "username": "restricted_user",
+      "password": "restricted1",
+    },
+  )
+
+
+def test_audit_page_requires_login(
+  gen_test_client,
+):
+  response = gen_test_client.get(
+    "/admin/audit",
+  )
+
+  assert response.status_code == 302
+
+
+def test_audit_fragment_requires_login(
+  gen_test_client,
+):
+  response = gen_test_client.get(
+    "/admin/audit/fragment",
+  )
+
+  assert response.status_code == 302
+
+
+def test_audit_page_requires_audit_read_permission(
+  gen_test_client,
+  gen_test_admin,
+):
+  _login_restricted_user(gen_test_client)
+
+  response = gen_test_client.get("/admin/audit")
+
+  assert response.status_code == 403
+
+
+def test_audit_fragment_requires_audit_read_permission(
+  gen_test_client,
+  gen_test_admin,
+):
+  _login_restricted_user(gen_test_client)
+
+  response = gen_test_client.get("/admin/audit/fragment")
+
+  assert response.status_code == 403
+
+
+def test_admin_can_view_audit_page(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  gen_test_item()
+
+  response = gen_test_admin_client.get("/admin/audit")
+
+  assert response.status_code == 200
+
+  html = response.data.decode()
+
+  assert 'data-audit-row=' in html
+  assert "inventory_item" in html
+
+
+def test_audit_page_applies_entity_type_filter(
+  gen_test_admin_client,
+  gen_test_item,
+  gen_test_location,
+):
+  gen_test_item()
+  gen_test_location()
+
+  unfiltered = gen_test_admin_client.get("/admin/audit")
+
+  assert unfiltered.data.decode().count('data-audit-row=') == 2
+
+  filtered = gen_test_admin_client.get(
+    "/admin/audit?entity_type=location",
+  )
+
+  assert filtered.status_code == 200
+  assert filtered.data.decode().count('data-audit-row=') == 1
+
+
+def test_audit_page_rejects_invalid_page(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.get("/admin/audit?page=abc")
+
+  assert response.status_code == 400
+
+
+def test_audit_page_rejects_zero_page(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.get("/admin/audit?page=0")
+
+  assert response.status_code == 400
+
+
+def test_audit_page_rejects_invalid_from_date(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.get("/admin/audit?from=not-a-date")
+
+  assert response.status_code == 400
+
+
+def test_audit_page_rejects_from_after_to(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.get(
+    "/admin/audit?from=2026-01-02&to=2026-01-01",
+  )
+
+  assert response.status_code == 400
+
+
+def test_audit_fragment_renders_rows_for_admin(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  gen_test_item()
+
+  response = gen_test_admin_client.get("/admin/audit/fragment?page=1")
+
+  assert response.status_code == 200
+
+  html = response.data.decode()
+
+  assert 'data-audit-row=' in html
+  assert 'data-has-more="false"' in html
+
+
+def test_audit_fragment_reports_more_pages(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  with db_transaction() as connection:
+    for index in range(51):
+      connection.execute(
+        """
+        INSERT INTO audit_log (
+          user_id,
+          action,
+          entity_type,
+          entity_id,
+          timestamp
+        )
+        VALUES (?, 'created', 'test', ?, datetime('now'))
+        """,
+        (gen_test_admin, str(index)),
+      )
+
+  response = gen_test_admin_client.get("/admin/audit/fragment?page=1")
+
+  assert response.status_code == 200
+  assert 'data-has-more="true"' in response.data.decode()

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import (
   Blueprint,
   abort,
@@ -15,6 +17,7 @@ from ..services.auth.authorization import (
   check_permission,
   permission_required,
 )
+from ..services.data.audit import list_audit_logs
 from ..services.data.custom_fields import (
   archive_custom_field,
   create_custom_field,
@@ -30,7 +33,7 @@ from ..services.data.locations import (
   get_locations,
   update_location,
 )
-from ..services.data.users import verify_password
+from ..services.data.users import get_users, verify_password
 from ..services.exceptions.data.common import InvalidInputError
 from ..services.exceptions.data.custom_fields import (
   CustomFieldInUseError,
@@ -58,6 +61,8 @@ _VALID_TABS = (
   _BACKUPS_TAB,
 )
 
+_AUDIT_PAGE_SIZE = 50
+
 
 def _render_settings(
   active_tab,
@@ -79,6 +84,7 @@ def _render_settings(
       check_permission(user_id, "backups.create")
       or check_permission(user_id, "backups.restore")
     ),
+    can_view_audit=check_permission(user_id, "audit.read"),
     debug=config.DEBUG,
     **context,
   )
@@ -342,3 +348,124 @@ def reset_database_route():
   session.clear()
 
   return redirect(url_for("auth.setup"))
+
+
+def _parse_audit_filters():
+  try:
+    page = int(request.args.get("page", "1"))
+  except ValueError:
+    abort(400)
+
+  if page < 1:
+    abort(400)
+
+  raw_user_id = request.args.get("user_id")
+
+  if raw_user_id:
+    try:
+      user_id = int(raw_user_id)
+    except ValueError:
+      abort(400)
+  else:
+    user_id = None
+
+  from_date = request.args.get("from")
+  to_date = request.args.get("to")
+
+  from_datetime = None
+  to_datetime = None
+
+  if from_date:
+    try:
+      from_datetime = datetime.strptime(from_date, "%Y-%m-%d")
+    except ValueError:
+      abort(400)
+
+  if to_date:
+    try:
+      to_datetime = datetime.strptime(to_date, "%Y-%m-%d")
+    except ValueError:
+      abort(400)
+
+  if from_datetime and to_datetime and from_datetime > to_datetime:
+    abort(400)
+
+  return {
+    "entity_type": request.args.get("entity_type") or None,
+    "entity_id": request.args.get("entity_id") or None,
+    "action": request.args.get("action") or None,
+    "user_id": user_id,
+    "from_date": from_date or None,
+    "to_date": to_date or None,
+    "page": page,
+  }
+
+
+def _audit_query(filters):
+  page = filters.pop("page")
+
+  result = list_audit_logs(
+    **filters,
+    limit=_AUDIT_PAGE_SIZE,
+    offset=(page - 1) * _AUDIT_PAGE_SIZE,
+  )
+
+  return result, page
+
+
+@admin.route("/audit", methods=["GET"])
+@login_required
+@permission_required("audit.read")
+def audit_route():
+  result, page = _audit_query(_parse_audit_filters())
+
+  total = result["total"]
+
+  return render_template(
+    "admin/audit.jinja",
+    logs=result["logs"],
+    total=total,
+    total_pages=max(1, -(-total // _AUDIT_PAGE_SIZE)),
+    page=page,
+    page_size=_AUDIT_PAGE_SIZE,
+    has_more=page * _AUDIT_PAGE_SIZE < total,
+    entity_types=result["entity_types"],
+    actions=result["actions"],
+    users=get_users(),
+    filters={
+      key: value
+      for key, value in {
+        "entity_type": request.args.get("entity_type") or "",
+        "entity_id": request.args.get("entity_id") or "",
+        "action": request.args.get("action") or "",
+        "user_id": request.args.get("user_id") or "",
+        "from": request.args.get("from") or "",
+        "to": request.args.get("to") or "",
+      }.items()
+    },
+  )
+
+
+@admin.route("/audit/fragment", methods=["GET"])
+@login_required
+@permission_required("audit.read")
+def audit_fragment_route():
+  result, page = _audit_query(_parse_audit_filters())
+
+  return render_template(
+    "admin/audit_rows.jinja",
+    logs=result["logs"],
+    has_more=page * _AUDIT_PAGE_SIZE < result["total"],
+    next_page=page + 1,
+    filters={
+      key: value
+      for key, value in {
+        "entity_type": request.args.get("entity_type") or "",
+        "entity_id": request.args.get("entity_id") or "",
+        "action": request.args.get("action") or "",
+        "user_id": request.args.get("user_id") or "",
+        "from": request.args.get("from") or "",
+        "to": request.args.get("to") or "",
+      }.items()
+    },
+  )
