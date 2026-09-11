@@ -83,6 +83,7 @@ def test_restore_with_wrong_password_shows_error(
   expect(page.locator("#restore-confirm-status")).to_contain_text("Incorrect password")
   expect(dialog).to_be_visible()
 
+
 @pytest.mark.e2e
 def test_backup_button_downloads_backup_file(page, live_server, setup_admin):
   page.goto(f"{live_server}/admin?tab=data")

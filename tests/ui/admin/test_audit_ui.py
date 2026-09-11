@@ -29,13 +29,17 @@ def test_audit_page_shows_created_item_event(page, live_server, logged_in, creat
 
   # Baseline: the /auth/setup audit event for the admin user.
   expect(page.locator("#audit-rows-desktop tr[data-audit-row]")).to_have_count(2)
-  expect(page.locator("#audit-rows-desktop").get_by_text("inventory_item")).to_be_visible()
+  expect(
+    page.locator("#audit-rows-desktop").get_by_text("inventory_item")
+  ).to_be_visible()
   expect(page.get_by_text("Showing 2 of 2 events")).to_be_visible()
   expect(page.locator("#audit-end")).to_be_visible()
 
 
 @pytest.mark.e2e
-def test_audit_page_infinite_scroll_loads_until_end(page, live_server, logged_in, create_item):
+def test_audit_page_infinite_scroll_loads_until_end(
+  page, live_server, logged_in, create_item
+):
   for index in range(55):
     create_item(f"Asset {index}")
 
@@ -122,5 +126,7 @@ def test_audit_page_mobile_cards_render(page, live_server, logged_in, create_ite
   page.goto(f"{live_server}/admin?tab=audit")
 
   expect(page.locator("#audit-rows-mobile [data-audit-card]")).to_have_count(2)
-  expect(page.locator("#audit-rows-mobile").get_by_text("inventory_item")).to_be_visible()
+  expect(
+    page.locator("#audit-rows-mobile").get_by_text("inventory_item")
+  ).to_be_visible()
   expect(page.get_by_role("table")).to_be_hidden()

@@ -207,9 +207,7 @@ def test_edit_modal_prefills_and_updates_custom_fields(
 
   edit_modal = page.get_by_role("dialog")
 
-  expect(edit_modal.locator('[name="f_Serial Number"]')).to_have_value(
-    "SN-300"
-  )
+  expect(edit_modal.locator('[name="f_Serial Number"]')).to_have_value("SN-300")
   expect(edit_modal.locator('select[name="f_Active"]')).to_have_value("true")
 
   edit_modal.locator('[name="f_Serial Number"]').fill("SN-301")
@@ -272,9 +270,15 @@ def test_add_modal_shows_type_hints_required_badges_and_placeholders(
 
   modal = page.get_by_role("dialog")
 
-  serial_wrapper = modal.locator('[name="f_Serial Number"]').locator("xpath=ancestor::div[1]")
-  quantity_wrapper = modal.locator('input[name="f_Quantity"]').locator("xpath=ancestor::div[1]")
-  price_wrapper = modal.locator('input[name="f_Price"]').locator("xpath=ancestor::div[1]")
+  serial_wrapper = modal.locator('[name="f_Serial Number"]').locator(
+    "xpath=ancestor::div[1]"
+  )
+  quantity_wrapper = modal.locator('input[name="f_Quantity"]').locator(
+    "xpath=ancestor::div[1]"
+  )
+  price_wrapper = modal.locator('input[name="f_Price"]').locator(
+    "xpath=ancestor::div[1]"
+  )
 
   expect(serial_wrapper.get_by_text("Text")).to_be_visible()
   expect(serial_wrapper.get_by_text("Required")).to_be_visible()
@@ -309,7 +313,9 @@ def test_add_modal_shows_chevron_on_custom_field_dropdowns(
 
   modal = page.get_by_role("dialog")
 
-  select_wrapper = modal.locator('select[name="f_Active"]').locator("xpath=ancestor::div[1]")
+  select_wrapper = modal.locator('select[name="f_Active"]').locator(
+    "xpath=ancestor::div[1]"
+  )
 
   expect(select_wrapper.locator(".bi-chevron-down")).to_have_count(1)
 
@@ -336,11 +342,13 @@ def test_modal_field_names_show_description_icon_only_with_description(
   add_modal = page.get_by_role("dialog")
 
   expect(
-    add_modal.locator('label[for^="add-cf-"]').filter(has_text="Serial Number")
+    add_modal.locator('label[for^="add-cf-"]')
+    .filter(has_text="Serial Number")
     .locator(".bi-question-circle")
   ).to_have_attribute("title", "Manufacturer serial number")
   expect(
-    add_modal.locator('label[for^="add-cf-"]').filter(has_text="Notes")
+    add_modal.locator('label[for^="add-cf-"]')
+    .filter(has_text="Notes")
     .locator(".bi-question-circle")
   ).to_have_count(0)
 
@@ -354,7 +362,8 @@ def test_modal_field_names_show_description_icon_only_with_description(
   view_modal = page.get_by_role("dialog")
 
   expect(
-    view_modal.locator("th").filter(has_text="Serial Number")
+    view_modal.locator("th")
+    .filter(has_text="Serial Number")
     .locator(".bi-question-circle")
   ).to_have_attribute("title", "Manufacturer serial number")
   expect(
@@ -367,7 +376,8 @@ def test_modal_field_names_show_description_icon_only_with_description(
   edit_modal = page.get_by_role("dialog")
 
   expect(
-    edit_modal.locator("th").filter(has_text="Serial Number")
+    edit_modal.locator("th")
+    .filter(has_text="Serial Number")
     .locator(".bi-question-circle")
   ).to_have_attribute("title", "Manufacturer serial number")
   expect(

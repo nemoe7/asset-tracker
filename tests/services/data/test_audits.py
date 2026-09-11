@@ -414,10 +414,7 @@ def test_list_audit_logs_paginates_with_total(gen_test_data_admin):
   third_page = list_audit_logs(limit=2, offset=4)
 
   ids = [
-    log["id"]
-    for log in first_page["logs"]
-    + second_page["logs"]
-    + third_page["logs"]
+    log["id"] for log in first_page["logs"] + second_page["logs"] + third_page["logs"]
   ]
 
   assert first_page["total"] == 5

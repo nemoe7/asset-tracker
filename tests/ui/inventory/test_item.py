@@ -354,7 +354,7 @@ def test_asset_name_link_opens_view_modal(
 
   page.goto(f"{live_server}/")
 
-  page.locator(f"a.view-item-link[data-item-id='{item["id"]}']").first.click()
+  page.locator(f"a.view-item-link[data-item-id='{item['id']}']").first.click()
 
   expect(page.locator("#view-item-modal")).to_be_visible()
   expect(page.locator("#view-item-name")).to_have_text("Test Asset")
@@ -370,9 +370,9 @@ def test_asset_name_link_is_keyboard_accessible(
 
   page.goto(f"{live_server}/")
 
-  page.locator(f"a.view-item-link[data-item-id='{item["id"]}']").first.focus()
+  page.locator(f"a.view-item-link[data-item-id='{item['id']}']").first.focus()
 
-  page.locator(f"a.view-item-link[data-item-id='{item["id"]}']").first.press("Enter")
+  page.locator(f"a.view-item-link[data-item-id='{item['id']}']").first.press("Enter")
 
   expect(page.locator("#view-item-modal")).to_be_visible()
   expect(page.locator("#view-item-name")).to_have_text("Test Asset")

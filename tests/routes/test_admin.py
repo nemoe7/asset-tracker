@@ -693,7 +693,7 @@ def test_admin_can_view_audit_tab(
 
   html = response.data.decode()
 
-  assert 'data-audit-row=' in html
+  assert "data-audit-row=" in html
   assert "inventory_item" in html
 
 
@@ -707,14 +707,14 @@ def test_audit_page_applies_entity_type_filter(
 
   unfiltered = gen_test_admin_client.get("/admin?tab=audit")
 
-  assert unfiltered.data.decode().count('data-audit-row=') == 2
+  assert unfiltered.data.decode().count("data-audit-row=") == 2
 
   filtered = gen_test_admin_client.get(
     "/admin?tab=audit&entity_type=location",
   )
 
   assert filtered.status_code == 200
-  assert filtered.data.decode().count('data-audit-row=') == 1
+  assert filtered.data.decode().count("data-audit-row=") == 1
 
 
 def test_audit_tab_rejects_invalid_page(
@@ -787,8 +787,8 @@ def test_audit_page_escapes_details_values(
 
   html = response.data.decode()
 
-  assert '<script>alert(1)</script>' not in html
-  assert '&lt;script&gt;alert(1)&lt;/script&gt;' in html
+  assert "<script>alert(1)</script>" not in html
+  assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
 
 
 def test_audit_tab_shows_active_filter_chips(
@@ -836,7 +836,7 @@ def test_audit_fragment_renders_rows_for_admin(
 
   html = response.data.decode()
 
-  assert 'data-audit-row=' in html
+  assert "data-audit-row=" in html
   assert 'data-has-more="false"' in html
 
 

@@ -17,4 +17,3 @@ def test_run_module_exposes_app_for_gunicorn(tmp_path, monkeypatch):
     assert isinstance(run.app, Flask)
   finally:
     importlib.reload(config)
-
