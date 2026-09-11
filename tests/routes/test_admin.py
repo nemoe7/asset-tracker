@@ -791,6 +791,38 @@ def test_audit_page_escapes_details_values(
   assert '&lt;script&gt;alert(1)&lt;/script&gt;' in html
 
 
+def test_audit_page_shows_active_filter_chips(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.get(
+    "/admin/audit?action=created&entity_type=location",
+  )
+
+  assert response.status_code == 200
+
+  html = response.data.decode()
+
+  assert "Type: location" in html
+  assert "Action: created" in html
+  assert "Clear all" in html
+
+  # The type chip's remove link keeps the action filter (and drops type).
+  assert "/admin/audit?action=created" in html
+  # The action chip's remove link keeps the type filter (and drops action).
+  assert "/admin/audit?entity_type=location" in html
+
+
+def test_audit_page_has_no_chips_without_filters(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.get("/admin/audit")
+
+  html = response.data.decode()
+
+  assert "data-filter-chip" not in html
+  assert "data-filter-clear" not in html
+
+
 def test_audit_fragment_renders_rows_for_admin(
   gen_test_admin_client,
   gen_test_item,

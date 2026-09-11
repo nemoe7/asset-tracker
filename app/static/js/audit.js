@@ -1,4 +1,12 @@
 (() => {
+  const filterButton = document.getElementById('audit-filter-button');
+
+  if (filterButton) {
+    filterButton.addEventListener('click', () => {
+      openModal(document.getElementById('filter-audit-modal'));
+    });
+  }
+
   const sentinel = document.getElementById('audit-sentinel');
   const counter = document.getElementById('audit-count');
   const loadMore = document.getElementById('audit-load-more');

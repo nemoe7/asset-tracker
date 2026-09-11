@@ -413,13 +413,75 @@ def _audit_query(filters):
   return result, page
 
 
+def _audit_filter_chips(filters, users):
+  """Build removable active-filter chips for the audit page toolbar.
+
+  ``filters`` holds the 6 filter keys (user_id is an int) with None/empty
+  for absent values. Each chip labels one active filter and links to the
+  same listing without it.
+  """
+  query_names = {
+    "entity_type": "entity_type",
+    "action": "action",
+    "user_id": "user_id",
+    "entity_id": "entity_id",
+    "from_date": "from",
+    "to_date": "to",
+  }
+
+  definitions = (
+    ("entity_type", "Type", "value"),
+    ("action", "Action", "value"),
+    ("user_id", "User", "username"),
+    ("entity_id", "ID", "value"),
+    ("from_date", "From", "value"),
+    ("to_date", "To", "value"),
+  )
+
+  present = {
+    key: value
+    for key, value in filters.items()
+    if value not in (None, "")
+  }
+
+  chips = []
+
+  for key, prefix, kind in definitions:
+    if key not in present:
+      continue
+
+    value = present[key]
+
+    if kind == "username":
+      value = next(
+        (user["username"] for user in users if user["id"] == value),
+        value,
+      )
+
+    remaining = {k: v for k, v in present.items() if k != key}
+
+    chips.append(
+      {
+        "label": f"{prefix}: {value}",
+        "remove_url": url_for(
+          "admin.audit_route",
+          **{query_names[k]: v for k, v in remaining.items()},
+        ),
+      }
+    )
+
+  return chips
+
+
 @admin.route("/audit", methods=["GET"])
 @login_required
 @permission_required("audit.read")
 def audit_route():
-  result, page = _audit_query(_parse_audit_filters())
+  parsed = _parse_audit_filters()
+  result, page = _audit_query(parsed)
 
   total = result["total"]
+  users = get_users()
 
   return render_template(
     "admin/audit.jinja",
@@ -429,7 +491,8 @@ def audit_route():
     has_more=page * _AUDIT_PAGE_SIZE < total,
     entity_types=result["entity_types"],
     actions=result["actions"],
-    users=get_users(),
+    users=users,
+    chips=_audit_filter_chips(parsed, users),
     filters={
       key: value
       for key, value in {
