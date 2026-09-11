@@ -597,7 +597,9 @@ def test_reset_database_clears_data(
   )
 
   assert response.status_code == 302
-  assert response.location.endswith("/auth/login")
+  # Reset wipes all users, so the app must be re-initialized via setup,
+  # not login.
+  assert response.location.endswith("/auth/setup")
   assert get_location(location_id) is None
 
 
