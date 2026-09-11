@@ -260,12 +260,28 @@ backupButton?.addEventListener('click', async () => {
 const restoreForm = document.getElementById('restore-form');
 const restoreFile = document.getElementById('restore-file');
 const restoreStatus = document.getElementById('restore-status');
+const restoreChooseButton = document.getElementById('restore-choose-button');
+const restoreChooseLabel = document.getElementById('restore-choose-label');
 const restoreConfirmDialog = document.getElementById('restore-confirm-dialog');
 const restoreConfirmForm = document.getElementById('restore-confirm-form');
 const restoreConfirmPassword = document.getElementById('restore-confirm-password');
 const restoreConfirmStatus = document.getElementById('restore-confirm-status');
 const restoreConfirmButton = document.getElementById('restore-confirm-button');
 const cancelRestoreConfirm = document.getElementById('cancel-restore-confirm');
+
+const restoreChooseDefault = 'Choose backup file…';
+
+// The native file box is visually hidden; this button opens it and shows
+// the chosen file's name in place of the browser's "No file chosen" text.
+restoreChooseButton?.addEventListener('click', () => {
+  restoreFile?.click();
+});
+
+restoreFile?.addEventListener('change', () => {
+  if (restoreChooseLabel) {
+    restoreChooseLabel.textContent = restoreFile?.files?.[0]?.name ?? restoreChooseDefault;
+  }
+});
 
 function showRestoreStatus(message, isError) {
   if (!restoreStatus) {
