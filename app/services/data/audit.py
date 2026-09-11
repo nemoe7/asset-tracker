@@ -107,13 +107,15 @@ def list_audit_logs(
   to_date=None,
   limit=50,
   offset=0,
+  include_options=True,
 ):
   """Filtered, newest-first audit listing for the activity log page.
 
   Returns the page of logs, the total matching count (before
-  limit/offset), and the distinct entity types/actions for the filter
-  dropdowns. ``from_date``/``to_date`` are inclusive 'YYYY-MM-DD' strings
-  compared against the UTC 'YYYY-MM-DD HH:MM:SS' timestamps.
+  limit/offset), and — unless ``include_options`` is False — the distinct
+  entity types/actions for the filter dropdowns. ``from_date``/
+  ``to_date`` are inclusive 'YYYY-MM-DD' strings compared against the
+  UTC 'YYYY-MM-DD HH:MM:SS' timestamps.
   """
   with db_connection() as connection:
     where_clauses = []
@@ -171,19 +173,23 @@ def list_audit_logs(
       [*parameters, limit, offset],
     ).fetchall()
 
-    entity_types = [
-      row["entity_type"]
-      for row in connection.execute(
-        "SELECT DISTINCT entity_type FROM audit_log ORDER BY entity_type"
-      ).fetchall()
-    ]
+    entity_types = []
+    actions = []
 
-    actions = [
-      row["action"]
-      for row in connection.execute(
-        "SELECT DISTINCT action FROM audit_log ORDER BY action"
-      ).fetchall()
-    ]
+    if include_options:
+      entity_types = [
+        row["entity_type"]
+        for row in connection.execute(
+          "SELECT DISTINCT entity_type FROM audit_log ORDER BY entity_type"
+        ).fetchall()
+      ]
+
+      actions = [
+        row["action"]
+        for row in connection.execute(
+          "SELECT DISTINCT action FROM audit_log ORDER BY action"
+        ).fetchall()
+      ]
 
     return {
       "logs": [_parse_audit_log(row) for row in rows],
