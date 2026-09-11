@@ -401,14 +401,13 @@ def _parse_audit_filters():
   }
 
 
-def _audit_query(filters, include_options=True):
+def _audit_query(filters):
   page = filters.pop("page")
 
   result = list_audit_logs(
     **filters,
     limit=_AUDIT_PAGE_SIZE,
     offset=(page - 1) * _AUDIT_PAGE_SIZE,
-    include_options=include_options,
   )
 
   return result, page
@@ -449,10 +448,7 @@ def audit_route():
 @login_required
 @permission_required("audit.read")
 def audit_fragment_route():
-  result, page = _audit_query(
-    _parse_audit_filters(),
-    include_options=False,
-  )
+  result, page = _audit_query(_parse_audit_filters())
 
   return render_template(
     "admin/audit_rows.jinja",
