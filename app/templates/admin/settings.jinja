@@ -637,167 +637,149 @@
     {# ==================== Data Panel ==================== #}
     <section id="tab-data" data-tab-panel="data" class="{{ 'hidden' if active_tab != 'data' }}">
 
-      {# ==================== Import ==================== #}
-      <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-
-        <div class="flex items-start justify-between gap-4">
-
-          <div>
-            <h2 class="text-lg font-semibold">Import</h2>
-
-            <p class="mt-1 text-sm text-zinc-400">
-              Import asset records from a CSV or .xlsx file. A unique Asset ID is
-              generated for every row; each row requires at least a
-              <code class="text-zinc-300">name</code> column.
-            </p>
-          </div>
-
-          <button type="button" id="import-button"
-            class="shrink-0 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
-            <i class="bi bi-upload mr-1" aria-hidden="true"></i>
-            Import assets
-          </button>
-
+      {# ==================== CSV/XLSX ==================== #}
+      <div class="rounded-xl border border-zinc-800 bg-zinc-900/50">
+        <div class="px-6 pt-5">
+          <h2 class="text-lg font-semibold">CSV/XLSX</h2>
         </div>
 
-        <p id="import-status" class="mt-3 hidden text-sm"></p>
+        <table class="mt-2 w-full text-left">
+          <tbody class="divide-y divide-zinc-800">
+            <tr>
+              <th scope="row" class="px-6 py-5 align-top font-normal">
+                <span class="block text-sm font-medium text-zinc-100">Import</span>
+                <span class="mt-1 block text-sm text-zinc-400">
+                  Import asset records from a CSV&nbsp;or&nbsp;.xlsx file. A unique
+                  Asset ID is generated for every row; each row requires at
+                  least a <code class="text-zinc-300">name</code> column.
+                </span>
+                <p id="import-status" aria-live="polite" class="mt-2 hidden text-sm"></p>
+              </th>
+              <td class="px-6 py-5 text-right align-middle">
+                <button type="button" id="import-button"
+                  class="shrink-0 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
+                  <i class="bi bi-upload mr-1" aria-hidden="true"></i>
+                  Import assets
+                </button>
+              </td>
+            </tr>
 
+            <tr>
+              <th scope="row" class="px-6 py-5 align-top font-normal">
+                <span class="block text-sm font-medium text-zinc-100">Export</span>
+                <span class="mt-1 block text-sm text-zinc-400">
+                  Export assets to a CSV&nbsp;file. Choose specific columns or
+                  leave the selection empty to include all fields.
+                </span>
+              </th>
+              <td class="px-6 py-5 text-right align-middle">
+                <button type="button" id="export-button"
+                  class="shrink-0 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
+                  <i class="bi bi-download mr-1" aria-hidden="true"></i>
+                  Export CSV
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      {# ==================== End Import ==================== #}
-
-      {# ==================== Export ==================== #}
-      <div class="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-
-        <div class="flex items-start justify-between gap-4">
-
-          <div>
-            <h2 class="text-lg font-semibold">Export</h2>
-
-            <p class="mt-1 text-sm text-zinc-400">
-              Export assets to a CSV file. Choose specific columns or
-              leave the selection empty to include all fields.
-            </p>
-          </div>
-
-          <button type="button" id="export-button"
-            class="shrink-0 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
-            <i class="bi bi-download mr-1" aria-hidden="true"></i>
-            Export CSV
-          </button>
-
-        </div>
-
-      </div>
-      {# ==================== End Export ==================== #}
+      {# ==================== End CSV/XLSX ==================== #}
 
       {% if can_manage_backups %}
-      {# ==================== Manual Backup ==================== #}
-      <div class="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-
-        <div class="flex items-start justify-between gap-4">
-
-          <div>
-            <h2 class="text-lg font-semibold">Manual backup</h2>
-
-            <p class="mt-1 text-sm text-zinc-400">
-              Download a full snapshot of the application database. Backups are
-              delivered directly to you and are never stored on the server.
-            </p>
-          </div>
-
-          <button type="button" id="backup-button"
-            class="shrink-0 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
-            <i class="bi bi-download mr-1" aria-hidden="true"></i>
-            Download backup
-          </button>
-
+      {# ==================== Backup ==================== #}
+      <div class="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/50">
+        <div class="px-6 pt-5">
+          <h2 class="text-lg font-semibold">Backup</h2>
         </div>
 
-        <p id="backup-status" class="mt-3 hidden text-sm"></p>
+        <table class="mt-2 w-full text-left">
+          <tbody class="divide-y divide-zinc-800">
+            <tr>
+              <th scope="row" class="px-6 py-5 align-top font-normal">
+                <span class="block text-sm font-medium text-zinc-100">Manual backup</span>
+                <span class="mt-1 block text-sm text-zinc-400">
+                  Download a full snapshot of the application database. Backups
+                  are delivered directly to you and are never stored on the
+                  server.
+                </span>
+                <p id="backup-status" aria-live="polite" class="mt-2 hidden text-sm"></p>
+              </th>
+              <td class="px-6 py-5 text-right align-middle">
+                <button type="button" id="backup-button"
+                  class="shrink-0 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
+                  <i class="bi bi-download mr-1" aria-hidden="true"></i>
+                  Download backup
+                </button>
+              </td>
+            </tr>
 
+            <tr>
+              <th scope="row" class="px-6 py-5 align-top font-normal">
+                <span class="block text-sm font-medium text-zinc-100">Restore from backup</span>
+                <span class="mt-1 block text-sm text-red-300">
+                  Restoring a backup overwrites <strong>all current data</strong> —
+                  assets, custom fields, users, and audit history. This cannot
+                  be undone. Download a fresh backup first if you are unsure.
+                </span>
+
+                <form id="restore-form" class="mt-4 max-w-md">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                  <label for="restore-file" class="sr-only">
+                    Backup file
+                  </label>
+
+                  <input id="restore-file" name="file" type="file" required accept=".db"
+                    class="block w-full text-sm text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-zinc-300 file:transition hover:file:bg-zinc-700">
+
+                  <p id="restore-status" aria-live="polite" class="mt-2 hidden text-sm"></p>
+
+                  <button type="submit" id="restore-button"
+                    class="mt-3 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
+                    <i class="bi bi-arrow-counterclockwise mr-1" aria-hidden="true"></i>
+                    Restore backup
+                  </button>
+                </form>
+              </th>
+              <td class="px-6 py-5"></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      {# ==================== End Manual Backup ==================== #}
-
-
-      {# ==================== Restore From Backup ==================== #}
-      <div class="mt-6 rounded-xl border border-red-900/50 bg-zinc-900/50 p-6">
-
-        <div class="flex items-start gap-4">
-
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-950 text-red-400">
-            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-          </div>
-
-          <div class="min-w-0">
-            <h2 class="text-lg font-semibold">Restore from backup</h2>
-
-            <p class="mt-1 text-sm text-red-300">
-              Restoring a backup overwrites <strong>all current data</strong> —
-              assets, custom fields, users, and audit history. This cannot
-              be undone. Download a fresh backup first if you are unsure.
-            </p>
-          </div>
-
-        </div>
-
-        <form id="restore-form" class="mt-5 space-y-4">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-          <div>
-            <label for="restore-file" class="mb-2 block text-sm font-medium text-zinc-300">
-              Backup file
-            </label>
-
-            <input id="restore-file" name="file" type="file" required accept=".db"
-              class="block text-sm text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-zinc-300 file:transition hover:file:bg-zinc-700">
-          </div>
-
-          <p id="restore-status" class="hidden text-sm"></p>
-
-          <button type="submit" id="restore-button"
-            class="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
-            <i class="bi bi-arrow-counterclockwise mr-1" aria-hidden="true"></i>
-            Restore backup
-          </button>
-
-        </form>
-
-      </div>
-      {# ==================== End Restore From Backup ==================== #}
+      {# ==================== End Backup ==================== #}
       {% endif %}
 
       {% if debug %}
-      {# ==================== Danger Zone ==================== #}
-      <div class="mt-6 rounded-xl border border-red-900/50 bg-zinc-900/50 p-6">
-
-        <div class="flex items-start gap-4">
-
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-950 text-red-400">
-            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-          </div>
-
-          <div class="min-w-0">
-            <h2 class="text-lg font-semibold">Danger zone</h2>
-
-            <p class="mt-1 text-sm text-red-300">
-              Reset the entire database to a clean state. All assets, custom fields,
-              users, and audit history will be permanently deleted. This cannot
-              be undone. Only available when DEBUG is enabled.
-            </p>
-          </div>
-
+      {# ==================== Danger ==================== #}
+      <div class="mt-6 rounded-xl border border-red-900/50 bg-zinc-900/50">
+        <div class="px-6 pt-5">
+          <h2 class="text-lg font-semibold">Danger</h2>
         </div>
 
-        <button type="button" id="reset-database-button"
-          class="mt-5 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
-          <i class="bi bi-trash mr-1" aria-hidden="true"></i>
-          Reset database
-        </button>
-
-        <p id="reset-status" class="mt-3 hidden text-sm"></p>
-
+        <table class="mt-2 w-full text-left">
+          <tbody class="divide-y divide-red-900/30">
+            <tr>
+              <th scope="row" class="px-6 py-5 align-top font-normal">
+                <span class="block text-sm font-medium text-zinc-100">Reset database</span>
+                <span class="mt-1 block text-sm text-red-300">
+                  Reset the entire database to a clean state. All assets, custom
+                  fields, users, and audit history will be permanently deleted.
+                  This cannot be undone. Only available when DEBUG is enabled.
+                </span>
+                <p id="reset-status" aria-live="polite" class="mt-2 hidden text-sm"></p>
+              </th>
+              <td class="px-6 py-5 text-right align-middle">
+                <button type="button" id="reset-database-button"
+                  class="shrink-0 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
+                  <i class="bi bi-trash mr-1" aria-hidden="true"></i>
+                  Reset database
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      {# ==================== End Danger Zone ==================== #}
+      {# ==================== End Danger ==================== #}
       {% endif %}
 
       {% include "inventory/modals/import.jinja" %}
