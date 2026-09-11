@@ -4,8 +4,40 @@ from app.services.data.audit import (
   create_audit_log,
   get_audit_log,
   get_audit_logs,
+  list_audit_logs,
 )
 from app.services.data.db import db_transaction
+
+
+def _insert_audit_log(
+  user_id,
+  action,
+  entity_type="test",
+  entity_id="1",
+  timestamp="2026-01-02 12:00:00",
+):
+  with db_transaction() as connection:
+    cursor = connection.execute(
+      """
+      INSERT INTO audit_log (
+        user_id,
+        action,
+        entity_type,
+        entity_id,
+        timestamp
+      )
+      VALUES (?, ?, ?, ?, ?)
+      """,
+      (
+        user_id,
+        action,
+        entity_type,
+        str(entity_id),
+        timestamp,
+      ),
+    )
+
+    return cursor.lastrowid
 
 
 def test_create_audit_log(gen_test_data_admin):
@@ -235,3 +267,181 @@ def test_create_audit_log_without_current_user_fails(
       entity_type="test",
       entity_id=1,
     )
+
+
+def test_list_audit_logs_returns_newest_first(gen_test_data_admin):
+  first_id = create_audit_log(
+    action="created",
+    entity_type="test",
+    entity_id=1,
+  )
+
+  second_id = create_audit_log(
+    action="updated",
+    entity_type="test",
+    entity_id=1,
+  )
+
+  result = list_audit_logs()
+
+  assert [log["id"] for log in result["logs"]] == [
+    second_id,
+    first_id,
+  ]
+
+
+def test_list_audit_logs_includes_username(gen_test_data_admin):
+  create_audit_log(
+    action="created",
+    entity_type="test",
+    entity_id=1,
+  )
+
+  result = list_audit_logs()
+
+  assert result["logs"][0]["username"] == "test_admin"
+
+
+def test_list_audit_logs_filters_by_action(gen_test_data_admin):
+  create_audit_log(
+    action="created",
+    entity_type="test",
+    entity_id=1,
+  )
+
+  create_audit_log(
+    action="updated",
+    entity_type="test",
+    entity_id=1,
+  )
+
+  result = list_audit_logs(action="created")
+
+  assert len(result["logs"]) == 1
+  assert result["logs"][0]["action"] == "created"
+
+
+def test_list_audit_logs_filters_by_user(
+  gen_test_data_admin,
+  gen_test_data_user,
+):
+  other_user_id = gen_test_data_user("other_user")
+
+  create_audit_log(
+    action="created",
+    entity_type="test",
+    entity_id=1,
+  )
+
+  _insert_audit_log(other_user_id, "updated")
+
+  result = list_audit_logs(user_id=other_user_id)
+
+  assert len(result["logs"]) == 1
+  assert result["logs"][0]["user_id"] == other_user_id
+  assert result["logs"][0]["action"] == "updated"
+
+
+def test_list_audit_logs_filters_by_entity_type_and_id(gen_test_data_admin):
+  create_audit_log(
+    action="created",
+    entity_type="user",
+    entity_id=1,
+  )
+
+  create_audit_log(
+    action="created",
+    entity_type="user",
+    entity_id=2,
+  )
+
+  result = list_audit_logs(
+    entity_type="user",
+    entity_id=1,
+  )
+
+  assert len(result["logs"]) == 1
+  assert result["logs"][0]["entity_id"] == "1"
+
+
+def test_list_audit_logs_filters_by_date_range(gen_test_data_admin):
+  _insert_audit_log(
+    gen_test_data_admin,
+    "before_range",
+    timestamp="2026-01-01 23:59:59",
+  )
+
+  _insert_audit_log(
+    gen_test_data_admin,
+    "in_range_start",
+    timestamp="2026-01-02 00:00:00",
+  )
+
+  _insert_audit_log(
+    gen_test_data_admin,
+    "in_range_end",
+    timestamp="2026-01-02 23:59:59",
+  )
+
+  _insert_audit_log(
+    gen_test_data_admin,
+    "after_range",
+    timestamp="2026-01-03 00:00:00",
+  )
+
+  result = list_audit_logs(
+    from_date="2026-01-02",
+    to_date="2026-01-02",
+  )
+
+  assert [log["action"] for log in result["logs"]] == [
+    "in_range_end",
+    "in_range_start",
+  ]
+  assert result["total"] == 2
+
+
+def test_list_audit_logs_paginates_with_total(gen_test_data_admin):
+  for _ in range(5):
+    create_audit_log(
+      action="created",
+      entity_type="test",
+      entity_id=1,
+    )
+
+  first_page = list_audit_logs(limit=2)
+  second_page = list_audit_logs(limit=2, offset=2)
+  third_page = list_audit_logs(limit=2, offset=4)
+
+  ids = [
+    log["id"]
+    for log in first_page["logs"]
+    + second_page["logs"]
+    + third_page["logs"]
+  ]
+
+  assert first_page["total"] == 5
+  assert len(first_page["logs"]) == 2
+  assert len(second_page["logs"]) == 2
+  assert len(third_page["logs"]) == 1
+  assert len(set(ids)) == 5
+  assert ids == sorted(ids, reverse=True)
+
+
+def test_list_audit_logs_returns_filter_options(gen_test_data_admin):
+  create_audit_log(
+    action="created",
+    entity_type="user",
+    entity_id=1,
+  )
+
+  create_audit_log(
+    action="updated",
+    entity_type="inventory_item",
+    entity_id=1,
+  )
+
+  result = list_audit_logs()
+
+  assert result["entity_types"] == ["inventory_item", "user"]
+  assert result["actions"] == ["created", "updated"]
