@@ -751,6 +751,46 @@ def test_audit_page_rejects_from_after_to(
   assert response.status_code == 400
 
 
+def test_audit_page_escapes_reflected_entity_id(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.get(
+    "/admin/audit",
+    query_string={"entity_id": '" onmouseover="alert(1)'},
+  )
+
+  assert response.status_code == 200
+  assert '" onmouseover="' not in response.data.decode()
+
+
+def test_audit_page_escapes_details_values(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  with db_transaction() as connection:
+    connection.execute(
+      """
+      INSERT INTO audit_log (
+        user_id,
+        action,
+        entity_type,
+        entity_id,
+        details,
+        timestamp
+      )
+      VALUES (?, 'updated', 'test', '1', '<script>alert(1)</script>', datetime('now'))
+      """,
+      (gen_test_admin,),
+    )
+
+  response = gen_test_admin_client.get("/admin/audit")
+
+  html = response.data.decode()
+
+  assert '<script>alert(1)</script>' not in html
+  assert '&lt;script&gt;alert(1)&lt;/script&gt;' in html
+
+
 def test_audit_fragment_renders_rows_for_admin(
   gen_test_admin_client,
   gen_test_item,

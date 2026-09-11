@@ -41,7 +41,7 @@
             class="absolute right-0 top-full z-50 mt-2 min-w-40 rounded-lg border border-zinc-800 bg-zinc-900 p-1 shadow-xl">
 
             <div class="px-3 py-2 text-sm text-zinc-400">
-              @{{ session.username }}
+              @{{ session.username | e }}
             </div>
 
             <a href="{{ url_for('admin.settings') }}"
@@ -82,8 +82,8 @@
         <select id="audit-entity-type" name="entity_type" class="form-select">
           <option value="">All</option>
           {% for entity_type in entity_types %}
-          <option value="{{ entity_type }}" {{ 'selected' if filters['entity_type'] == entity_type }}>
-            {{ entity_type }}
+          <option value="{{ entity_type | e }}" {{ 'selected' if filters['entity_type'] == entity_type }}>
+            {{ entity_type | e }}
           </option>
           {% endfor %}
         </select>
@@ -94,8 +94,8 @@
         <select id="audit-action" name="action" class="form-select">
           <option value="">All</option>
           {% for action in actions %}
-          <option value="{{ action }}" {{ 'selected' if filters['action'] == action }}>
-            {{ action }}
+          <option value="{{ action | e }}" {{ 'selected' if filters['action'] == action }}>
+            {{ action | e }}
           </option>
           {% endfor %}
         </select>
@@ -107,7 +107,7 @@
           <option value="">All</option>
           {% for user in users %}
           <option value="{{ user['id'] }}" {{ 'selected' if filters['user_id'] == user['id']|string }}>
-            {{ user['username'] }}
+            {{ user['username'] | e }}
           </option>
           {% endfor %}
         </select>
@@ -115,18 +115,18 @@
 
       <div>
         <label for="audit-entity-id" class="mb-2 block text-xs font-medium text-zinc-400">Entity ID</label>
-        <input id="audit-entity-id" name="entity_id" type="text" value="{{ filters['entity_id'] }}"
+        <input id="audit-entity-id" name="entity_id" type="text" value="{{ filters['entity_id'] | e }}"
           class="form-input">
       </div>
 
       <div>
         <label for="audit-from" class="mb-2 block text-xs font-medium text-zinc-400">From</label>
-        <input id="audit-from" name="from" type="date" value="{{ filters['from'] }}" class="form-input">
+        <input id="audit-from" name="from" type="date" value="{{ filters['from'] | e }}" class="form-input">
       </div>
 
       <div>
         <label for="audit-to" class="mb-2 block text-xs font-medium text-zinc-400">To</label>
-        <input id="audit-to" name="to" type="date" value="{{ filters['to'] }}" class="form-input">
+        <input id="audit-to" name="to" type="date" value="{{ filters['to'] | e }}" class="form-input">
       </div>
 
       <button type="submit"

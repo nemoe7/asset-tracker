@@ -8,7 +8,7 @@
   <pre class="mt-2 max-w-md overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-xs text-zinc-300">{{ log["details"] | tojson(indent=2) }}</pre>
 </details>
 {% elif log["details"] %}
-<span class="break-all text-xs text-zinc-400">{{ log["details"] }}</span>
+<span class="break-all text-xs text-zinc-400">{{ log["details"] | e }}</span>
 {% else %}
 <span class="text-zinc-600">&mdash;</span>
 {% endif %}
@@ -18,10 +18,10 @@
 {% macro desktop_row(log) %}
 <tr data-audit-row="{{ log['id'] }}">
   <td class="whitespace-nowrap px-5 py-4 text-zinc-300">{{ log["timestamp"] }}</td>
-  <td class="px-5 py-4 font-medium text-zinc-100">{{ log["username"] }}</td>
-  <td class="px-5 py-4 text-zinc-400">{{ log["action"] }}</td>
-  <td class="px-5 py-4 text-zinc-400">{{ log["entity_type"] }}</td>
-  <td class="max-w-48 truncate px-5 py-4 text-zinc-400" title="{{ log['entity_id'] }}">{{ log["entity_id"] }}</td>
+  <td class="px-5 py-4 font-medium text-zinc-100">{{ log["username"] | e }}</td>
+  <td class="px-5 py-4 text-zinc-400">{{ log["action"] | e }}</td>
+  <td class="px-5 py-4 text-zinc-400">{{ log["entity_type"] | e }}</td>
+  <td class="max-w-48 truncate px-5 py-4 text-zinc-400" title="{{ log['entity_id'] | e }}">{{ log["entity_id"] | e }}</td>
   <td class="px-5 py-4">{{ details_block(log) }}</td>
 </tr>
 {% endmacro %}
@@ -30,11 +30,11 @@
 {% macro mobile_card(log) %}
 <div data-audit-card="{{ log['id'] }}" class="px-4 py-3">
   <div class="flex items-baseline justify-between gap-3">
-    <p class="truncate text-sm font-medium text-zinc-100">{{ log["username"] }}</p>
+    <p class="truncate text-sm font-medium text-zinc-100">{{ log["username"] | e }}</p>
     <p class="shrink-0 text-xs text-zinc-500">{{ log["timestamp"] }}</p>
   </div>
-  <p class="mt-1 truncate text-xs text-zinc-400" title="{{ log['entity_id'] }}">
-    {{ log["action"] }} &middot; {{ log["entity_type"] }} &middot; {{ log["entity_id"] }}
+  <p class="mt-1 truncate text-xs text-zinc-400" title="{{ log['entity_id'] | e }}">
+    {{ log["action"] | e }} &middot; {{ log["entity_type"] | e }} &middot; {{ log["entity_id"] | e }}
   </p>
   {% if log["details"] %}
   <details class="mt-2">
@@ -42,7 +42,7 @@
     {% if log["details"] is mapping %}
     <pre class="mt-2 overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-xs text-zinc-300">{{ log["details"] | tojson(indent=2) }}</pre>
     {% else %}
-    <p class="mt-2 break-all text-xs text-zinc-400">{{ log["details"] }}</p>
+    <p class="mt-2 break-all text-xs text-zinc-400">{{ log["details"] | e }}</p>
     {% endif %}
   </details>
   {% endif %}
