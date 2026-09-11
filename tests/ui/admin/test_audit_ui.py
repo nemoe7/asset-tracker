@@ -10,14 +10,12 @@ def logged_in(page, live_server, setup_admin):
 
 
 @pytest.mark.e2e
-def test_audit_menu_link_opens_audit_tab(page, live_server, logged_in):
-  menu = page.locator("details")
-  menu.locator("summary").click()
+def test_audit_tab_opens_from_tab_bar(page, live_server, logged_in):
+  page.goto(f"{live_server}/admin")
 
-  page.get_by_role("link", name="Activity", exact=True).click()
+  page.locator("#admin-tabs").get_by_role("button", name="Activity").click()
 
-  page.wait_for_url(f"{live_server}/admin?tab=audit")
-
+  expect(page.locator("#tab-audit")).to_be_visible()
   expect(page.get_by_role("heading", name="Activity")).to_be_visible()
 
 
