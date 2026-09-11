@@ -266,7 +266,7 @@ def test_get_items_same_field_equality_rows_or(integer_field):
 def test_get_items_same_field_ordering_rows_and_range(integer_field):
   five = _make_item("Five", integer_field, 5)
   ten = _make_item("Ten", integer_field, 10)
-  twenty = _make_item("Twenty", integer_field, 20)
+  _make_item("Twenty", integer_field, 20)
 
   filters = _filter(
     [integer_field, integer_field],

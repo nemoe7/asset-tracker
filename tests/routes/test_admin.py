@@ -605,9 +605,9 @@ def test_reset_database_clears_data(
 
 
 def _login_restricted_user(gen_test_client):
-  from werkzeug.security import generate_password_hash
-
   import sqlite3
+
+  from werkzeug.security import generate_password_hash
 
   import config
 

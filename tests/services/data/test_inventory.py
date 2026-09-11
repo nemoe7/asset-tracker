@@ -1302,8 +1302,8 @@ def test_import_items_sets_custom_fields_skips_user_type(
   token = set_current_user(gen_test_data_admin)
 
   try:
-    serial_id = create_custom_field("Serial", "text")
-    owner_id = create_custom_field("Owner", "user")
+    create_custom_field("Serial", "text")
+    create_custom_field("Owner", "user")
   finally:
     reset_current_user(token)
 
@@ -1372,7 +1372,7 @@ def test_import_items_coerces_integer_custom_field(gen_test_data_admin):
   token = set_current_user(gen_test_data_admin)
 
   try:
-    quantity_id = create_custom_field("Quantity", "integer")
+    create_custom_field("Quantity", "integer")
   finally:
     reset_current_user(token)
 
@@ -1396,7 +1396,7 @@ def test_import_items_coerces_decimal_custom_field(gen_test_data_admin):
   token = set_current_user(gen_test_data_admin)
 
   try:
-    price_id = create_custom_field("Price", "decimal")
+    create_custom_field("Price", "decimal")
   finally:
     reset_current_user(token)
 
@@ -1420,7 +1420,7 @@ def test_import_items_coerces_boolean_custom_field(gen_test_data_admin):
   token = set_current_user(gen_test_data_admin)
 
   try:
-    active_id = create_custom_field("Active", "boolean")
+    create_custom_field("Active", "boolean")
   finally:
     reset_current_user(token)
 
