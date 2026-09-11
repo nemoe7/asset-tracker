@@ -18,6 +18,12 @@ function activateTab(name) {
 for (const button of tabButtons) {
   button.addEventListener('click', () => {
     activateTab(button.dataset.tabButton);
+
+    // Rewrite only the tab param so a reload lands on the same tab;
+    // replaceState never pushes a history entry.
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', button.dataset.tabButton);
+    history.replaceState(null, '', url);
   });
 }
 

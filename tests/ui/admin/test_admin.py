@@ -14,7 +14,7 @@ def test_menu_contains_admin_panel_link(page, live_server, logged_in):
   menu = page.locator("details")
   menu.locator("summary").click()
 
-  expect(page.get_by_role("link", name="Management", exact=True)).to_be_visible()
+  expect(page.get_by_role("link", name="Admin Panel", exact=True)).to_be_visible()
 
   # The individual tab links are no longer in the menu.
   expect(page.get_by_role("link", name="Locations", exact=True)).to_have_count(0)
@@ -26,7 +26,7 @@ def test_menu_admin_panel_opens_admin_page(page, live_server, logged_in):
   menu = page.locator("details")
   menu.locator("summary").click()
 
-  page.get_by_role("link", name="Management", exact=True).click()
+  page.get_by_role("link", name="Admin Panel", exact=True).click()
 
   page.wait_for_url(f"{live_server}/admin")
 
@@ -159,7 +159,7 @@ def test_admin_page_has_hamburger_menu(page, live_server, logged_in):
   menu.locator("summary").click()
 
   expect(menu.get_by_text("@test_admin", exact=True)).to_be_visible()
-  expect(page.get_by_role("link", name="Management", exact=True)).to_be_visible()
+  expect(page.get_by_role("link", name="Admin Panel", exact=True)).to_be_visible()
   expect(page.get_by_role("button", name="Log out")).to_be_visible()
 
 
