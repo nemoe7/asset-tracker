@@ -127,6 +127,8 @@ def create_app():
 
   app.jinja_env.filters["datetime"] = format_datetime
 
+  app.jinja_env.autoescape = lambda name: True
+
   @app.after_request
   def _add_security_headers(resp):
     csp = "default-src 'self'; frame-ancestors 'none'"
