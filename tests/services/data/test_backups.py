@@ -45,9 +45,7 @@ def test_create_backup_returns_db_bytes_without_storing_any_file(
     "SELECT COUNT(*) FROM backup_history WHERE path IS NULL"
   ).fetchone()
 
-  tables = connection.execute(
-    "SELECT COUNT(*) FROM inventory_items"
-  ).fetchone()
+  tables = connection.execute("SELECT COUNT(*) FROM inventory_items").fetchone()
 
   connection.close()
 
@@ -105,9 +103,7 @@ def test_create_backup_failure_writes_no_history(gen_test_data_admin, monkeypatc
   from app.services.data.db import db_connection
 
   with db_connection() as connection:
-    rows = connection.execute(
-      "SELECT COUNT(*) FROM backup_history"
-    ).fetchone()
+    rows = connection.execute("SELECT COUNT(*) FROM backup_history").fetchone()
 
   assert rows[0] == 0
 
@@ -267,9 +263,7 @@ def test_restore_invalid_file_leaves_live_db_untouched(gen_test_data_admin):
 
   from app.services.data.audit import get_audit_logs
 
-  assert not any(
-    log["action"] == "restored" for log in get_audit_logs()
-  )
+  assert not any(log["action"] == "restored" for log in get_audit_logs())
 
 
 def test_restore_truncated_backup_raises_invalid_input(gen_test_data_admin):

@@ -80,9 +80,7 @@ def test_create_backup_returns_backup_file_download_to_requester(
 
   connection.deserialize(data)
 
-  items = connection.execute(
-    "SELECT COUNT(*) FROM inventory_items"
-  ).fetchone()
+  items = connection.execute("SELECT COUNT(*) FROM inventory_items").fetchone()
 
   connection.close()
 
@@ -110,9 +108,7 @@ def test_create_backup_failure_returns_500_without_success(
   from app.services.data.db import db_connection
 
   with db_connection() as connection:
-    rows = connection.execute(
-      "SELECT COUNT(*) FROM backup_history"
-    ).fetchone()
+    rows = connection.execute("SELECT COUNT(*) FROM backup_history").fetchone()
 
   assert rows[0] == 0
 

@@ -14,9 +14,7 @@ def test_menu_contains_admin_panel_link(page, live_server, logged_in):
   menu = page.locator("details")
   menu.locator("summary").click()
 
-  expect(
-    page.get_by_role("link", name="Management", exact=True)
-  ).to_be_visible()
+  expect(page.get_by_role("link", name="Management", exact=True)).to_be_visible()
 
   # The individual tab links are no longer in the menu.
   expect(page.get_by_role("link", name="Locations", exact=True)).to_have_count(0)
@@ -44,7 +42,9 @@ def test_admin_page_creates_location(page, live_server, logged_in):
   page.locator("#add-location-name").fill("Warehouse")
   page.locator("#add-location-description").fill("Main storage area")
 
-  page.locator("#add-location-dialog").get_by_role("button", name="Add location").click()
+  page.locator("#add-location-dialog").get_by_role(
+    "button", name="Add location"
+  ).click()
 
   page.wait_for_url(f"{live_server}/admin?tab=locations")
 
@@ -74,9 +74,7 @@ def test_admin_page_edits_location(page, live_server, logged_in):
 
   expect(dialog).to_be_visible()
   expect(page.locator("#edit-location-name")).to_have_value("Warehouse")
-  expect(page.locator("#edit-location-description")).to_have_value(
-    "Main storage area"
-  )
+  expect(page.locator("#edit-location-description")).to_have_value("Main storage area")
 
   page.locator("#edit-location-name").fill("Main Warehouse")
   page.locator("#edit-location-description").fill("Updated storage area")
@@ -127,12 +125,9 @@ def test_admin_page_creates_custom_field(page, live_server, logged_in):
 
   page.wait_for_url(f"{live_server}/admin?tab=custom-fields")
 
-  row = page.locator("#tab-custom-fields tbody tr").filter(
-    has_text="Serial Number"
-  )
+  row = page.locator("#tab-custom-fields tbody tr").filter(has_text="Serial Number")
   expect(row).to_be_visible()
   expect(row.get_by_text("text", exact=True)).to_be_visible()
-
 
 
 @pytest.mark.e2e
@@ -307,9 +302,7 @@ def test_admin_page_creates_enum_custom_field(page, live_server, logged_in):
 
   page.wait_for_url(f"{live_server}/admin?tab=custom-fields")
 
-  row = page.locator("#tab-custom-fields tbody tr").filter(
-    has_text="Category"
-  )
+  row = page.locator("#tab-custom-fields tbody tr").filter(has_text="Category")
   expect(row).to_be_visible()
   expect(row.get_by_text("enum", exact=True)).to_be_visible()
 
@@ -403,9 +396,7 @@ def test_admin_page_archives_and_restores_custom_field(
 
   page.wait_for_url(f"{live_server}/admin?tab=custom-fields")
 
-  restored = page.locator("#tab-custom-fields tbody tr").filter(
-    has_text="Condition"
-  )
+  restored = page.locator("#tab-custom-fields tbody tr").filter(has_text="Condition")
   expect(restored).to_be_visible()
 
 
@@ -427,9 +418,7 @@ def test_admin_page_edits_custom_field(page, live_server, logged_in):
   dialog = page.locator("#edit-field-dialog")
   expect(dialog).to_be_hidden()
 
-  row = page.locator("#tab-custom-fields tbody tr").filter(
-    has_text="Serial Number"
-  )
+  row = page.locator("#tab-custom-fields tbody tr").filter(has_text="Serial Number")
   row.locator(".edit-field").click()
 
   expect(dialog).to_be_visible()
@@ -471,4 +460,3 @@ def test_admin_page_edit_field_modal_can_close(page, live_server, logged_in):
   dialog.get_by_role("button", name="Close").click()
 
   expect(dialog).to_be_hidden()
-

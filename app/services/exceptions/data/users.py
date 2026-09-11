@@ -11,8 +11,10 @@ class InvalidPasswordError(InvalidInputError):
 class InvalidUsernameError(InvalidInputError):
   default_message = "Invalid username"
 
+
 class InvalidNameError(InvalidInputError):
   default_message = "Invalid name"
+
 
 class UsernameAlreadyExistsError(ServiceError):
   default_message = "Username already exists"

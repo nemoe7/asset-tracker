@@ -461,11 +461,7 @@ def _audit_filter_chips(filters, users):
     ("to_date", "To", "value"),
   )
 
-  present = {
-    key: value
-    for key, value in filters.items()
-    if value not in (None, "")
-  }
+  present = {key: value for key, value in filters.items() if value not in (None, "")}
 
   chips = []
 

@@ -628,6 +628,7 @@ def test_restore_custom_field_succeeds_for_archived_field(gen_test_data_admin):
 
   assert restore_custom_field(field_id) is True
 
+
 def test_get_custom_field_by_name(gen_test_data_admin):
   field_id = create_custom_field(
     name="Serial Number",

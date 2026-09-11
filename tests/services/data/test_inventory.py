@@ -18,7 +18,9 @@ from app.services.data.inventory import (
 )
 from app.services.data.locations import create_location
 from app.services.exceptions.data.common import InvalidInputError
-from app.services.exceptions.data.custom_field_values import InvalidCustomFieldValueError
+from app.services.exceptions.data.custom_field_values import (
+  InvalidCustomFieldValueError,
+)
 from app.services.exceptions.data.inventory import *
 from app.services.exceptions.data.locations import LocationNotFoundError
 
@@ -1359,11 +1361,7 @@ def test_import_items_creates_imported_audit_log(gen_test_data_admin):
     [{"name": "Alpha", "description": None, "location": None, "custom_fields": {}}],
   )
 
-  imported = [
-    log
-    for log in get_audit_logs()
-    if log["action"] == "imported"
-  ]
+  imported = [log for log in get_audit_logs() if log["action"] == "imported"]
 
   assert len(imported) == 1
   assert imported[0]["details"] == {"item_count": len(result["item_ids"])}

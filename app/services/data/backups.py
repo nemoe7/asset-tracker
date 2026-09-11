@@ -152,9 +152,7 @@ def _resolve_restored_audit_user_id(connection, preferred_ids):
     if row is not None:
       return user_id
 
-  row = connection.execute(
-    "SELECT id FROM users ORDER BY id LIMIT 1"
-  ).fetchone()
+  row = connection.execute("SELECT id FROM users ORDER BY id LIMIT 1").fetchone()
 
   return row["id"] if row is not None else None
 
