@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 
 from flask import (
   Blueprint,
@@ -395,22 +395,22 @@ def _parse_audit_filters():
   from_date = request.args.get("from")
   to_date = request.args.get("to")
 
-  from_datetime = None
-  to_datetime = None
+  from_day = None
+  to_day = None
 
   if from_date:
     try:
-      from_datetime = datetime.strptime(from_date, "%Y-%m-%d")
+      from_day = date.fromisoformat(from_date)
     except ValueError:
       abort(400)
 
   if to_date:
     try:
-      to_datetime = datetime.strptime(to_date, "%Y-%m-%d")
+      to_day = date.fromisoformat(to_date)
     except ValueError:
       abort(400)
 
-  if from_datetime and to_datetime and from_datetime > to_datetime:
+  if from_day and to_day and from_day > to_day:
     abort(400)
 
   return {

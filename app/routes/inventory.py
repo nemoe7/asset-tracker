@@ -17,11 +17,14 @@ from app.services.data.custom_field_filters import parse_filters
 from app.services.data.custom_field_values import set_custom_field_value
 from app.services.data.custom_fields import get_custom_fields
 
+from ..services.auth.authentication import login_required
+from ..services.auth.authorization import permission_required
 from ..services.data.inventory import (
   archive_item,
   create_item,
   get_item,
   get_items_paginated,
+  import_items,
   restore_item,
   update_item,
 )
@@ -37,9 +40,6 @@ from ..services.exceptions.data.inventory import (
 from ..services.exceptions.data.locations import LocationNotFoundError
 from ..services.export import build_export
 from ..services.import_svc import parse_import_file
-from ..services.data.inventory import import_items
-from ..services.auth.authentication import login_required
-from ..services.auth.authorization import permission_required
 
 logger = logging.getLogger(__name__)
 

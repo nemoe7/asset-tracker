@@ -60,6 +60,6 @@ def reset_e2e_db(e2e_db):
       try:
         e2e_db.unlink()
         break
-      except Exception as e:  # noqa: BLE001
+      except Exception as e:
         print(f"Failed to delete {e2e_db}: {e}. Retrying...")
         time.sleep(0.1)
