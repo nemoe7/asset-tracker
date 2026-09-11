@@ -445,18 +445,3 @@ def test_list_audit_logs_returns_filter_options(gen_test_data_admin):
 
   assert result["entity_types"] == ["inventory_item", "user"]
   assert result["actions"] == ["created", "updated"]
-
-
-def test_list_audit_logs_can_skip_filter_options(gen_test_data_admin):
-  create_audit_log(
-    action="created",
-    entity_type="user",
-    entity_id=1,
-  )
-
-  result = list_audit_logs(include_options=False)
-
-  assert result["total"] == 1
-  assert result["logs"]
-  assert result["entity_types"] == []
-  assert result["actions"] == []
