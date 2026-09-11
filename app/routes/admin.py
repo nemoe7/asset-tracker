@@ -53,12 +53,10 @@ admin = Blueprint(
 _LOCATION_TAB = "locations"
 _CUSTOM_FIELDS_TAB = "custom-fields"
 _DATA_TAB = "data"
-_BACKUPS_TAB = "backups"
 _VALID_TABS = (
   _LOCATION_TAB,
   _CUSTOM_FIELDS_TAB,
   _DATA_TAB,
-  _BACKUPS_TAB,
 )
 
 _AUDIT_PAGE_SIZE = 50
@@ -120,7 +118,6 @@ def settings():
     _LOCATION_TAB: ("locations.manage",),
     _CUSTOM_FIELDS_TAB: ("custom_fields.manage",),
     _DATA_TAB: (),
-    _BACKUPS_TAB: ("backups.create", "backups.restore"),
   }
 
   tab_permissions = permission_by_tab[active_tab]
