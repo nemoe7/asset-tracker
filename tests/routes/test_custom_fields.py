@@ -1,4 +1,57 @@
-from app.services.data.custom_fields import get_custom_fields
+from app.services.auth.context import reset_current_user, set_current_user
+from app.services.data.custom_fields import (
+  create_custom_field,
+  get_custom_fields,
+)
+from app.services.data.permissions import (
+  create_permission,
+  get_permission_by_name,
+)
+from app.services.data.role_permissions import set_role_permission
+from app.services.data.roles import create_role
+from app.services.data.user_roles import set_user_role
+from app.services.data.users import create_user
+
+
+def _login_checker_with_field_grants(
+  gen_test_client,
+  admin_id,
+  read_ids=(),
+  update_ids=(),
+):
+  token = set_current_user(admin_id)
+
+  try:
+    user_id = create_user("checker", "checker123", "Checker")
+    role_id = create_role("Checker", "Inspects assets")
+
+    for field_id in read_ids:
+      name = f"field.{field_id}.read"
+      permission = get_permission_by_name(name)
+      permission_id = (
+        permission["id"] if permission is not None else create_permission(name)
+      )
+      set_role_permission(role_id, permission_id, True)
+
+    for field_id in update_ids:
+      name = f"field.{field_id}.update"
+      permission = get_permission_by_name(name)
+      permission_id = (
+        permission["id"] if permission is not None else create_permission(name)
+      )
+      set_role_permission(role_id, permission_id, True)
+
+    set_user_role(user_id, role_id)
+  finally:
+    reset_current_user(token)
+
+  gen_test_client.post(
+    "/auth/login",
+    data={
+      "username": "checker",
+      "password": "checker123",
+    },
+  )
 
 
 def test_admin_can_create_custom_field(
@@ -382,6 +435,80 @@ def test_admin_can_list_custom_fields(
   assert fields[0]["field_type"] == "date"
   assert fields[1]["name"] == "Serial Number"
   assert fields[1]["field_type"] == "text"
+
+
+def test_custom_field_list_respects_read_permission(
+  gen_test_admin,
+  gen_test_client,
+):
+  token = set_current_user(gen_test_admin)
+
+  try:
+    visible_id = create_custom_field("Serial", "text")
+    create_custom_field("Secret", "text")
+  finally:
+    reset_current_user(token)
+
+  _login_checker_with_field_grants(
+    gen_test_client,
+    gen_test_admin,
+    read_ids={visible_id},
+  )
+
+  response = gen_test_client.get("/custom-fields")
+
+  assert response.status_code == 200
+
+  fields = response.json
+
+  assert [field["name"] for field in fields] == ["Serial"]
+  assert fields[0]["is_editable"] is False
+
+
+def test_custom_field_list_marks_editable(
+  gen_test_admin,
+  gen_test_client,
+):
+  token = set_current_user(gen_test_admin)
+
+  try:
+    field_id = create_custom_field("Serial", "text")
+  finally:
+    reset_current_user(token)
+
+  _login_checker_with_field_grants(
+    gen_test_client,
+    gen_test_admin,
+    read_ids={field_id},
+    update_ids={field_id},
+  )
+
+  response = gen_test_client.get("/custom-fields")
+
+  assert response.status_code == 200
+
+  assert response.json[0]["is_editable"] is True
+
+
+def test_custom_field_get_requires_read_permission(
+  gen_test_admin,
+  gen_test_client,
+):
+  token = set_current_user(gen_test_admin)
+
+  try:
+    field_id = create_custom_field("Secret", "text")
+  finally:
+    reset_current_user(token)
+
+  _login_checker_with_field_grants(
+    gen_test_client,
+    gen_test_admin,
+  )
+
+  response = gen_test_client.get(f"/custom-fields/{field_id}")
+
+  assert response.status_code == 404
 
 
 def test_admin_can_list_archived_custom_fields(

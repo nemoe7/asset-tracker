@@ -27,9 +27,8 @@ def _validate_location(location_id):
     raise LocationNotFoundError()
 
 
-def _get_custom_fields(connection, item_id):
-  rows = connection.execute(
-    """
+def _get_custom_fields(connection, item_id, visible_field_ids=None):
+  query = """
     SELECT
       inventory_item_fields.value,
       custom_fields.name,
@@ -38,9 +37,15 @@ def _get_custom_fields(connection, item_id):
     JOIN custom_fields
       ON custom_fields.id = inventory_item_fields.field_id
     WHERE inventory_item_fields.item_id = ?
-    """,
-    (item_id,),
-  ).fetchall()
+  """
+  parameters = [item_id]
+
+  if visible_field_ids is not None:
+    placeholders = ", ".join("?" for _ in visible_field_ids)
+    query += f" AND custom_fields.id IN ({placeholders})"
+    parameters.extend(visible_field_ids)
+
+  rows = connection.execute(query, parameters).fetchall()
 
   fields = {}
 
@@ -64,7 +69,7 @@ def _get_custom_fields(connection, item_id):
   return fields
 
 
-def _item_with_custom_fields(connection, item):
+def _item_with_custom_fields(connection, item, visible_field_ids=None):
   if item is None:
     return None
 
@@ -72,6 +77,7 @@ def _item_with_custom_fields(connection, item):
   item["custom_fields"] = _get_custom_fields(
     connection,
     item["id"],
+    visible_field_ids,
   )
 
   return item
@@ -414,7 +420,7 @@ def import_items(rows):
     }
 
 
-def get_item(item_id, include_archived=False):
+def get_item(item_id, include_archived=False, visible_field_ids=None):
   with db_connection() as connection:
     archived_condition = ""
 
@@ -438,6 +444,7 @@ def get_item(item_id, include_archived=False):
     return _item_with_custom_fields(
       connection,
       item,
+      visible_field_ids,
     )
 
 
@@ -449,6 +456,7 @@ def get_items(
   sort_by="name",
   sort_order="asc",
   custom_field_filters=None,
+  visible_field_ids=None,
 ):
   with db_connection() as connection:
     (
@@ -483,6 +491,7 @@ def get_items(
       _item_with_custom_fields(
         connection,
         item,
+        visible_field_ids,
       )
       for item in items
     ]
@@ -496,6 +505,7 @@ def get_items_paginated(
   sort_by="name",
   sort_order="asc",
   custom_field_filters=None,
+  visible_field_ids=None,
   page=1,
   per_page=25,
 ):
@@ -562,6 +572,7 @@ def get_items_paginated(
         _item_with_custom_fields(
           connection,
           item,
+          visible_field_ids,
         )
         for item in items
       ],

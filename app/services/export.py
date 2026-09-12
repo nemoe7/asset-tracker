@@ -24,8 +24,12 @@ def _custom_column(field):
   return (field["name"], get_value)
 
 
-def _selected_columns(field_keys):
-  custom_columns = [_custom_column(field) for field in get_custom_fields()]
+def _selected_columns(field_keys, visible_field_ids=None):
+  custom_columns = [
+    _custom_column(field)
+    for field in get_custom_fields()
+    if visible_field_ids is None or field["id"] in visible_field_ids
+  ]
 
   if field_keys is None:
     return _BUILTIN_COLUMNS + custom_columns
@@ -77,8 +81,9 @@ def build_export(
   sort_order="asc",
   custom_field_filters=None,
   field_keys=None,
+  visible_field_ids=None,
 ):
-  columns = _selected_columns(field_keys)
+  columns = _selected_columns(field_keys, visible_field_ids)
 
   items = get_items(
     search=search,
@@ -87,6 +92,7 @@ def build_export(
     sort_by=sort_by,
     sort_order=sort_order,
     custom_field_filters=custom_field_filters,
+    visible_field_ids=visible_field_ids,
   )
 
   output = io.StringIO()

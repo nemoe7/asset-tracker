@@ -256,6 +256,72 @@ def test_export_selected_custom_fields(
   assert rows[1] == ["Alpha Asset", "SN-001"]
 
 
+def test_export_excludes_non_readable_custom_fields(
+  gen_test_admin,
+  gen_test_client,
+  gen_test_item,
+):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.custom_field_values import set_custom_field_value
+  from app.services.data.custom_fields import create_custom_field
+  from app.services.data.permissions import (
+    create_permission,
+    get_permission_by_name,
+  )
+  from app.services.data.role_permissions import set_role_permission
+  from app.services.data.roles import create_role
+  from app.services.data.user_roles import set_user_role
+  from app.services.data.users import create_user
+
+  token = set_current_user(gen_test_admin)
+
+  try:
+    serial_id = create_custom_field("Serial Number", "text")
+    create_custom_field("Secret", "text")
+
+    item_id = gen_test_item(name="Alpha Asset")
+    set_custom_field_value(item_id, serial_id, "SN-001")
+  finally:
+    reset_current_user(token)
+
+  token = set_current_user(gen_test_admin)
+
+  try:
+    user_id = create_user("checker", "checker123", "Checker")
+    role_id = create_role("Checker", "Inspects assets")
+
+    permission = get_permission_by_name(f"field.{serial_id}.read")
+    permission_id = (
+      permission["id"]
+      if permission is not None
+      else create_permission(f"field.{serial_id}.read")
+    )
+    set_role_permission(role_id, permission_id, True)
+
+    set_user_role(user_id, role_id)
+  finally:
+    reset_current_user(token)
+
+  gen_test_client.post(
+    "/auth/login",
+    data={
+      "username": "checker",
+      "password": "checker123",
+    },
+  )
+
+  response = gen_test_client.get("/inventory/export")
+
+  rows = list(
+    csv.reader(
+      io.StringIO(response.get_data(as_text=True)),
+    )
+  )
+
+  assert "Secret" not in rows[0]
+  assert "Serial Number" in rows[0]
+
+
 def test_export_empty_result_returns_headers(gen_test_admin_client):
   response = gen_test_admin_client.get("/inventory/export")
 
