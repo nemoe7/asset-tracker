@@ -80,11 +80,11 @@ def test_get_user_roles(gen_test_data_admin):
 
   assert roles[0]["user_id"] == user_id
   assert roles[0]["role_id"] == first_role_id
-  assert roles[0]["role"] == "Checker"
+  assert roles[0]["role_name"] == "Checker"
 
   assert roles[1]["user_id"] == user_id
   assert roles[1]["role_id"] == second_role_id
-  assert roles[1]["role"] == "Manager"
+  assert roles[1]["role_name"] == "Manager"
 
 
 def test_get_user_roles_returns_empty_list(gen_test_data_admin):
