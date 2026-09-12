@@ -266,3 +266,38 @@ def test_restore_requires_file_and_password(gen_test_admin_client):
   response = gen_test_admin_client.post("/backups/restore")
 
   assert response.status_code == 400
+
+
+# ==================== Access protection (SEC-007) ====================
+
+
+def test_create_backup_requires_authentication(gen_test_client, gen_test_admin):
+  response = gen_test_client.post("/backups/create")
+
+  assert response.status_code == 302
+  assert "/auth/login" in response.headers["Location"]
+
+
+def test_restore_requires_authentication(gen_test_client, gen_test_admin):
+  response = gen_test_client.post("/backups/restore")
+
+  assert response.status_code == 302
+  assert "/auth/login" in response.headers["Location"]
+
+
+def test_create_backup_rejects_cross_site_post(gen_test_admin_client):
+  response = gen_test_admin_client.post(
+    "/backups/create",
+    headers={"Sec-Fetch-Site": "cross-site"},
+  )
+
+  assert response.status_code == 403
+
+
+def test_restore_rejects_cross_site_post(gen_test_admin_client):
+  response = gen_test_admin_client.post(
+    "/backups/restore",
+    headers={"Sec-Fetch-Site": "cross-site"},
+  )
+
+  assert response.status_code == 403
