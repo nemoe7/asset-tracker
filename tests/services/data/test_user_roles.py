@@ -6,6 +6,7 @@ from app.services.data.user_roles import (
   delete_user_role,
   get_user_role,
   get_user_roles,
+  is_role_assigned,
   set_user_role,
 )
 from app.services.exceptions.data.roles import RoleNotFoundError
@@ -141,3 +142,27 @@ def test_set_user_role_no_op_does_not_create_audit_log(
   audit_logs_after = get_audit_logs()
 
   assert len(audit_logs_after) == len(audit_logs_before)
+
+
+def test_is_role_assigned(gen_test_data_admin):
+  role_id = create_role(name="Checker")
+
+  user_id = gen_test_data_admin
+
+  assert is_role_assigned(role_id) is False
+
+  set_user_role(user_id, role_id)
+
+  assert is_role_assigned(role_id) is True
+
+
+def test_is_role_assigned_after_unassignment(gen_test_data_admin):
+  role_id = create_role(name="Checker")
+
+  user_id = gen_test_data_admin
+
+  set_user_role(user_id, role_id)
+
+  delete_user_role(user_id, role_id)
+
+  assert is_role_assigned(role_id) is False
