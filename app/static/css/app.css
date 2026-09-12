@@ -633,6 +633,12 @@
   .border-red-900 {
     border-color: var(--color-red-900);
   }
+  .border-red-900\/40 {
+    border-color: color-mix(in srgb, oklch(39.6% 0.141 25.723) 40%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in oklab, var(--color-red-900) 40%, transparent);
+    }
+  }
   .border-red-900\/50 {
     border-color: color-mix(in srgb, oklch(39.6% 0.141 25.723) 50%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
