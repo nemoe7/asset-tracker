@@ -484,49 +484,68 @@ let currentEditRoleId = null;
 let originalPermissions = [];
 let stagedPermissions = [];
 
+// Keep the known-permissions autocomplete in sync with staged permissions so
+// permissions already added (or already present on load) are not offered again.
+function refreshKnownPermissionOptions() {
+  if (!knownPermissionsList) return;
+  const staged = new Set(stagedPermissions.map((p) => p.permission.toLowerCase()));
+  knownPermissionsList.replaceChildren(
+    ...KNOWN_PERMISSIONS.filter((p) => !staged.has(p.toLowerCase())).map(
+      (p) => new Option(p, p)
+    )
+  );
+}
+
 function renderStagedPermissions() {
   if (!editRolePermissionsList) return;
   editRolePermissionsList.innerHTML = '';
 
   for (const permission of stagedPermissions) {
-    const row = document.createElement('div');
-    row.className = 'flex items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3';
+    // Chip-style permission, mirroring the edit-user roles flow. Clicking the
+    // chip toggles between allowed/denied instead of using a dropdown.
+    const wrapper = document.createElement('div');
+    wrapper.className = `edit-role-permission-chip flex w-fit max-w-full items-center gap-1.5 rounded-full border py-1 pl-1.5 pr-1.5 ${
+      permission.allowed
+        ? 'border-emerald-700 bg-emerald-100 text-emerald-900'
+        : 'border-red-700 bg-red-100 text-red-900'
+    }`;
 
-    const name = document.createElement('div');
-    name.className = 'min-w-0';
-    name.innerHTML = `<p class="truncate text-sm font-medium text-zinc-100">${permission.permission}</p>`;
-
-    const actions = document.createElement('div');
-    actions.className = 'flex shrink-0 gap-1';
-
-    const allowedSelect = document.createElement('select');
-    allowedSelect.className = 'rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700';
-    allowedSelect.innerHTML = `
-      <option value="1" ${permission.allowed ? 'selected' : ''}>Allowed</option>
-      <option value="0" ${permission.allowed ? '' : 'selected'}>Denied</option>
-    `;
-    allowedSelect.addEventListener('change', () => {
-      permission.allowed = allowedSelect.value === '1';
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'flex min-w-0 items-center gap-1.5 pl-1.5';
+    chip.title = permission.allowed ? 'Allowed - click to deny' : 'Denied - click to allow';
+    chip.setAttribute('aria-pressed', String(permission.allowed));
+    chip.addEventListener('click', () => {
+      permission.allowed = !permission.allowed;
       renderStagedPermissions();
     });
 
+    const label = document.createElement('span');
+    label.className = 'edit-role-permission-name min-w-0 truncate text-sm font-medium';
+    label.textContent = permission.permission;
+
+    const state = document.createElement('span');
+    state.className = 'text-xs font-semibold';
+    state.textContent = permission.allowed ? 'Allowed' : 'Denied';
+
+    chip.append(label, state);
+
     const removeButton = document.createElement('button');
     removeButton.type = 'button';
-    removeButton.className = 'rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300';
+    removeButton.className = 'flex size-5 shrink-0 items-center justify-center rounded-full text-red-400 hover:bg-red-950 hover:text-red-300';
     removeButton.title = 'Remove permission';
     removeButton.setAttribute('aria-label', 'Remove permission');
-    removeButton.innerHTML = '<i class="bi bi-x-lg" aria-hidden="true"></i>';
+    removeButton.innerHTML = '<i class="bi bi-x-lg block" aria-hidden="true"></i>';
     removeButton.addEventListener('click', () => {
       stagedPermissions = stagedPermissions.filter((p) => p !== permission);
       renderStagedPermissions();
     });
 
-    actions.appendChild(allowedSelect);
-    actions.appendChild(removeButton);
-    row.appendChild(name);
-    row.appendChild(actions);
-    editRolePermissionsList.appendChild(row);
+    wrapper.append(chip, removeButton);
+    editRolePermissionsList.appendChild(wrapper);
   }
+
+  refreshKnownPermissionOptions();
 }
 
 async function renderEditRolePermissions(roleId) {
