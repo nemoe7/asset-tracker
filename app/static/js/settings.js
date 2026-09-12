@@ -524,11 +524,7 @@ function renderStagedPermissions() {
     label.className = 'edit-role-permission-name min-w-0 truncate text-sm font-medium';
     label.textContent = permission.permission;
 
-    const state = document.createElement('span');
-    state.className = 'text-xs font-semibold';
-    state.textContent = permission.allowed ? 'Allowed' : 'Denied';
-
-    chip.append(label, state);
+    chip.append(label);
 
     const removeButton = document.createElement('button');
     removeButton.type = 'button';
