@@ -7,7 +7,13 @@ def open_export_modal(page, live_server):
 
   page.locator("#export-button").click()
 
-  return page.get_by_role("dialog")
+  modal = page.get_by_role("dialog")
+
+  # The button handler fetches custom fields before opening the modal, so
+  # waiting for the heading guarantees the datalist is already populated.
+  expect(modal.get_by_role("heading", name="Export CSV")).to_be_visible()
+
+  return modal
 
 
 def datalist_values(page):

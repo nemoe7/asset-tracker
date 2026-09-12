@@ -85,8 +85,8 @@
 | BKP-007 | P3 | Perform missed scheduled backup on next startup. | 🔴 | BKP-006 | REL-007 | |
 | BKP-010 | P3 | System backup includes all required application data. | 🟢 | — | REL-004 | Full SQLite DB snapshot incl. all tables and system config |
 | BKP-014 | P3 | Record backup/restoration events. | 🟢 | BKP-011, BKP-012 | AUD-007 | |
-| CMP-001 | P3 | Support current common desktop browsers. | 🟡 | USE-001 | — | Test browser compatibility |
-| CMP-002 | P3 | Support modern mobile browsers. | 🟡 | USE-003 | QRC-004 | Test mobile browser compatibility |
+| CMP-001 | P3 | Support current common desktop browsers. | 🟢 | USE-001 | — | Playwright-emulated engines only; no physical-device matrix |
+| CMP-002 | P3 | Support modern mobile browsers. | 🟢 | USE-003 | QRC-004 | Playwright-emulated engines only; no physical-device matrix |
 | CMP-003 | P3 | QR scanning works through supported mobile cameras/browser functionality. | 🟢 | QRC-004 | CHK-001 | |
 | FLD-006 | P3 | Admins can define Enum values. | 🟢 | FLD-004, FLD-005 | FLD-002 | |
 | FLD-008 | P3 | Admins can mark custom fields required. | 🟢 | FLD-002, FLD-004 | FLD-012 | |

@@ -141,6 +141,16 @@ Therefore, `pytest` automatically uses:
 
 The `e2e` marker identifies browser end-to-end tests.
 
+By default these run on Chromium. To verify browser support across all
+bundled engines:
+
+```bash
+pytest tests/ui -m e2e --browser chromium --browser firefox --browser webkit -n 4
+```
+
+Four workers keep parallel Firefox instances from starving page loads on
+smaller machines.
+
 ## Deployment
 
 Astra can be deployed on another machine using the included Docker Compose configuration.
