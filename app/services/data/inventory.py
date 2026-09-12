@@ -363,9 +363,13 @@ def create_item(name, description=None, location_id=None):
     return item_id
 
 
-def import_items(rows):
+def import_items(rows, editable_field_ids=None):
   with db_transaction() as _connection:
-    custom_fields = {field["name"]: field for field in get_custom_fields()}
+    custom_fields = {
+      field["name"]: field
+      for field in get_custom_fields()
+      if editable_field_ids is None or field["id"] in editable_field_ids
+    }
 
     item_ids = []
 

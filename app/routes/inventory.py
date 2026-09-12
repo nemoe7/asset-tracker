@@ -111,6 +111,14 @@ def _visible_field_ids(user_id):
   }
 
 
+def _editable_field_ids(user_id):
+  return {
+    field["id"]
+    for field in get_custom_fields()
+    if check_permission(user_id, f"field.{field['id']}.update")
+  }
+
+
 @inventory.route("/fragment", methods=["GET"])
 @login_required
 def fragment():
@@ -213,8 +221,11 @@ def create():
   description = request.form.get("description") or None
   location_id = request.form.get("location_id")
 
+  editable_field_ids = _editable_field_ids(session.get("user_id"))
   custom_fields = [
-    field for field in get_custom_fields() if field["field_type"] != "user"
+    field
+    for field in get_custom_fields()
+    if field["field_type"] != "user" and field["id"] in editable_field_ids
   ]
   values = _collect_custom_field_values()
 
@@ -342,8 +353,11 @@ def update(item_id):
   if description == "":
     description = None
 
+  editable_field_ids = _editable_field_ids(session.get("user_id"))
   custom_fields = [
-    field for field in get_custom_fields() if field["field_type"] != "user"
+    field
+    for field in get_custom_fields()
+    if field["field_type"] != "user" and field["id"] in editable_field_ids
   ]
   values = _collect_custom_field_values()
 
@@ -441,7 +455,10 @@ def import_items_route():
 
   try:
     rows = parse_import_file(file)
-    result = import_items(rows)
+    result = import_items(
+      rows,
+      editable_field_ids=_editable_field_ids(session.get("user_id")),
+    )
   except (InvalidInputError, LocationNotFoundError) as error:
     return jsonify({"error": str(error)}), 400
 
