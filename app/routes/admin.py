@@ -33,9 +33,26 @@ from ..services.data.locations import (
   get_locations,
   update_location,
 )
+from ..services.data.permissions import (
+  create_permission,
+  get_permission_by_name,
+)
+from ..services.data.role_permissions import (
+  delete_role_permission,
+  get_role_permissions,
+  set_role_permission,
+)
+from ..services.data.roles import (
+  create_role,
+  delete_role,
+  get_role,
+  get_roles,
+  update_role,
+)
 from ..services.data.user_roles import (
   delete_user_role,
   get_user_roles,
+  is_role_assigned,
   set_user_role,
 )
 from ..services.data.users import (
@@ -56,7 +73,13 @@ from ..services.exceptions.data.locations import (
   LocationAlreadyExistsError,
   LocationNotFoundError,
 )
-from ..services.exceptions.data.roles import RoleNotFoundError
+from ..services.exceptions.data.permissions import (
+  PermissionAlreadyExistsError,
+)
+from ..services.exceptions.data.roles import (
+  RoleAlreadyExistsError,
+  RoleNotFoundError,
+)
 from ..services.exceptions.data.users import (
   UserIsArchivedError,
   UserIsNotArchivedError,
@@ -90,6 +113,12 @@ _AUDIT_PAGE_SIZE = 50
 
 def _users_with_roles():
   return [{**user, "roles": get_user_roles(user["id"])} for user in get_users()]
+
+
+def _roles_with_permissions():
+  return [
+    {**role, "permissions": get_role_permissions(role["id"])} for role in get_roles()
+  ]
 
 
 def _render_settings(
@@ -130,6 +159,13 @@ def _render_settings(
       "users_with_roles": _users_with_roles(),
     }
 
+  roles_context = {}
+
+  if can_manage_roles:
+    roles_context = {
+      "roles_with_permissions": _roles_with_permissions(),
+    }
+
   return render_template(
     "admin/settings.jinja",
     locations=get_locations(),
@@ -149,6 +185,7 @@ def _render_settings(
     debug=config.DEBUG,
     **audit_context,
     **users_context,
+    **roles_context,
     **context,
   )
 
@@ -474,6 +511,146 @@ def restore_user_route(user_id):
     )
 
   return redirect(url_for("admin.settings", tab=_USERS_TAB))
+
+
+@admin.route("/roles", methods=["POST"])
+@login_required
+@permission_required("roles.manage")
+def create_role_route():
+  name = request.form.get("name", "").strip()
+  description = request.form.get("description", "").strip() or None
+
+  try:
+    create_role(
+      name=name,
+      description=description,
+    )
+  except (
+    InvalidInputError,
+    RoleAlreadyExistsError,
+  ) as error:
+    return _render_settings(
+      _ROLES_TAB,
+      error=str(error),
+      role_name=name,
+      role_description=description or "",
+    )
+
+  return redirect(url_for("admin.settings", tab=_ROLES_TAB))
+
+
+@admin.route("/roles/<int:role_id>", methods=["POST"])
+@login_required
+@permission_required("roles.manage")
+def update_role_route(role_id):
+  if get_role(role_id) is None:
+    abort(404)
+
+  kwargs = {}
+
+  if request.form.get("name") is not None:
+    kwargs["name"] = request.form.get("name", "").strip()
+
+  if request.form.get("description") is not None:
+    kwargs["description"] = request.form.get("description", "").strip() or None
+
+  try:
+    update_role(role_id, **kwargs)
+  except (
+    InvalidInputError,
+    RoleAlreadyExistsError,
+  ) as error:
+    return _render_settings(
+      _ROLES_TAB,
+      error=str(error),
+    )
+
+  return redirect(url_for("admin.settings", tab=_ROLES_TAB))
+
+
+@admin.route("/roles/<int:role_id>/delete", methods=["POST"])
+@login_required
+@permission_required("roles.manage")
+def delete_role_route(role_id):
+  if get_role(role_id) is None:
+    abort(404)
+
+  if is_role_assigned(role_id):
+    return _render_settings(
+      _ROLES_TAB,
+      error="Cannot delete a role that is still assigned to a user",
+    )
+
+  delete_role(role_id)
+
+  return redirect(url_for("admin.settings", tab=_ROLES_TAB))
+
+
+@admin.route("/roles/<int:role_id>/permissions", methods=["POST"])
+@login_required
+@permission_required("roles.manage")
+def grant_role_permission_route(role_id):
+  if get_role(role_id) is None:
+    abort(404)
+
+  permission_name = request.form.get("permission_name", "").strip()
+  allowed = request.form.get("allowed") in ("1", "true", "on")
+
+  if not permission_name:
+    return _render_settings(
+      _ROLES_TAB,
+      error="Permission name cannot be empty",
+    )
+
+  permission = get_permission_by_name(permission_name)
+
+  if permission is None:
+    try:
+      permission_id = create_permission(permission_name)
+    except (
+      InvalidInputError,
+      PermissionAlreadyExistsError,
+    ) as error:
+      return _render_settings(
+        _ROLES_TAB,
+        error=str(error),
+      )
+  else:
+    permission_id = permission["id"]
+
+  try:
+    set_role_permission(role_id, permission_id, allowed)
+  except (
+    InvalidInputError,
+    RoleNotFoundError,
+  ) as error:
+    return _render_settings(
+      _ROLES_TAB,
+      error=str(error),
+    )
+
+  return redirect(url_for("admin.settings", tab=_ROLES_TAB))
+
+
+@admin.route(
+  "/roles/<int:role_id>/permissions/<int:permission_id>/delete",
+  methods=["POST"],
+)
+@login_required
+@permission_required("roles.manage")
+def remove_role_permission_route(role_id, permission_id):
+  if get_role(role_id) is None:
+    abort(404)
+
+  try:
+    delete_role_permission(role_id, permission_id)
+  except (
+    InvalidInputError,
+    RoleNotFoundError,
+  ):
+    abort(404)
+
+  return redirect(url_for("admin.settings", tab=_ROLES_TAB))
 
 
 @admin.route("/data/reset", methods=["POST"])
