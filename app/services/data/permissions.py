@@ -43,7 +43,6 @@ def create_permission(name, description=None):
       action="created",
       entity_type="permission",
       entity_id=permission_id,
-
     )
 
     return permission_id
@@ -172,7 +171,6 @@ def update_permission(
       entity_type="permission",
       entity_id=permission_id,
       details=details,
-
     )
 
     return True
@@ -204,7 +202,6 @@ def delete_permission(permission_id):
       action="deleted",
       entity_type="permission",
       entity_id=permission_id,
-
     )
 
     return True

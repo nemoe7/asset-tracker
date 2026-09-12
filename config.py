@@ -6,7 +6,11 @@ BASE_DIR = Path(__file__).resolve().parent
 
 DB_PATH = Path(os.environ.get("DATABASE_PATH", BASE_DIR / ".data/inventory.db"))
 
-SESSION_COOKIE_SECURE = os.environ.get("TRUST_PROXY", "0").strip().lower() in {"1", "true", "yes"}
+SESSION_COOKIE_SECURE = os.environ.get("TRUST_PROXY", "0").strip().lower() in {
+  "1",
+  "true",
+  "yes",
+}
 
 DEBUG = os.environ.get("DEBUG", "0").strip().lower() in {"1", "true", "yes"}
 

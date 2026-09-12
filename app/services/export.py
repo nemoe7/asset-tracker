@@ -25,9 +25,7 @@ def _custom_column(field):
 
 
 def _selected_columns(field_keys):
-  custom_columns = [
-    _custom_column(field) for field in get_custom_fields()
-  ]
+  custom_columns = [_custom_column(field) for field in get_custom_fields()]
 
   if field_keys is None:
     return _BUILTIN_COLUMNS + custom_columns

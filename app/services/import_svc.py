@@ -47,9 +47,7 @@ def _build_rows(dict_rows, columns):
 
 def _parse_csv(file_storage):
   try:
-    reader = csv.DictReader(
-      line.decode("utf-8-sig") for line in file_storage.stream
-    )
+    reader = csv.DictReader(line.decode("utf-8-sig") for line in file_storage.stream)
 
     fieldnames = reader.fieldnames
 
@@ -59,8 +57,7 @@ def _parse_csv(file_storage):
     columns = [
       name
       for name in fieldnames
-      if name and name not in _IGNORED_COLUMNS
-      and name not in _BUILTIN_COLUMNS
+      if name and name not in _IGNORED_COLUMNS and name not in _BUILTIN_COLUMNS
     ]
 
     return _build_rows(reader, columns)
@@ -91,16 +88,12 @@ def _parse_xlsx(file_storage):
     if "name" not in header:
       raise InvalidInputError("Import requires a name column")
 
-    rows = [
-      dict(zip(header, row))
-      for row in dict_rows
-    ]
+    rows = [dict(zip(header, row)) for row in dict_rows]
 
     columns = [
       name
       for name in header
-      if name and name not in _IGNORED_COLUMNS
-      and name not in _BUILTIN_COLUMNS
+      if name and name not in _IGNORED_COLUMNS and name not in _BUILTIN_COLUMNS
     ]
 
     return _build_rows(rows, columns)
