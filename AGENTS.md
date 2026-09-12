@@ -39,7 +39,7 @@
 - Prefer the smallest complete change that satisfies the requirement.
 - Preserve existing behavior unless a requirement requires changing it.
 - Leave unrelated code untouched.
-- The tailwindcss generator may touch `app/static/css/app.css`, include these changes in your commits
+- The tailwindcss watcher/generator may touch `app/static/css/app.css`, include these changes in your commits
 
 ## Testing
 
