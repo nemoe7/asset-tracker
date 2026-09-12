@@ -14,7 +14,7 @@
 - Check relevant docs before implementation.
 - `docs/requirements.md` — requirements.
 - `docs/implementation.md` — implementation status/priorities. Notes are exceptions, empty by default: a note exists only for non-derivable information — what blocks a 🟡/🔴 row, or a 🟢 row's caveat/constraint a future implementer must know (scope limits, external dependencies, traps, unverified assumptions). Never narrate what was done or how it works — the code and tests are the record.
-- `docs/conventions/` — project conventions.
+- `docs/conventions/` — project conventions. Permissions use `namespace.operation` (e.g. `inventory.read`, `field.<field_id>.read`, `field.<field_id>.update`); field-level access is not `.manage`. Authoritative source: `docs/conventions/auth/authorization.md`.
 - `docs/schema/` and `database/schema.sql` — schema guidance.
 - Update documentation when changes make it inaccurate.
 
