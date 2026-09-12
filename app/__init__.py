@@ -19,7 +19,7 @@ from .services.data.db import (
   get_db,
   init_db,
 )
-from .services.data.user_roles import is_role_assigned
+from .services.data.user_roles import is_admin_role, is_role_assigned
 from .services.exceptions.auth.authorization import PermissionDeniedError
 from .templatetags import format_datetime
 
@@ -126,6 +126,7 @@ def create_app():
 
   app.jinja_env.globals["csrf_token"] = lambda: session.get("csrf_token", "")
   app.jinja_env.globals["is_role_assigned"] = is_role_assigned
+  app.jinja_env.globals["is_admin_role"] = is_admin_role
 
   app.jinja_env.filters["datetime"] = format_datetime
 

@@ -975,17 +975,28 @@
             </button>
           </div>
           <div id="edit-role-permissions-list" class="mt-3 space-y-2"></div>
-          <div id="edit-role-permission-form" class="hidden mt-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 space-y-3">
+          <div id="edit-role-permission-form" class="relative hidden mt-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 space-y-3">
+            <button type="button" id="edit-role-permission-close"
+              class="absolute right-2 top-2 rounded-lg p-1 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-200"
+              title="Close permission form" aria-label="Close permission form">
+              <i class="bi bi-x-lg block size-3.5" aria-hidden="true"></i>
+            </button>
             <div>
               <label for="edit-role-permission-name" class="mb-1 block text-xs font-medium text-zinc-400">Permission</label>
               <input id="edit-role-permission-name" name="permission_name" list="known-permissions-list"
                 type="text" autocomplete="off"
                 class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+              <datalist id="known-permissions-list"></datalist>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center justify-end gap-3">
+              <label for="edit-role-permission-allowed" class="text-sm font-medium text-zinc-300">Allowed</label>
               <input id="edit-role-permission-allowed" name="allowed" type="checkbox" value="true"
                 class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500" checked>
-              <label for="edit-role-permission-allowed" class="text-sm font-medium text-zinc-300">Allowed</label>
+              <button type="button" id="edit-role-permission-submit"
+                class="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+                <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
+                Add
+              </button>
             </div>
             <p id="edit-role-permission-status" class="hidden text-sm"></p>
           </div>
@@ -1096,19 +1107,7 @@
                       title="Edit role" aria-label="Edit role">
                       <i class="bi bi-pencil" aria-hidden="true"></i>
                     </button>
-                    <button type="button"
-                      class="manage-role-permissions rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
-                      data-role-id="{{ role.id }}" data-role-name="{{ role.name }}"
-                      title="Manage permissions" aria-label="Manage permissions">
-                      <i class="bi bi-key" aria-hidden="true"></i>
-                    </button>
-                    <button type="button"
-                      class="grant-role-permission rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
-                      data-role-id="{{ role.id }}"
-                      title="Grant permission" aria-label="Grant permission">
-                      <i class="bi bi-plus-lg" aria-hidden="true"></i>
-                    </button>
-                    {% if not is_role_assigned(role.id) %}
+                    {% if not is_role_assigned(role.id) and not is_admin_role(role.id) %}
                     <form method="post" action="{{ url_for('admin.delete_role_route', role_id=role.id) }}"
                       data-delete-role>
                       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -1148,19 +1147,7 @@
                 title="Edit role" aria-label="Edit role">
                 <i class="bi bi-pencil" aria-hidden="true"></i>
               </button>
-              <button type="button"
-                class="manage-role-permissions rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
-                data-role-id="{{ role.id }}" data-role-name="{{ role.name }}"
-                title="Manage permissions" aria-label="Manage permissions">
-                <i class="bi bi-key" aria-hidden="true"></i>
-              </button>
-              <button type="button"
-                class="grant-role-permission rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
-                data-role-id="{{ role.id }}"
-                title="Grant permission" aria-label="Grant permission">
-                <i class="bi bi-plus-lg" aria-hidden="true"></i>
-              </button>
-              {% if not is_role_assigned(role.id) %}
+              {% if not is_role_assigned(role.id) and not is_admin_role(role.id) %}
               <form method="post" action="{{ url_for('admin.delete_role_route', role_id=role.id) }}"
                 data-delete-role>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -1190,98 +1177,7 @@
       {% endif %}
       {# ==================== End Roles List ==================== #}
 
-      {# ==================== Manage Permissions Dialog ==================== #}
-      <div id="manage-role-permissions-dialog" class="hidden p-6">
-
-        <div class="flex items-center justify-between gap-4">
-          <h2 class="text-lg font-semibold">
-            Manage permissions
-          </h2>
-          <button type="button" class="icon-button modal-close" title="Close" aria-label="Close">
-            <i class="bi bi-x-lg block size-4" aria-hidden="true"></i>
-          </button>
-        </div>
-
-        <p id="manage-role-permissions-status" class="mt-1 text-sm text-zinc-400"></p>
-
-        <div class="py-4">
-          <hr class="border-zinc-800">
-        </div>
-
-        <div id="manage-role-permissions-list" class="space-y-2">
-        </div>
-
-        <div class="mt-6 flex justify-end gap-3">
-          <button type="button" id="cancel-manage-role-permissions"
-            class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
-            Close
-          </button>
-        </div>
-
-      </div>
-      {# ==================== End Manage Permissions Dialog ==================== #}
-
-      {# ==================== Grant Permission Inline Form ==================== #}
-      <div id="grant-role-permission-dialog" class="hidden p-6">
-
-        <div class="flex items-center justify-between gap-4">
-          <h2 class="text-lg font-semibold">
-            Grant permission
-          </h2>
-          <button type="button" class="icon-button modal-close" title="Close" aria-label="Close">
-            <i class="bi bi-x-lg block size-4" aria-hidden="true"></i>
-          </button>
-        </div>
-
-        <p class="mt-1 text-sm text-zinc-400">Enter a permission name and choose whether to allow or deny it.</p>
-
-        <div class="py-4">
-          <hr class="border-zinc-800">
-        </div>
-
-        <form id="grant-role-permission-form" class="space-y-4">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div>
-            <label for="grant-role-permission-name" class="mb-2 block text-sm font-medium text-zinc-300">
-              Permission
-            </label>
-            <input id="grant-role-permission-name" name="permission_name" list="known-permissions-list"
-              type="text" required autocomplete="off"
-              class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
-            <datalist id="known-permissions-list"></datalist>
-            <p id="grant-role-permission-warning" class="mt-1 hidden text-xs text-zinc-500">
-              Unknown permission — a new permission will be created.
-            </p>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <input id="grant-role-permission-allowed" name="allowed" type="checkbox" value="true"
-              class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500" checked>
-
-            <label for="grant-role-permission-allowed" class="text-sm font-medium text-zinc-300">
-              Allowed
-            </label>
-          </div>
-
-          <p id="grant-role-permission-status" class="hidden text-sm"></p>
-
-          <div class="flex justify-end gap-3">
-            <button type="button" id="cancel-grant-role-permission"
-              class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
-              Cancel
-            </button>
-            <button type="submit" id="grant-role-permission-button"
-              class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
-              <i class="bi bi-plus-lg mr-1" aria-hidden="true"></i>
-              Grant permission
-            </button>
-          </div>
-        </form>
-
-      </div>
-      {# ==================== End Grant Permission Inline Form ==================== #}
-
-    </section>
+          </section>
     {% endif %}
     {# ==================== End Roles Panel ==================== #}
 

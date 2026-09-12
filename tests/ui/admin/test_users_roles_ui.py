@@ -211,23 +211,21 @@ def test_admin_page_grants_permission_to_role(page, live_server, setup_admin):
   row = page.locator("#tab-roles tbody tr").filter(has_text="Viewer")
   expect(row).to_be_visible()
 
-  row.locator(".grant-role-permission").click()
+  row.locator(".edit-role").click()
 
-  dialog = page.locator("#grant-role-permission-dialog")
+  dialog = page.locator("#edit-role-dialog")
   expect(dialog).to_be_visible()
 
-  page.locator("#grant-role-permission-name").fill("assets.read")
-  page.locator("#grant-role-permission-allowed").check()
+  dialog.get_by_role("button", name="Add permission").click()
+  page.locator("#edit-role-permission-name").fill("assets.read")
+  page.locator("#edit-role-permission-allowed").check()
+  page.locator("#edit-role-permission-submit").click()
 
-  dialog.get_by_role("button", name="Grant permission").click()
-
-  page.wait_for_url(f"{live_server}/admin?tab=roles")
-
-  expect(page.get_by_text("assets.read").first).to_be_visible()
+  expect(page.locator("#edit-role-permissions-list").get_by_text("assets.read")).to_be_visible()
 
 
 @pytest.mark.e2e
-def test_admin_page_unknown_permission_warning(page, live_server, setup_admin):
+def test_admin_page_grants_custom_permission_to_role(page, live_server, setup_admin):
   response = page.request.post(
     f"{live_server}/admin/roles",
     form={
@@ -244,13 +242,21 @@ def test_admin_page_unknown_permission_warning(page, live_server, setup_admin):
   row = page.locator("#tab-roles tbody tr").filter(has_text="Viewer")
   expect(row).to_be_visible()
 
-  row.locator(".grant-role-permission").click()
+  row.locator(".edit-role").click()
 
-  dialog = page.locator("#grant-role-permission-dialog")
+  dialog = page.locator("#edit-role-dialog")
   expect(dialog).to_be_visible()
 
-  page.locator("#grant-role-permission-name").fill("custom.unknown.permission")
+  dialog.get_by_role("button", name="Add permission").click()
+  page.locator("#edit-role-permission-name").fill("custom.report.view")
+  page.locator("#edit-role-permission-allowed").check()
+  page.locator("#edit-role-permission-submit").click()
 
-  expect(page.locator("#grant-role-permission-warning")).to_be_visible()
+  expect(
+    dialog.locator("#edit-role-permissions-list").get_by_text("custom.report.view")
+  ).to_be_visible()
 
-  dialog.get_by_role("button", name="Close").click()
+  dialog.get_by_role("button", name="Save changes").click()
+  page.wait_for_url(f"{live_server}/admin?tab=roles")
+
+  expect(page.get_by_text("custom.report.view").first).to_be_visible()

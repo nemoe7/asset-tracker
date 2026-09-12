@@ -220,26 +220,6 @@ if (knownPermissionsList) {
   }
 }
 
-const grantRolePermissionName = document.getElementById('grant-role-permission-name');
-const grantRolePermissionWarning = document.getElementById('grant-role-permission-warning');
-
-function isKnownPermission(value) {
-  return KNOWN_PERMISSIONS.some(
-    (permission) => permission.toLowerCase() === value.toLowerCase(),
-  );
-}
-
-function syncPermissionWarning() {
-  if (!grantRolePermissionWarning || !grantRolePermissionName) {
-    return;
-  }
-
-  const value = grantRolePermissionName.value.trim();
-  grantRolePermissionWarning.classList.toggle('hidden', !value || isKnownPermission(value));
-}
-
-grantRolePermissionName?.addEventListener('input', syncPermissionWarning);
-
 // ==================== End Known Permissions ====================
 
 
@@ -376,10 +356,18 @@ const editRolePermissionForm = document.getElementById('edit-role-permission-for
 const editRolePermissionName = document.getElementById('edit-role-permission-name');
 const editRolePermissionAllowed = document.getElementById('edit-role-permission-allowed');
 const editRolePermissionStatus = document.getElementById('edit-role-permission-status');
+const editRolePermissionClose = document.getElementById('edit-role-permission-close');
+const editRolePermissionSubmit = document.getElementById('edit-role-permission-submit');
 let currentEditRoleId = null;
 
 editRoleAddPermission?.addEventListener('click', () => {
   editRolePermissionForm.classList.toggle('hidden');
+  editRolePermissionName?.focus();
+});
+
+editRolePermissionClose?.addEventListener('click', () => {
+  editRolePermissionForm.classList.add('hidden');
+  editRolePermissionStatus?.classList.add('hidden');
 });
 
 async function renderEditRolePermissions(roleId) {
@@ -405,7 +393,7 @@ async function renderEditRolePermissions(roleId) {
       actions.className = 'flex shrink-0 gap-1';
 
       const allowedSelect = document.createElement('select');
-      allowedSelect.className = 'form-input';
+      allowedSelect.className = 'rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700';
       allowedSelect.innerHTML = `
         <option value="1" ${permission.allowed ? 'selected' : ''}>Allowed</option>
         <option value="0" ${permission.allowed ? '' : 'selected'}>Denied</option>
@@ -484,15 +472,23 @@ document.querySelectorAll('.edit-role').forEach((button) => {
     editRoleForm.action = button.dataset.updateUrl;
     editRoleName.value = button.dataset.roleName ?? '';
     editRoleDescription.value = button.dataset.roleDescription ?? '';
+    editRolePermissionForm?.classList.add('hidden');
+    editRolePermissionStatus?.classList.add('hidden');
     openModal(editRoleModal);
+    renderEditRolePermissions(button.dataset.roleId);
   });
 });
 
-editRolePermissionForm?.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  if (!currentEditRoleId) return;
+async function addEditRolePermission(event) {
+  if (event) event.preventDefault();
+  if (!currentEditRoleId || !editRolePermissionName) return;
 
-  const formData = new FormData(editRolePermissionForm);
+  const permissionName = editRolePermissionName.value.trim();
+  if (!permissionName) return;
+
+  const formData = new FormData();
+  formData.append('permission_name', permissionName);
+  formData.append('allowed', editRolePermissionAllowed.checked ? 'true' : 'false');
   formData.append('csrf_token', document.querySelector('input[name="csrf_token"]')?.value ?? '');
 
   editRolePermissionStatus?.classList.add('hidden');
@@ -509,11 +505,19 @@ editRolePermissionForm?.addEventListener('submit', async (event) => {
       return;
     }
 
-    editRolePermissionForm.reset();
-    editRolePermissionForm.classList.add('hidden');
+    editRolePermissionName.value = '';
+    editRolePermissionName.focus();
     await renderEditRolePermissions(currentEditRoleId);
   } catch {
     showEditRolePermissionError('Failed to add permission.');
+  }
+}
+
+editRolePermissionSubmit?.addEventListener('click', addEditRolePermission);
+
+editRolePermissionName?.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    addEditRolePermission(event);
   }
 });
 
@@ -556,204 +560,6 @@ confirmDeleteRole?.addEventListener('click', () => {
 });
 
 // ==================== End Delete Role Confirmation ====================
-
-
-// ==================== Manage Role Permissions ====================
-
-const manageRolePermissionsDialog = document.getElementById('manage-role-permissions-dialog');
-const manageRolePermissionsList = document.getElementById('manage-role-permissions-list');
-const manageRolePermissionsStatus = document.getElementById('manage-role-permissions-status');
-const cancelManageRolePermissions = document.getElementById('cancel-manage-role-permissions');
-const grantRolePermissionDialog = document.getElementById('grant-role-permission-dialog');
-const grantRolePermissionForm = document.getElementById('grant-role-permission-form');
-const grantRolePermissionButton = document.getElementById('grant-role-permission-button');
-const cancelGrantRolePermission = document.getElementById('cancel-grant-role-permission');
-
-let currentManageRoleId = null;
-
-document.querySelectorAll('.manage-role-permissions').forEach((button) => {
-  button.addEventListener('click', () => {
-    currentManageRoleId = button.dataset.roleId;
-    renderManagePermissions(currentManageRoleId);
-    openModal(manageRolePermissionsDialog);
-  });
-});
-
-cancelManageRolePermissions?.addEventListener('click', () => {
-  closeModal();
-});
-
-cancelGrantRolePermission?.addEventListener('click', () => {
-  closeModal();
-});
-
-async function renderManagePermissions(roleId) {
-  if (!manageRolePermissionsList) {
-    return;
-  }
-
-  manageRolePermissionsList.innerHTML = '';
-  manageRolePermissionsStatus?.classList.add('hidden');
-
-  try {
-    const response = await fetch(`/admin/roles/${roleId}/permissions`);
-
-    if (!response.ok) {
-      throw new Error('Failed to load permissions');
-    }
-
-    const permissions = await response.json();
-
-    for (const permission of permissions) {
-      const row = document.createElement('div');
-      row.className = 'flex items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3';
-
-      const name = document.createElement('div');
-      name.className = 'min-w-0';
-      name.innerHTML = `<p class="truncate text-sm font-medium text-zinc-100">${permission.permission}</p>`;
-
-      const actions = document.createElement('div');
-      actions.className = 'flex shrink-0 gap-1';
-
-      const allowedSelect = document.createElement('select');
-      allowedSelect.className = 'form-input';
-      allowedSelect.innerHTML = `
-        <option value="1" ${permission.allowed ? 'selected' : ''}>Allowed</option>
-        <option value="0" ${permission.allowed ? '' : 'selected'}>Denied</option>
-      `;
-
-      allowedSelect.addEventListener('change', async () => {
-        const allowed = allowedSelect.value === '1';
-        const formData = new FormData();
-        formData.append('permission_name', permission.permission);
-        formData.append('allowed', allowed ? 'true' : 'false');
-        formData.append('csrf_token', document.querySelector('input[name="csrf_token"]')?.value ?? '');
-
-        grantRolePermissionButton?.setAttribute('disabled', '');
-
-        try {
-          const updateResponse = await fetch(`/admin/roles/${roleId}/permissions`, {
-            method: 'POST',
-            body: formData,
-          });
-
-          const payload = await updateResponse.json().catch(() => ({}));
-
-          if (!updateResponse.ok) {
-            showManagePermissionsError(payload.error || 'Failed to update permission.');
-            return;
-          }
-
-          location.reload();
-        } catch {
-          showManagePermissionsError('Failed to update permission.');
-        } finally {
-          grantRolePermissionButton?.removeAttribute('disabled');
-        }
-      });
-
-      const revokeButton = document.createElement('button');
-      revokeButton.type = 'button';
-      revokeButton.className = 'rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300';
-      revokeButton.title = 'Remove permission';
-      revokeButton.setAttribute('aria-label', 'Remove permission');
-      revokeButton.innerHTML = '<i class="bi bi-x-lg" aria-hidden="true"></i>';
-
-      revokeButton.addEventListener('click', async () => {
-        const formData = new FormData();
-        formData.append('csrf_token', document.querySelector('input[name="csrf_token"]')?.value ?? '');
-
-        try {
-          const response = await fetch(`/admin/roles/${roleId}/permissions/${permission.permission_id}/delete`, {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!response.ok) {
-            const payload = await response.json().catch(() => ({}));
-            showManagePermissionsError(payload.error || 'Failed to remove permission.');
-            return;
-          }
-
-          location.reload();
-        } catch {
-          showManagePermissionsError('Failed to remove permission.');
-        }
-      });
-
-      actions.appendChild(allowedSelect);
-      actions.appendChild(revokeButton);
-      row.appendChild(name);
-      row.appendChild(actions);
-      manageRolePermissionsList.appendChild(row);
-    }
-  } catch {
-    manageRolePermissionsStatus.textContent = 'Failed to load permissions.';
-    manageRolePermissionsStatus.classList.remove('hidden');
-  }
-}
-
-function showManagePermissionsError(message) {
-  if (!manageRolePermissionsStatus) {
-    return;
-  }
-
-  manageRolePermissionsStatus.textContent = message;
-  manageRolePermissionsStatus.classList.remove('hidden');
-  manageRolePermissionsStatus.classList.add('text-red-400');
-}
-
-document.querySelectorAll('.grant-role-permission').forEach((button) => {
-  button.addEventListener('click', () => {
-    currentManageRoleId = button.dataset.roleId;
-    openModal(grantRolePermissionDialog);
-  });
-});
-
-grantRolePermissionForm?.addEventListener('submit', async (event) => {
-  event.preventDefault();
-
-  const formData = new FormData(grantRolePermissionForm);
-  formData.append('csrf_token', document.querySelector('input[name="csrf_token"]')?.value ?? '');
-
-  const status = document.getElementById('grant-role-permission-status');
-  status?.classList.add('hidden');
-
-  grantRolePermissionButton?.setAttribute('disabled', '');
-
-  try {
-    const response = await fetch(`/admin/roles/${currentManageRoleId}/permissions`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    const payload = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      if (status) {
-        status.textContent = payload.error || 'Failed to grant permission.';
-        status.classList.remove('hidden');
-        status.classList.add('text-red-400');
-      }
-      return;
-    }
-
-    grantRolePermissionForm.reset();
-    grantRolePermissionWarning?.classList.add('hidden');
-    closeModal();
-    location.reload();
-  } catch {
-    if (status) {
-      status.textContent = 'Failed to grant permission.';
-      status.classList.remove('hidden');
-      status.classList.add('text-red-400');
-    }
-  } finally {
-    grantRolePermissionButton?.removeAttribute('disabled');
-  }
-});
-
-// ==================== End Manage Role Permissions ====================
 
 
 // ==================== Manual Backup ====================
