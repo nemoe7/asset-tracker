@@ -33,7 +33,20 @@ from ..services.data.locations import (
   get_locations,
   update_location,
 )
-from ..services.data.users import get_users, verify_password
+from ..services.data.user_roles import (
+  delete_user_role,
+  get_user_roles,
+  set_user_role,
+)
+from ..services.data.users import (
+  archive_user,
+  create_user,
+  get_user,
+  get_users,
+  restore_user,
+  update_user,
+  verify_password,
+)
 from ..services.exceptions.data.common import InvalidInputError
 from ..services.exceptions.data.custom_fields import (
   CustomFieldInUseError,
@@ -42,6 +55,13 @@ from ..services.exceptions.data.custom_fields import (
 from ..services.exceptions.data.locations import (
   LocationAlreadyExistsError,
   LocationNotFoundError,
+)
+from ..services.exceptions.data.roles import RoleNotFoundError
+from ..services.exceptions.data.users import (
+  UserIsArchivedError,
+  UserIsNotArchivedError,
+  UsernameAlreadyExistsError,
+  UsernameIsArchivedError,
 )
 
 admin = Blueprint(
@@ -54,14 +74,22 @@ _LOCATION_TAB = "locations"
 _CUSTOM_FIELDS_TAB = "custom-fields"
 _DATA_TAB = "data"
 _AUDIT_TAB = "audit"
+_USERS_TAB = "users"
+_ROLES_TAB = "roles"
 _VALID_TABS = (
   _LOCATION_TAB,
   _CUSTOM_FIELDS_TAB,
   _DATA_TAB,
   _AUDIT_TAB,
+  _USERS_TAB,
+  _ROLES_TAB,
 )
 
 _AUDIT_PAGE_SIZE = 50
+
+
+def _users_with_roles():
+  return [{**user, "roles": get_user_roles(user["id"])} for user in get_users()]
 
 
 def _render_settings(
@@ -71,6 +99,8 @@ def _render_settings(
 ):
   user_id = session.get("user_id")
   can_view_audit = check_permission(user_id, "audit.read")
+  can_manage_users = check_permission(user_id, "users.manage")
+  can_manage_roles = check_permission(user_id, "roles.manage")
 
   audit_context = {}
 
@@ -93,6 +123,13 @@ def _render_settings(
       "filters": _audit_view_filters(),
     }
 
+  users_context = {}
+
+  if can_manage_users:
+    users_context = {
+      "users_with_roles": _users_with_roles(),
+    }
+
   return render_template(
     "admin/settings.jinja",
     locations=get_locations(),
@@ -107,8 +144,11 @@ def _render_settings(
       or check_permission(user_id, "backups.restore")
     ),
     can_view_audit=can_view_audit,
+    can_manage_users=can_manage_users,
+    can_manage_roles=can_manage_roles,
     debug=config.DEBUG,
     **audit_context,
+    **users_context,
     **context,
   )
 
@@ -144,6 +184,8 @@ def settings():
     _CUSTOM_FIELDS_TAB: ("custom_fields.manage",),
     _DATA_TAB: (),
     _AUDIT_TAB: ("audit.read",),
+    _USERS_TAB: ("users.manage",),
+    _ROLES_TAB: ("roles.manage",),
   }
 
   tab_permissions = permission_by_tab[active_tab]
@@ -318,30 +360,120 @@ def restore_custom_field_route(field_id):
 @login_required
 @permission_required("users.manage")
 def create_user_route():
-  # User management UI is not implemented yet; these routes stay registered
-  # but are inert until then.
-  return redirect(url_for("main.index"))
+  username = request.form.get("username", "").strip()
+  name = request.form.get("name", "").strip() or None
+  password = request.form.get("password", "")
+
+  try:
+    create_user(
+      username=username,
+      password=password,
+      name=name,
+    )
+  except (
+    InvalidInputError,
+    UsernameAlreadyExistsError,
+    UsernameIsArchivedError,
+  ) as error:
+    return _render_settings(
+      _USERS_TAB,
+      error=str(error),
+      user_username=username,
+      user_name=name or "",
+      user_password=password,
+    )
+
+  return redirect(url_for("admin.settings", tab=_USERS_TAB))
 
 
 @admin.route("/users/<int:user_id>", methods=["POST"])
 @login_required
 @permission_required("users.manage")
 def update_user_route(user_id):
-  return redirect(url_for("main.index"))
+  if get_user(user_id) is None:
+    abort(404)
+
+  kwargs = {}
+
+  if request.form.get("username") is not None:
+    kwargs["username"] = request.form.get("username", "").strip()
+
+  if request.form.get("name") is not None:
+    kwargs["name"] = request.form.get("name", "").strip() or None
+
+  password = request.form.get("password", "")
+
+  if password:
+    kwargs["password"] = password
+
+  role_ids = [
+    int(raw) for raw in request.form.getlist("role_ids") if raw.strip().isdigit()
+  ]
+  desired_role_ids = set(role_ids)
+  current_role_ids = {row["role_id"] for row in get_user_roles(user_id)}
+
+  try:
+    if kwargs:
+      update_user(user_id, **kwargs)
+
+    for role_id in desired_role_ids - current_role_ids:
+      set_user_role(user_id, role_id)
+
+    for role_id in current_role_ids - desired_role_ids:
+      delete_user_role(user_id, role_id)
+  except (
+    InvalidInputError,
+    UserIsArchivedError,
+    RoleNotFoundError,
+  ) as error:
+    return _render_settings(
+      _USERS_TAB,
+      error=str(error),
+    )
+
+  return redirect(url_for("admin.settings", tab=_USERS_TAB))
 
 
 @admin.route("/users/<int:user_id>/archive", methods=["POST"])
 @login_required
 @permission_required("users.manage")
 def archive_user_route(user_id):
-  return redirect(url_for("main.index"))
+  if user_id == session.get("user_id"):
+    return _render_settings(
+      _USERS_TAB,
+      error="Cannot archive your own account",
+    )
+
+  if get_user(user_id) is None:
+    abort(404)
+
+  try:
+    archive_user(user_id)
+  except UserIsArchivedError as error:
+    return _render_settings(
+      _USERS_TAB,
+      error=str(error),
+    )
+
+  return redirect(url_for("admin.settings", tab=_USERS_TAB))
 
 
 @admin.route("/users/<int:user_id>/restore", methods=["POST"])
 @login_required
 @permission_required("users.manage")
 def restore_user_route(user_id):
-  return redirect(url_for("main.index"))
+  if get_user(user_id) is None:
+    abort(404)
+
+  try:
+    restore_user(user_id)
+  except UserIsNotArchivedError as error:
+    return _render_settings(
+      _USERS_TAB,
+      error=str(error),
+    )
+
+  return redirect(url_for("admin.settings", tab=_USERS_TAB))
 
 
 @admin.route("/data/reset", methods=["POST"])
