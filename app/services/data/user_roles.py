@@ -142,6 +142,20 @@ def delete_user_role(user_id, role_id):
     return True
 
 
+def get_role_user_count(role_id):
+  with db_connection() as connection:
+    row = connection.execute(
+      """
+      SELECT COUNT(*) AS cnt
+      FROM user_roles
+      WHERE role_id = ?
+      """,
+      (role_id,),
+    ).fetchone()
+
+    return row["cnt"]
+
+
 def is_role_assigned(role_id):
   with db_connection() as connection:
     row = connection.execute(
