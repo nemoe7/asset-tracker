@@ -97,11 +97,11 @@
 | PER-003 | P3 | QR scanning opens the asset without unnecessary steps. | 🟢 | QRC-005 | CHK-001 | |
 | SEC-001 | P3 | Protected functions require authentication. | 🟢 | AUT-006 | — | |
 | SEC-002 | P3 | Enforce role/per-user access control. | 🟢 | AUT-003 | AUT-005, SEC-003 | |
-| SEC-003 | P3 | Users only access permitted information/functions. | 🟡 | AUT-003, AUT-004 | SEC-002 | Field-level access control pending (USR-009, USR-010, FLD-013) |
+| SEC-003 | P3 | Users only access permitted information/functions. | 🟢 | AUT-003, AUT-004 | SEC-002 | |
 | SEC-004 | P3 | Credentials are not stored in plaintext. | 🟢 | AUT-001 | — | |
 | SEC-005 | P3 | Audit logs are protected from unauthorized modification. | 🟢 | — | AUD-013 | |
 | SEC-007 | P3 | Backup files are protected from unauthorized access. | 🟢 | BKP-011 | SEC-006 | Manual backups only; no files persist server-side. Scheduled backups (BKP-016+) must add at-rest protection |
-| SEC-008 | P3 | Custom fields cannot bypass integrity/security controls. | 🔴 | FLD-012, FLD-013 | — | Revisit custom fields |
+| SEC-008 | P3 | Custom fields cannot bypass integrity/security controls. | 🟢 | FLD-012, FLD-013 | — | Field view/edit access control enforced on all read/write/export paths |
 | QRC-007 | P3 | QR code contains the Asset ID and does not need to contain the asset's complete information. | 🟢 | QRC-001 | QRC-002, QRC-006 | |
 | SRH-007 | P3 | Custom fields can be used for search/filtering. | 🟢 | FLD-014 | SRH-002 | User-type fields excluded (FLD-007 pending) |
 | USE-001 | P3 | Application usable through a standard web browser. | 🟢 | — | CMP-001, CMP-002 | |
@@ -144,8 +144,8 @@
 | ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
 | ----- | :---: | ----- | :---: | ----- | ----- | -------- |
 | AUT-003 | P5 | Restrict functionality according to roles/permissions. | 🟢 | — | SEC-002 | |
-| AUT-004 | P5 | Restrict asset information according to permissions. | 🟡 | AUT-003 | SEC-003, FLD-013 | |
-| AUT-005 | P5 | Same permission rules on desktop/mobile. | 🟡 | AUT-003, AUT-004 | SEC-003, USE-003 | |
+| AUT-004 | P5 | Restrict asset information according to permissions. | 🟢 | AUT-003 | SEC-003, FLD-013 | |
+| AUT-005 | P5 | Same permission rules on desktop/mobile. | 🟢 | AUT-003, AUT-004 | SEC-003, USE-003 | Enforcement is server-side, so it applies to both interfaces |
 | AUT-012 | P5 | Wildcards automatically apply to newly created matching permissions. | 🟢 | AUT-008 | AUT-009 | |
 | AUT-013 | P5 | Direct user decisions override role permissions. | 🟢 | USR-008 | AUT-003 | |
 | AUT-014 | P5 | Most-specific matching permission wins. | 🟢 | AUT-008 | AUT-015 | |
@@ -166,9 +166,9 @@
 | BKP-017 | P5 | Default backup location is mounted deployment directory. | 🔴 | BKP-016 | — | |
 | BKP-018 | P5 | Backup location configurable independently of runtime. | 🔴 | BKP-016 | BKP-019 | |
 | BKP-019 | P5 | Support external backup locations such as NAS where practical. | 🔴 | BKP-018 | — | |
-| EXP-009 | P5 | Export only information available to generating user. | 🔴 | EXP-001, AUT-004 | SEC-003 | |
+| EXP-009 | P5 | Export only information available to generating user. | 🟢 | EXP-001, AUT-004 | SEC-003 | |
 | FLD-012 | P5 | Validate custom-field values against configured type. | 🟢 | FLD-005 | SEC-008, IMP-005 | |
-| FLD-013 | P5 | Custom fields respect viewing/editing permissions. | 🔴 | FLD-002, AUT-004 | USR-009, USR-010 | |
+| FLD-013 | P5 | Custom fields respect viewing/editing permissions. | 🟢 | FLD-002, AUT-004 | USR-009, USR-010 | |
 | REL-002 | P5 | Failed operations provide appropriate errors. | 🟡 | — | — | Complete coverage is not established |
 | REL-007 | P5 | Missed scheduled backup recoverable at startup. | 🔴 | BKP-007 | BKP-006 | |
 | SEC-006 | P5 | Restrict backup/restore to authorized users. | 🔴 | BKP-011, BKP-012, AUT-003 | SEC-001 | |
@@ -184,7 +184,7 @@
 | AUT-010 | — | Support global `*` wildcard. | 🟢 | — | AUT-011 | |
 | AUT-011 | — | Global wildcard grants all concrete permissions. | 🟢 | AUT-010 | AUT-012 | |
 | USR-008 | — | Per-user permissions override inherited role permissions. | 🟢 | USR-007 | AUT-013 | |
-| USR-009 | — | Configure which asset fields Checkers can view. | 🔴 | FLD-002, FLD-013 | USR-010 | |
-| USR-010 | — | Configure which asset fields Checkers can edit. | 🔴 | FLD-002, FLD-013 | USR-009 | |
+| USR-009 | — | Configure which asset fields Checkers can view. | 🟢 | FLD-002, FLD-013 | USR-010 | |
+| USR-010 | — | Configure which asset fields Checkers can edit. | 🟢 | FLD-002, FLD-013 | USR-009 | |
 | USR-011 | — | Checkers cannot modify their own permissions. | 🔴 | USR-007 | — | |
 | FLD-007 | — | User custom fields reference system users. | 🟡 | FLD-005 | USR-001 | UI pending |
