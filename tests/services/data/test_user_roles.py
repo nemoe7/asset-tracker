@@ -4,11 +4,13 @@ from app.services.data.audit import get_audit_logs
 from app.services.data.roles import create_role
 from app.services.data.user_roles import (
   delete_user_role,
+  get_role_user_count,
   get_user_role,
   get_user_roles,
   is_role_assigned,
   set_user_role,
 )
+from app.services.data.users import archive_user
 from app.services.exceptions.data.roles import RoleNotFoundError
 from app.services.exceptions.data.user_roles import UserRoleNotFoundError
 from app.services.exceptions.data.users import UserNotFoundError
@@ -166,3 +168,34 @@ def test_is_role_assigned_after_unassignment(gen_test_data_admin):
   delete_user_role(user_id, role_id)
 
   assert is_role_assigned(role_id) is False
+
+
+def test_is_role_assigned_ignores_archived_users(gen_test_data_user):
+  role_id = create_role(name="Checker")
+
+  archived_user_id = gen_test_data_user("archiveda")
+  set_user_role(archived_user_id, role_id)
+  archive_user(archived_user_id)
+
+  assert is_role_assigned(role_id) is False
+
+  active_user_id = gen_test_data_user("activeuser")
+  set_user_role(active_user_id, role_id)
+
+  assert is_role_assigned(role_id) is True
+
+
+def test_get_role_user_count_excludes_archived_users(gen_test_data_user):
+  role_id = create_role(name="Checker")
+
+  assert get_role_user_count(role_id) == 0
+
+  active_user_id = gen_test_data_user("activeuser")
+  set_user_role(active_user_id, role_id)
+  assert get_role_user_count(role_id) == 1
+
+  archived_user_id = gen_test_data_user("archivedb")
+  set_user_role(archived_user_id, role_id)
+  archive_user(archived_user_id)
+
+  assert get_role_user_count(role_id) == 1
