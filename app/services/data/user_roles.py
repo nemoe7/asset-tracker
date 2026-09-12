@@ -140,3 +140,18 @@ def delete_user_role(user_id, role_id):
     )
 
     return True
+
+
+def is_role_assigned(role_id):
+  with db_connection() as connection:
+    row = connection.execute(
+      """
+      SELECT 1
+      FROM user_roles
+      WHERE role_id = ?
+      LIMIT 1
+      """,
+      (role_id,),
+    ).fetchone()
+
+    return row is not None
