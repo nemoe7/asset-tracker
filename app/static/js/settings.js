@@ -506,7 +506,7 @@ async function renderManagePermissions(roleId) {
             return;
           }
 
-          renderManagePermissions(roleId);
+          location.reload();
         } catch {
           showManagePermissionsError('Failed to update permission.');
         } finally {
@@ -537,7 +537,7 @@ async function renderManagePermissions(roleId) {
             return;
           }
 
-          renderManagePermissions(roleId);
+          location.reload();
         } catch {
           showManagePermissionsError('Failed to remove permission.');
         }
@@ -603,7 +603,7 @@ grantRolePermissionForm?.addEventListener('submit', async (event) => {
     grantRolePermissionForm.reset();
     grantRolePermissionWarning?.classList.add('hidden');
     closeModal();
-    renderManagePermissions(currentManageRoleId);
+    location.reload();
   } catch {
     if (status) {
       status.textContent = 'Failed to grant permission.';
