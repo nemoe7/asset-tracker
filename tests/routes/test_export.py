@@ -185,7 +185,7 @@ def test_export_includes_custom_fields(
   gen_test_item,
   gen_test_admin,
 ):
-  from app.services.auth.context import set_current_user, reset_current_user
+  from app.services.auth.context import reset_current_user, set_current_user
   from app.services.data.custom_field_values import set_custom_field_value
   from app.services.data.custom_fields import create_custom_field
 
@@ -193,7 +193,7 @@ def test_export_includes_custom_fields(
 
   try:
     serial_id = create_custom_field("Serial Number", "text")
-    quantity_id = create_custom_field("Quantity", "integer")
+    create_custom_field("Quantity", "integer")
 
     item_id = gen_test_item(name="Alpha Asset")
     set_custom_field_value(item_id, serial_id, "SN-001")
@@ -227,7 +227,7 @@ def test_export_selected_custom_fields(
   gen_test_item,
   gen_test_admin,
 ):
-  from app.services.auth.context import set_current_user, reset_current_user
+  from app.services.auth.context import reset_current_user, set_current_user
   from app.services.data.custom_field_values import set_custom_field_value
   from app.services.data.custom_fields import create_custom_field
 

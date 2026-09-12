@@ -1,7 +1,5 @@
 import io
 
-import pytest
-
 
 def make_backup_upload(data):
   return {"file": (io.BytesIO(data), "backup-20260904-000000.db")}
@@ -18,10 +16,9 @@ def test_create_backup_requires_backups_create_permission(
   gen_test_client,
   gen_test_admin,
 ):
-  from app.services.exceptions.auth.authorization import PermissionDeniedError
-  from werkzeug.security import generate_password_hash
-
   import sqlite3
+
+  from werkzeug.security import generate_password_hash
 
   import config
 
@@ -80,9 +77,7 @@ def test_create_backup_returns_backup_file_download_to_requester(
 
   connection.deserialize(data)
 
-  items = connection.execute(
-    "SELECT COUNT(*) FROM inventory_items"
-  ).fetchone()
+  items = connection.execute("SELECT COUNT(*) FROM inventory_items").fetchone()
 
   connection.close()
 
@@ -93,8 +88,7 @@ def test_create_backup_failure_returns_500_without_success(
   gen_test_admin_client,
   monkeypatch,
 ):
-  import app.services.data.backups as backups
-
+  from app.services.data import backups
   from app.services.exceptions.data.backups import BackupError
 
   def failing_copy():
@@ -110,9 +104,7 @@ def test_create_backup_failure_returns_500_without_success(
   from app.services.data.db import db_connection
 
   with db_connection() as connection:
-    rows = connection.execute(
-      "SELECT COUNT(*) FROM backup_history"
-    ).fetchone()
+    rows = connection.execute("SELECT COUNT(*) FROM backup_history").fetchone()
 
   assert rows[0] == 0
 
@@ -121,9 +113,9 @@ def test_create_backup_failure_returns_500_without_success(
 
 
 def login_restricted_user(gen_test_client):
-  from werkzeug.security import generate_password_hash
-
   import sqlite3
+
+  from werkzeug.security import generate_password_hash
 
   import config
 
@@ -159,7 +151,6 @@ def test_restore_requires_backups_restore_permission(
   gen_test_client,
   gen_test_admin,
 ):
-  from app.services.exceptions.auth.authorization import PermissionDeniedError
 
   login_restricted_user(gen_test_client)
 
@@ -174,7 +165,7 @@ def test_restore_requires_backups_restore_permission(
 
 
 def make_backup_bytes(gen_test_admin):
-  from app.services.auth.context import set_current_user, reset_current_user
+  from app.services.auth.context import reset_current_user, set_current_user
   from app.services.data.backups import create_backup
 
   token = set_current_user(gen_test_admin)

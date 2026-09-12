@@ -5,10 +5,10 @@ from datetime import datetime, timezone
 import config
 
 from ..auth.context import get_current_user
-from .audit import create_audit_log
-from .db import db_connection, db_transaction
 from ..exceptions.data.backups import BackupError, InvalidBackupError
 from ..exceptions.data.common import InvalidInputError
+from .audit import create_audit_log
+from .db import db_connection, db_transaction
 
 _CORE_TABLES = (
   "users",
@@ -152,9 +152,7 @@ def _resolve_restored_audit_user_id(connection, preferred_ids):
     if row is not None:
       return user_id
 
-  row = connection.execute(
-    "SELECT id FROM users ORDER BY id LIMIT 1"
-  ).fetchone()
+  row = connection.execute("SELECT id FROM users ORDER BY id LIMIT 1").fetchone()
 
   return row["id"] if row is not None else None
 

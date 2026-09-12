@@ -104,9 +104,7 @@ def make_xlsx_upload(rows):
   return FileStorage(
     stream=stream,
     filename="items.xlsx",
-    content_type=(
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    ),
+    content_type=("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
   )
 
 

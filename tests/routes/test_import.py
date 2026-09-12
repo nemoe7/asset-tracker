@@ -1,7 +1,6 @@
 import io
 import sqlite3
 
-import pytest
 from werkzeug.security import generate_password_hash
 
 import config
@@ -19,7 +18,6 @@ def test_import_requires_inventory_import_permission(
 ):
   # The permission decorator denies unauthorized users; the existing
   # app-wide behavior raises PermissionDeniedError (unhandled → 500).
-  from app.services.exceptions.auth.authorization import PermissionDeniedError
 
   connection = sqlite3.connect(config.DB_PATH)
 
@@ -62,7 +60,7 @@ def test_import_returns_imported_count(gen_test_admin_client):
     "/inventory/import",
     data={
       "file": (
-        io.BytesIO("name,description\nAlpha,First\nBeta,\n".encode("utf-8")),
+        io.BytesIO(b"name,description\nAlpha,First\nBeta,\n"),
         "items.csv",
       ),
     },
@@ -78,7 +76,7 @@ def test_import_invalid_file_returns_400(gen_test_admin_client):
     "/inventory/import",
     data={
       "file": (
-        io.BytesIO("description\nFirst\n".encode("utf-8")),
+        io.BytesIO(b"description\nFirst\n"),
         "items.csv",
       ),
     },
