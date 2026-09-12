@@ -472,7 +472,7 @@ async function renderManagePermissions(roleId) {
 
       const name = document.createElement('div');
       name.className = 'min-w-0';
-      name.innerHTML = `<p class="truncate text-sm font-medium text-zinc-100">${permission.name}</p>`;
+      name.innerHTML = `<p class="truncate text-sm font-medium text-zinc-100">${permission.permission}</p>`;
 
       const actions = document.createElement('div');
       actions.className = 'flex shrink-0 gap-1';
@@ -487,7 +487,7 @@ async function renderManagePermissions(roleId) {
       allowedSelect.addEventListener('change', async () => {
         const allowed = allowedSelect.value === '1';
         const formData = new FormData();
-        formData.append('permission_name', permission.name);
+        formData.append('permission_name', permission.permission);
         formData.append('allowed', allowed ? 'true' : 'false');
         formData.append('csrf_token', document.querySelector('input[name="csrf_token"]')?.value ?? '');
 
@@ -526,7 +526,7 @@ async function renderManagePermissions(roleId) {
         formData.append('csrf_token', document.querySelector('input[name="csrf_token"]')?.value ?? '');
 
         try {
-          const response = await fetch(`/admin/roles/${roleId}/permissions/${permission.id}/delete`, {
+          const response = await fetch(`/admin/roles/${roleId}/permissions/${permission.permission_id}/delete`, {
             method: 'POST',
             body: formData,
           });

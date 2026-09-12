@@ -3,6 +3,7 @@ from datetime import date
 from flask import (
   Blueprint,
   abort,
+  jsonify,
   redirect,
   render_template,
   request,
@@ -591,6 +592,16 @@ def delete_role_route(role_id):
   delete_role(role_id)
 
   return redirect(url_for("admin.settings", tab=_ROLES_TAB))
+
+
+@admin.route("/roles/<int:role_id>/permissions", methods=["GET"])
+@login_required
+@permission_required("roles.manage")
+def list_role_permissions_route(role_id):
+  if get_role(role_id) is None:
+    abort(404)
+
+  return jsonify([dict(row) for row in get_role_permissions(role_id)])
 
 
 @admin.route("/roles/<int:role_id>/permissions", methods=["POST"])
