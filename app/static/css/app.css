@@ -641,6 +641,9 @@
   .border-emerald-700 {
     border-color: var(--color-emerald-700);
   }
+  .border-emerald-900 {
+    border-color: var(--color-emerald-900);
+  }
   .border-red-700 {
     border-color: var(--color-red-700);
   }
@@ -683,11 +686,17 @@
   .bg-emerald-100 {
     background-color: var(--color-emerald-100);
   }
+  .bg-emerald-900 {
+    background-color: var(--color-emerald-900);
+  }
   .bg-red-100 {
     background-color: var(--color-red-100);
   }
   .bg-red-600 {
     background-color: var(--color-red-600);
+  }
+  .bg-red-900 {
+    background-color: var(--color-red-900);
   }
   .bg-red-950 {
     background-color: var(--color-red-950);
@@ -898,11 +907,17 @@
   .whitespace-nowrap {
     white-space: nowrap;
   }
+  .text-emerald-100 {
+    color: var(--color-emerald-100);
+  }
   .text-emerald-400 {
     color: var(--color-emerald-400);
   }
   .text-emerald-900 {
     color: var(--color-emerald-900);
+  }
+  .text-red-100 {
+    color: var(--color-red-100);
   }
   .text-red-300 {
     color: var(--color-red-300);

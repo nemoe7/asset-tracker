@@ -506,8 +506,8 @@ function renderStagedPermissions() {
     const wrapper = document.createElement('div');
     wrapper.className = `edit-role-permission-chip flex w-fit max-w-full items-center gap-1.5 rounded-full border py-1 pl-1.5 pr-1.5 ${
       permission.allowed
-        ? 'border-emerald-700 bg-emerald-100 text-emerald-900'
-        : 'border-red-700 bg-red-100 text-red-900'
+        ? 'border-emerald-900 bg-emerald-900 text-emerald-100'
+        : 'border-red-900 bg-red-900 text-red-100'
     }`;
 
     const chip = document.createElement('button');
