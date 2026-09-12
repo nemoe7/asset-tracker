@@ -8,8 +8,19 @@ from app.services.data.custom_fields import (
 )
 from app.services.data.db import db_transaction
 from app.services.data.locations import get_location
-from app.services.data.roles import create_role
-from app.services.data.user_roles import get_user_roles
+from app.services.data.permissions import (
+  create_permission,
+  get_permission_by_name,
+)
+from app.services.data.role_permissions import (
+  get_role_permissions,
+  set_role_permission,
+)
+from app.services.data.roles import create_role, get_role, get_roles
+from app.services.data.user_roles import (
+  get_user_roles,
+  set_user_role,
+)
 from app.services.data.users import get_user_by_username
 
 # ==================== Admin Page ====================
@@ -330,6 +341,243 @@ def test_admin_cannot_archive_missing_user(
 ):
   response = gen_test_admin_client.post(
     "/admin/users/999/archive",
+  )
+
+  assert response.status_code == 404
+
+
+# ==================== Roles Tab ====================
+
+
+def test_admin_can_create_role(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/roles",
+    data={
+      "name": "Checker",
+      "description": "Checks assets",
+    },
+  )
+
+  assert response.status_code == 302
+  assert "/admin" in response.location
+
+  created = next(role for role in get_roles() if role["name"] == "Checker")
+
+  assert created["description"] == "Checks assets"
+
+
+def test_admin_cannot_create_role_with_empty_name(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/roles",
+    data={"name": "   "},
+  )
+
+  assert response.status_code == 200
+  assert "Role name cannot be empty" in response.data.decode()
+
+
+def test_admin_cannot_create_duplicate_role(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  create_role(name="Checker")
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    "/admin/roles",
+    data={"name": "Checker"},
+  )
+
+  assert response.status_code == 200
+  assert "Role already exists" in response.data.decode()
+
+
+def test_admin_can_edit_role(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  role_id = create_role(name="Checker", description="Old description")
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    f"/admin/roles/{role_id}",
+    data={
+      "name": "Senior Checker",
+      "description": "New description",
+    },
+  )
+
+  assert response.status_code == 302
+
+  role = get_role(role_id)
+
+  assert role["name"] == "Senior Checker"
+  assert role["description"] == "New description"
+
+
+def test_admin_can_delete_unassigned_role(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  role_id = create_role(name="Unused Role")
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    f"/admin/roles/{role_id}/delete",
+  )
+
+  assert response.status_code == 302
+
+  assert get_role(role_id) is None
+
+
+def test_admin_cannot_delete_role_in_use(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  role_id = create_role(name="Assigned Role")
+  set_user_role(gen_test_admin, role_id)
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    f"/admin/roles/{role_id}/delete",
+  )
+
+  assert response.status_code == 200
+  assert "still assigned" in response.data.decode()
+
+  assert get_role(role_id) is not None
+
+
+def test_admin_can_grant_existing_permission(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  role_id = create_role(name="Checker")
+  permission_id = create_permission(name="locations.manage")
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    f"/admin/roles/{role_id}/permissions",
+    data={
+      "permission_name": "locations.manage",
+      "allowed": "true",
+    },
+  )
+
+  assert response.status_code == 302
+
+  permissions = get_role_permissions(role_id)
+
+  assert permissions[0]["permission_id"] == permission_id
+  assert permissions[0]["allowed"] == 1
+
+
+def test_admin_can_grant_unknown_permission_creates_row(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  role_id = create_role(name="Checker")
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    f"/admin/roles/{role_id}/permissions",
+    data={
+      "permission_name": "future.namespace",
+      "allowed": "true",
+    },
+  )
+
+  assert response.status_code == 302
+
+  permission = get_permission_by_name("future.namespace")
+
+  assert permission is not None
+
+  permissions = get_role_permissions(role_id)
+
+  assert permissions[0]["permission"] == "future.namespace"
+
+
+def test_admin_can_deny_permission(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  role_id = create_role(name="Checker")
+  permission_id = create_permission(name="users.manage")
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    f"/admin/roles/{role_id}/permissions",
+    data={
+      "permission_name": "users.manage",
+      "allowed": "false",
+    },
+  )
+
+  assert response.status_code == 302
+
+  permissions = get_role_permissions(role_id)
+
+  assert permissions[0]["permission_id"] == permission_id
+  assert permissions[0]["allowed"] == 0
+
+
+def test_admin_can_remove_role_permission(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  role_id = create_role(name="Checker")
+  permission_id = create_permission(name="locations.manage")
+  set_role_permission(role_id, permission_id, True)
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    f"/admin/roles/{role_id}/permissions/{permission_id}/delete",
+  )
+
+  assert response.status_code == 302
+
+  assert get_role_permissions(role_id) == []
+
+
+def test_admin_role_routes_require_roles_manage_permission(
+  gen_test_client,
+  gen_test_admin,
+):
+  _login_restricted_user(gen_test_client)
+
+  response = gen_test_client.post(
+    "/admin/roles",
+    data={"name": "Checker"},
+  )
+
+  assert response.status_code == 403
+
+  response = gen_test_client.post(
+    "/admin/roles/1/delete",
+  )
+
+  assert response.status_code == 403
+
+
+def test_admin_cannot_delete_missing_role(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/roles/999/delete",
   )
 
   assert response.status_code == 404
