@@ -3,10 +3,10 @@ from playwright.sync_api import expect
 
 
 @pytest.mark.e2e
-def test_backups_tab_shows_manual_backup_controls(page, live_server, setup_admin):
-  page.goto(f"{live_server}/admin?tab=backups")
+def test_data_tab_shows_manual_backup_controls(page, live_server, setup_admin):
+  page.goto(f"{live_server}/admin?tab=data")
 
-  panel = page.locator("#tab-backups")
+  panel = page.locator("#tab-data")
 
   expect(panel).to_be_visible()
   expect(page.locator("#backup-button")).to_be_visible()
@@ -18,11 +18,11 @@ def test_restore_section_shows_file_input_and_restore_button(
   live_server,
   setup_admin,
 ):
-  page.goto(f"{live_server}/admin?tab=backups")
+  page.goto(f"{live_server}/admin?tab=data")
 
   expect(page.get_by_text("Restore from backup")).to_be_visible()
   expect(
-    page.locator("#tab-backups").get_by_text("overwrites", exact=False)
+    page.locator("#tab-data").get_by_text("overwrites", exact=False)
   ).to_contain_text("all current data")
   expect(page.locator("#restore-file")).to_be_visible()
   expect(page.locator("#restore-button")).to_be_visible()
@@ -42,7 +42,7 @@ def test_restore_opens_password_modal_after_choosing_file(
 
   backup_file.write_bytes(b"SQLite format 3\x00" + b"\x00" * 64)
 
-  page.goto(f"{live_server}/admin?tab=backups")
+  page.goto(f"{live_server}/admin?tab=data")
 
   page.locator("#restore-file").set_input_files(backup_file)
   page.locator("#restore-button").click()
@@ -68,7 +68,7 @@ def test_restore_with_wrong_password_shows_error(
 
   backup_file.write_bytes(b"SQLite format 3\x00" + b"\x00" * 64)
 
-  page.goto(f"{live_server}/admin?tab=backups")
+  page.goto(f"{live_server}/admin?tab=data")
 
   page.locator("#restore-file").set_input_files(backup_file)
   page.locator("#restore-button").click()
@@ -84,10 +84,9 @@ def test_restore_with_wrong_password_shows_error(
   expect(dialog).to_be_visible()
 
 
-
 @pytest.mark.e2e
 def test_backup_button_downloads_backup_file(page, live_server, setup_admin):
-  page.goto(f"{live_server}/admin?tab=backups")
+  page.goto(f"{live_server}/admin?tab=data")
 
   with page.expect_download() as download_info:
     page.locator("#backup-button").click()

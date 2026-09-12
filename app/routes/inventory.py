@@ -17,11 +17,14 @@ from app.services.data.custom_field_filters import parse_filters
 from app.services.data.custom_field_values import set_custom_field_value
 from app.services.data.custom_fields import get_custom_fields
 
+from ..services.auth.authentication import login_required
+from ..services.auth.authorization import permission_required
 from ..services.data.inventory import (
   archive_item,
   create_item,
   get_item,
   get_items_paginated,
+  import_items,
   restore_item,
   update_item,
 )
@@ -37,9 +40,6 @@ from ..services.exceptions.data.inventory import (
 from ..services.exceptions.data.locations import LocationNotFoundError
 from ..services.export import build_export
 from ..services.import_svc import parse_import_file
-from ..services.data.inventory import import_items
-from ..services.auth.authentication import login_required
-from ..services.auth.authorization import permission_required
 
 logger = logging.getLogger(__name__)
 
@@ -149,9 +149,7 @@ def _coerce_form_value(field, raw_value):
     if field_type == "decimal":
       return float(raw_value)
   except ValueError:
-    raise InvalidInputError(
-      f"Invalid value for {field_type} field"
-    ) from None
+    raise InvalidInputError(f"Invalid value for {field_type} field") from None
 
   if field_type == "boolean":
     return raw_value == "true"
@@ -160,11 +158,7 @@ def _coerce_form_value(field, raw_value):
 
 
 def _collect_custom_field_values():
-  return {
-    key[2:]: value
-    for key, value in request.form.items()
-    if key.startswith("f_")
-  }
+  return {key[2:]: value for key, value in request.form.items() if key.startswith("f_")}
 
 
 def _required_custom_field_error(field):
@@ -197,9 +191,7 @@ def create():
   location_id = request.form.get("location_id")
 
   custom_fields = [
-    field
-    for field in get_custom_fields()
-    if field["field_type"] != "user"
+    field for field in get_custom_fields() if field["field_type"] != "user"
   ]
   values = _collect_custom_field_values()
 
@@ -318,9 +310,7 @@ def update(item_id):
     description = None
 
   custom_fields = [
-    field
-    for field in get_custom_fields()
-    if field["field_type"] != "user"
+    field for field in get_custom_fields() if field["field_type"] != "user"
   ]
   values = _collect_custom_field_values()
 

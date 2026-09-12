@@ -265,13 +265,13 @@ An empty string is not automatically converted to `None`.
 For example, a nullable foreign key may legitimately receive:
 
 ```python
-location_id=None
+location_id = None
 ```
 
 while a required text field receiving:
 
 ```python
-name=""
+name = ""
 ```
 
 shall fail its required-field validation.

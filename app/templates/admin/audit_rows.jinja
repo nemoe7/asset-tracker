@@ -1,0 +1,22 @@
+{# Rows-only fragment for one page of audit logs, consumed by audit.js. #}
+
+{% from "admin/_audit_items.jinja" import desktop_row, mobile_card %}
+
+<div
+  id="audit-chunk"
+  data-has-more="{{ 'true' if has_more else 'false' }}"
+  data-next-page="{{ next_page }}">
+
+  <template data-target="audit-rows-desktop">
+    {% for log in logs %}
+    {{ desktop_row(log) }}
+    {% endfor %}
+  </template>
+
+  <template data-target="audit-rows-mobile">
+    {% for log in logs %}
+    {{ mobile_card(log) }}
+    {% endfor %}
+  </template>
+
+</div>

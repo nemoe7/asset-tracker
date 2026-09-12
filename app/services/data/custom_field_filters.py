@@ -145,4 +145,3 @@ def parse_filters(f_fields, f_ops, f_values, fields):
     filters.append((field["id"], validated_op, validated_value))
 
   return filters
-
