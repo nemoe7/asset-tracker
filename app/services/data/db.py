@@ -20,6 +20,7 @@ def get_db(db_path=None):
     return connection
 
   db_path = db_path or config.DB_PATH
+  db_path.parent.mkdir(parents=True, exist_ok=True)
 
   connection = sqlite3.connect(db_path)
   connection.row_factory = sqlite3.Row

@@ -159,6 +159,7 @@ def _resolve_restored_audit_user_id(connection, preferred_ids):
 
 def restore_backup(file_storage, db_path=None):
   db_path = db_path or config.DB_PATH
+  db_path.parent.mkdir(parents=True, exist_ok=True)
 
   data = file_storage.read()
 
