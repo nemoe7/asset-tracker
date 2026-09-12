@@ -460,3 +460,50 @@ def test_admin_page_edit_field_modal_can_close(page, live_server, logged_in):
   dialog.get_by_role("button", name="Close").click()
 
   expect(dialog).to_be_hidden()
+
+
+@pytest.mark.e2e
+def test_admin_configures_field_permissions(
+  page,
+  live_server,
+  logged_in,
+  create_custom_field,
+):
+  field = create_custom_field("Serial Number", "text")
+
+  response = page.request.post(
+    f"{live_server}/admin/roles",
+    form={
+      "name": "Checker",
+      "description": "Inspects assets",
+    },
+    max_redirects=0,
+  )
+
+  assert response.status == 302
+
+  page.goto(f"{live_server}/admin?tab=custom-fields")
+
+  dialog = page.locator("#field-permissions-dialog")
+  expect(dialog).to_be_hidden()
+
+  row = page.locator("#tab-custom-fields tbody tr").filter(has_text="Serial Number")
+  row.locator(".field-permissions").click()
+
+  expect(dialog).to_be_visible()
+  expect(dialog.get_by_text("Checker", exact=True)).to_be_visible()
+
+  dialog.locator('input[data-op="read"]').check()
+
+  dialog.locator("#save-field-permissions").click()
+
+  expect(dialog).to_be_hidden()
+
+  permissions = page.request.get(
+    f"{live_server}/admin/custom-fields/{field['id']}/permissions"
+  ).json()
+
+  checker = next(role for role in permissions["roles"] if role["name"] == "Checker")
+
+  assert permissions["permissions"][str(checker["id"])]["read"] is True
+  assert permissions["permissions"][str(checker["id"])]["update"] is False

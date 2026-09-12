@@ -3,10 +3,12 @@ from app.services.auth.context import (
   set_current_user,
 )
 from app.services.data.custom_fields import (
+  create_custom_field,
   get_custom_field,
   get_custom_fields,
 )
 from app.services.data.db import db_transaction
+from app.services.data.field_permissions import get_field_role_permissions
 from app.services.data.locations import get_location
 from app.services.data.permissions import (
   create_permission,
@@ -998,6 +1000,124 @@ def test_admin_can_update_custom_field_description_and_required(
 
   assert updated["description"] == "Manufacturer serial number"
   assert updated["required"] == 1
+
+
+# ==================== Field Permissions ====================
+
+
+def _create_field_and_role():
+  token = set_current_user(get_user_by_username("test_admin")["id"])
+
+  try:
+    field_id = create_custom_field("Serial Number", "text")
+    role_id = create_role("Checker", "Inspects assets")
+    return field_id, role_id
+  finally:
+    reset_current_user(token)
+
+
+def test_admin_can_get_field_permissions(
+  gen_test_admin_client,
+):
+  field_id, role_id = _create_field_and_role()
+
+  response = gen_test_admin_client.get(
+    f"/admin/custom-fields/{field_id}/permissions",
+  )
+
+  assert response.status_code == 200
+
+  payload = response.get_json()
+
+  assert payload["roles"][0]["id"] == role_id
+  assert payload["permissions"][str(role_id)] == {
+    "read": False,
+    "update": False,
+  }
+
+
+def test_admin_can_grant_field_view_permission(
+  gen_test_admin_client,
+):
+  field_id, role_id = _create_field_and_role()
+
+  response = gen_test_admin_client.post(
+    f"/admin/custom-fields/{field_id}/permissions",
+    data={
+      "read_role_ids": [str(role_id)],
+    },
+  )
+
+  assert response.status_code == 302
+
+  permissions = get_field_role_permissions(field_id)
+
+  assert permissions[role_id] == {
+    "read": True,
+    "update": False,
+  }
+
+
+def test_admin_can_grant_field_edit_permission(
+  gen_test_admin_client,
+):
+  field_id, role_id = _create_field_and_role()
+
+  response = gen_test_admin_client.post(
+    f"/admin/custom-fields/{field_id}/permissions",
+    data={
+      "update_role_ids": [str(role_id)],
+    },
+  )
+
+  assert response.status_code == 302
+
+  permissions = get_field_role_permissions(field_id)
+
+  assert permissions[role_id] == {
+    "read": False,
+    "update": True,
+  }
+
+
+def test_admin_can_revoke_field_permission(
+  gen_test_admin_client,
+):
+  field_id, role_id = _create_field_and_role()
+
+  gen_test_admin_client.post(
+    f"/admin/custom-fields/{field_id}/permissions",
+    data={
+      "read_role_ids": [str(role_id)],
+      "update_role_ids": [str(role_id)],
+    },
+  )
+
+  response = gen_test_admin_client.post(
+    f"/admin/custom-fields/{field_id}/permissions",
+    data={},
+  )
+
+  assert response.status_code == 302
+
+  permissions = get_field_role_permissions(field_id)
+
+  assert permissions[role_id] == {
+    "read": False,
+    "update": False,
+  }
+
+
+def test_field_permissions_require_manage_permission(
+  gen_test_client,
+):
+  _login_restricted_user(gen_test_client)
+
+  response = gen_test_client.get(
+    "/admin/custom-fields/1/permissions",
+  )
+
+  assert response.status_code == 403
 
 
 # ==================== Data Tab ====================

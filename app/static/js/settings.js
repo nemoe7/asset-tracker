@@ -147,6 +147,125 @@ document.getElementById('cancel-edit-field')?.addEventListener('click', () => {
   closeModal();
 });
 
+// ==================== Field Permissions Modal ====================
+
+const fieldPermissionsDialog = document.getElementById('field-permissions-dialog');
+const fieldPermissionsBody = document.getElementById('field-permissions-body');
+const cancelFieldPermissions = document.getElementById('cancel-field-permissions');
+const saveFieldPermissions = document.getElementById('save-field-permissions');
+
+let currentFieldPermissions = null;
+
+function renderFieldPermissions() {
+  if (!fieldPermissionsBody) return;
+
+  fieldPermissionsBody.innerHTML = '';
+
+  const table = document.createElement('div');
+  table.className = 'divide-y divide-zinc-800 rounded-lg border border-zinc-800';
+
+  for (const role of currentFieldPermissions.roles) {
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between gap-3 px-4 py-3';
+
+    const name = document.createElement('span');
+    name.className = 'text-sm font-medium text-zinc-200';
+    name.textContent = role.name;
+    row.append(name);
+
+    const toggles = document.createElement('div');
+    toggles.className = 'flex items-center gap-5';
+
+    for (const op of ['read', 'update']) {
+      const label = document.createElement('label');
+      label.className = 'flex items-center gap-2 text-sm text-zinc-300';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500';
+      checkbox.dataset.roleId = String(role.id);
+      checkbox.dataset.op = op;
+      checkbox.checked = role[op];
+
+      label.append(checkbox, document.createTextNode(op === 'read' ? 'View' : 'Edit'));
+      toggles.append(label);
+    }
+
+    row.append(toggles);
+    table.append(row);
+  }
+
+  fieldPermissionsBody.append(table);
+}
+
+async function openFieldPermissions(fieldId) {
+  if (!fieldPermissionsBody) return;
+
+  fieldPermissionsBody.innerHTML = '<p class="text-sm text-zinc-500">Loading…</p>';
+
+  try {
+    const response = await fetch(`/admin/custom-fields/${fieldId}/permissions`);
+    if (!response.ok) throw new Error('Failed to load permissions');
+
+    const payload = await response.json();
+
+    currentFieldPermissions = {
+      fieldId,
+      roles: payload.roles.map((role) => ({
+        ...role,
+        read: !!payload.permissions[role.id]?.read,
+        update: !!payload.permissions[role.id]?.update,
+      })),
+    };
+
+    renderFieldPermissions();
+    openModal(fieldPermissionsDialog);
+  } catch {
+    fieldPermissionsBody.innerHTML = '<p class="text-sm text-red-400">Failed to load permissions.</p>';
+  }
+}
+
+document.querySelectorAll('.field-permissions').forEach((button) => {
+  button.addEventListener('click', () => {
+    openFieldPermissions(button.dataset.fieldId);
+  });
+});
+
+cancelFieldPermissions?.addEventListener('click', () => {
+  closeModal();
+});
+
+saveFieldPermissions?.addEventListener('click', async () => {
+  if (!currentFieldPermissions) return;
+
+  const readRoleIds = [];
+  const updateRoleIds = [];
+
+  fieldPermissionsBody.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+    if (!checkbox.checked) return;
+    (checkbox.dataset.op === 'read' ? readRoleIds : updateRoleIds).push(checkbox.dataset.roleId);
+  });
+
+  const body = new FormData();
+  body.append('csrf_token', document.querySelector('input[name="csrf_token"]')?.value ?? '');
+  for (const id of readRoleIds) body.append('read_role_ids', id);
+  for (const id of updateRoleIds) body.append('update_role_ids', id);
+
+  const response = await fetch(
+    `/admin/custom-fields/${currentFieldPermissions.fieldId}/permissions`,
+    { method: 'POST', body },
+  );
+
+  if (!response.ok) {
+    fieldPermissionsBody.innerHTML = '<p class="text-sm text-red-400">Failed to save permissions.</p>';
+    return;
+  }
+
+  closeModal();
+});
+
+// ==================== End Field Permissions Modal ====================
+
 // ==================== Archive Custom Field Confirmation ====================
 
 const archiveFieldModal = document.getElementById('archive-field-dialog');
