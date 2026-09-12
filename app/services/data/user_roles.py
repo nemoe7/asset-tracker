@@ -179,7 +179,10 @@ def get_role_user_count(role_id):
       """
       SELECT COUNT(*) AS cnt
       FROM user_roles
+      JOIN users
+        ON users.id = user_roles.user_id
       WHERE role_id = ?
+        AND users.archived_at IS NULL
       """,
       (role_id,),
     ).fetchone()
@@ -193,7 +196,10 @@ def is_role_assigned(role_id):
       """
       SELECT 1
       FROM user_roles
+      JOIN users
+        ON users.id = user_roles.user_id
       WHERE role_id = ?
+        AND users.archived_at IS NULL
       LIMIT 1
       """,
       (role_id,),
