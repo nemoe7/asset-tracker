@@ -221,7 +221,9 @@ def test_admin_page_grants_permission_to_role(page, live_server, setup_admin):
   page.locator("#edit-role-permission-allowed").check()
   page.locator("#edit-role-permission-submit").click()
 
-  expect(page.locator("#edit-role-permissions-list").get_by_text("assets.read")).to_be_visible()
+  expect(
+    page.locator("#edit-role-permissions-list").get_by_text("assets.read")
+  ).to_be_visible()
 
 
 @pytest.mark.e2e
