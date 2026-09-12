@@ -161,6 +161,14 @@
   ::file-selector-button {
     margin-inline-end: 4px;
   }
+
+  #edit-user-roles::-webkit-scrollbar {
+    display: none;
+  }
+  #edit-user-roles {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
   ::placeholder {
     opacity: 1;
   }
