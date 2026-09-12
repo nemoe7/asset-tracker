@@ -67,7 +67,9 @@ from ..services.data.users import (
   archive_user,
   create_user,
   get_user,
+  get_user_by_username,
   get_users,
+  restore_archived_user,
   restore_user,
   update_user,
   verify_password,
@@ -468,21 +470,45 @@ def create_user_route():
   username = request.form.get("username", "").strip()
   name = request.form.get("name", "").strip() or None
   password = request.form.get("password", "")
+  restore_archived = request.form.get("restore_archived") == "true"
 
   try:
-    create_user(
-      username=username,
-      password=password,
-      name=name,
-    )
-  except (
-    InvalidInputError,
-    UsernameAlreadyExistsError,
-    UsernameIsArchivedError,
-  ) as error:
+    if restore_archived:
+      archived = get_user_by_username(
+        username,
+        include_archived=True,
+      )
+
+      if archived is not None and archived["archived_at"] is not None:
+        restore_archived_user(
+          username,
+          name=name,
+          password=password,
+        )
+      else:
+        create_user(
+          username=username,
+          password=password,
+          name=name,
+        )
+    else:
+      create_user(
+        username=username,
+        password=password,
+        name=name,
+      )
+  except (InvalidInputError, UsernameAlreadyExistsError) as error:
     return _render_settings(
       _USERS_TAB,
       error=str(error),
+      user_username=username,
+      user_name=name or "",
+      user_password=password,
+    )
+  except UsernameIsArchivedError:
+    return _render_settings(
+      _USERS_TAB,
+      archived_username_conflict=username,
       user_username=username,
       user_name=name or "",
       user_password=password,

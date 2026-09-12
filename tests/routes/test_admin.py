@@ -303,6 +303,80 @@ def test_admin_can_restore_user(
   assert restored["archived_at"] is None
 
 
+def test_admin_create_user_with_archived_username_asks_confirmation(
+  gen_test_admin_client,
+):
+  gen_test_admin_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "name": "New User",
+      "password": "password123",
+    },
+  )
+
+  user = get_user_by_username("new_user")
+
+  gen_test_admin_client.post(
+    f"/admin/users/{user['id']}/archive",
+  )
+
+  response = gen_test_admin_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "name": "New User",
+      "password": "password123",
+    },
+  )
+
+  assert response.status_code == 200
+
+  html = response.data.decode()
+
+  assert 'id="archived-username-conflict" value="new_user"' in html
+  assert "Restore &amp; continue" in html
+
+
+def test_admin_create_user_confirms_restore_of_archived_username(
+  gen_test_admin_client,
+):
+  gen_test_admin_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "name": "New User",
+      "password": "password123",
+    },
+  )
+
+  user = get_user_by_username("new_user")
+
+  gen_test_admin_client.post(
+    f"/admin/users/{user['id']}/archive",
+  )
+
+  response = gen_test_admin_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "name": "Renamed User",
+      "password": "newpassword123",
+      "restore_archived": "true",
+    },
+  )
+
+  assert response.status_code == 302
+
+  restored = get_user_by_username(
+    "new_user",
+    include_archived=True,
+  )
+
+  assert restored["archived_at"] is None
+  assert restored["name"] == "Renamed User"
+
+
 def test_admin_user_routes_require_users_manage_permission(
   gen_test_client,
   gen_test_admin,

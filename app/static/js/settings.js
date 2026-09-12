@@ -361,6 +361,23 @@ cancelAddUser?.addEventListener('click', () => {
 // ==================== End Add User Modal ====================
 
 
+// ==================== Restore Archived User Confirmation ====================
+
+const archivedUsernameConflict = document.getElementById('archived-username-conflict');
+const restoreArchivedUserModal = document.getElementById('restore-archived-user-dialog');
+const cancelRestoreArchivedUser = document.getElementById('cancel-restore-archived-user');
+
+if (archivedUsernameConflict?.value) {
+  openModal(restoreArchivedUserModal);
+}
+
+cancelRestoreArchivedUser?.addEventListener('click', () => {
+  closeModal();
+});
+
+// ==================== End Restore Archived User Confirmation ====================
+
+
 // ==================== Edit User Modal ====================
 
 const editUserModal = document.getElementById('edit-user-dialog');
