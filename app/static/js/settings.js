@@ -477,26 +477,12 @@ cancelEditRole?.addEventListener('click', () => {
 });
 
 const editRolePermissionsList = document.getElementById('edit-role-permissions-list');
-const editRoleAddPermission = document.getElementById('edit-role-add-permission');
-const editRolePermissionForm = document.getElementById('edit-role-permission-form');
 const editRolePermissionName = document.getElementById('edit-role-permission-name');
-const editRolePermissionAllowed = document.getElementById('edit-role-permission-allowed');
-const editRolePermissionStatus = document.getElementById('edit-role-permission-status');
-const editRolePermissionClose = document.getElementById('edit-role-permission-close');
-const editRolePermissionSubmit = document.getElementById('edit-role-permission-submit');
+const editRolePermissionAdd = document.getElementById('edit-role-permission-add');
+const editRolePermissionError = document.getElementById('edit-role-permission-error');
 let currentEditRoleId = null;
 let originalPermissions = [];
 let stagedPermissions = [];
-
-editRoleAddPermission?.addEventListener('click', () => {
-  editRolePermissionForm.classList.toggle('hidden');
-  editRolePermissionName?.focus();
-});
-
-editRolePermissionClose?.addEventListener('click', () => {
-  editRolePermissionForm.classList.add('hidden');
-  editRolePermissionStatus?.classList.add('hidden');
-});
 
 function renderStagedPermissions() {
   if (!editRolePermissionsList) return;
@@ -546,7 +532,7 @@ function renderStagedPermissions() {
 async function renderEditRolePermissions(roleId) {
   if (!editRolePermissionsList) return;
   currentEditRoleId = roleId;
-  editRolePermissionStatus?.classList.add('hidden');
+  editRolePermissionError?.classList.add('hidden');
 
   try {
     const response = await fetch(`/admin/roles/${roleId}/permissions`);
@@ -566,10 +552,10 @@ async function renderEditRolePermissions(roleId) {
 }
 
 function showEditRolePermissionError(message) {
-  if (!editRolePermissionStatus) return;
-  editRolePermissionStatus.textContent = message;
-  editRolePermissionStatus.classList.remove('hidden');
-  editRolePermissionStatus.classList.add('text-red-400');
+  if (!editRolePermissionError) return;
+  editRolePermissionError.textContent = message;
+  editRolePermissionError.classList.remove('hidden');
+  editRolePermissionError.classList.add('text-red-400');
 }
 
 document.querySelectorAll('.edit-role').forEach((button) => {
@@ -577,8 +563,7 @@ document.querySelectorAll('.edit-role').forEach((button) => {
     editRoleForm.action = button.dataset.updateUrl;
     editRoleName.value = button.dataset.roleName ?? '';
     editRoleDescription.value = button.dataset.roleDescription ?? '';
-    editRolePermissionForm?.classList.add('hidden');
-    editRolePermissionStatus?.classList.add('hidden');
+    editRolePermissionError?.classList.add('hidden');
     openModal(editRoleModal);
     renderEditRolePermissions(button.dataset.roleId);
   });
@@ -590,25 +575,38 @@ function addEditRolePermission() {
   const permissionName = editRolePermissionName.value.trim();
   if (!permissionName) return;
 
-  const allowed = editRolePermissionAllowed.checked;
-  stagedPermissions.push({ permission: permissionName, allowed, isNew: true });
+  const duplicate = stagedPermissions.some(
+  (p) => p.permission.toLowerCase() === permissionName.toLowerCase()
+  );
+  editRolePermissionError?.classList.toggle('hidden', !duplicate);
+
+  if (duplicate) return;
+
+  stagedPermissions.push({ permission: permissionName, allowed: true, isNew: true });
 
   editRolePermissionName.value = '';
   editRolePermissionName.focus();
   renderStagedPermissions();
 }
 
-editRolePermissionSubmit?.addEventListener('click', (event) => {
-  event.preventDefault();
+function submitEditRolePermission() {
   addEditRolePermission();
+}
+
+// Hide the error while typing a new value.
+editRolePermissionName?.addEventListener('input', () => {
+  editRolePermissionError?.classList.add('hidden');
 });
 
+// Add a permission when Enter is pressed instead of submitting the form.
 editRolePermissionName?.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    addEditRolePermission();
-  }
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  submitEditRolePermission();
 });
+
+// Add a permission via the explicit Add button.
+editRolePermissionAdd?.addEventListener('click', submitEditRolePermission);
 
 // Persist staged permission changes only on explicit save. A fetched response
 // that followed a 302 is a success; a validation error renders the page (200).
