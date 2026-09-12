@@ -54,6 +54,7 @@ from ..services.data.user_roles import (
   delete_user_role,
   get_role_user_count,
   get_user_roles,
+  is_admin_role,
   is_role_assigned,
   set_user_role,
 )
@@ -583,6 +584,12 @@ def update_role_route(role_id):
 def delete_role_route(role_id):
   if get_role(role_id) is None:
     abort(404)
+
+  if is_admin_role(role_id):
+    return _render_settings(
+      _ROLES_TAB,
+      error="The Admin role cannot be deleted",
+    )
 
   if is_role_assigned(role_id):
     return _render_settings(

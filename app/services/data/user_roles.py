@@ -34,6 +34,20 @@ def set_user_role(
     if role is None:
       raise RoleNotFoundError(role_id)
 
+    if is_admin_role(role_id):
+      existing_admin = connection.execute(
+        """
+        SELECT 1
+        FROM user_roles
+        WHERE role_id = ?
+          AND user_id != ?
+        """,
+        (role_id, user_id),
+      ).fetchone()
+
+      if existing_admin is not None:
+        raise InvalidInputError("Only one user can have the Admin role")
+
     cursor = connection.execute(
       """
       INSERT INTO user_roles (
@@ -110,6 +124,9 @@ def get_user_roles(user_id):
 
 def delete_user_role(user_id, role_id):
   with db_transaction() as connection:
+    if is_admin_role(role_id):
+      raise InvalidInputError("Cannot remove the Admin role from a user")
+
     existing = connection.execute(
       """
       SELECT 1
@@ -140,6 +157,20 @@ def delete_user_role(user_id, role_id):
     )
 
     return True
+
+
+def is_admin_role(role_id):
+  with db_connection() as connection:
+    row = connection.execute(
+      """
+      SELECT name
+      FROM roles
+      WHERE id = ?
+      """,
+      (role_id,),
+    ).fetchone()
+
+    return row is not None and row["name"] == "Admin"
 
 
 def get_role_user_count(role_id):
