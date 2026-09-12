@@ -331,6 +331,63 @@ def restore_user(user_id):
     return True
 
 
+def restore_archived_user(username, name=None, password=None):
+  """Restore the archived user holding ``username`` and apply new credentials.
+
+  Used when an admin tries to create a user whose username belongs to an
+  archived account. The provided name/password (if any) replace the restored
+  user's existing values.
+  """
+  user = get_user_by_username(
+    username,
+    include_archived=True,
+  )
+
+  if user is None:
+    raise UserNotFoundError()
+
+  if user["archived_at"] is None:
+    raise UserIsNotArchivedError()
+
+  if name is not None:
+    _validate_name(name)
+
+  if password is not None:
+    _validate_password(password)
+
+  with db_transaction() as connection:
+    updates = [
+      "archived_at = NULL",
+      "updated_at = datetime('now')",
+    ]
+    values = []
+
+    if name is not None:
+      updates.append("name = ?")
+      values.append(name)
+
+    if password is not None:
+      updates.append("password_hash = ?")
+      values.append(generate_password_hash(password))
+
+    connection.execute(
+      f"""
+      UPDATE users
+      SET {", ".join(updates)}
+      WHERE id = ?
+      """,
+      (*values, user["id"]),
+    )
+
+    create_audit_log(
+      action="restored",
+      entity_type="user",
+      entity_id=user["id"],
+    )
+
+    return user["id"]
+
+
 def verify_password(user_id, password):
   with db_connection() as connection:
     user = connection.execute(

@@ -689,6 +689,8 @@
     {% if can_manage_users %}
     <section id="tab-users" data-tab-panel="users" class="{{ 'hidden' if active_tab != 'users' }}">
 
+      <input type="hidden" id="archived-username-conflict" value="{{ archived_username_conflict or '' }}">
+
       {# ==================== Add User ==================== #}
       <div class="mb-6 flex justify-end">
         <button type="button" id="add-user-button"
@@ -733,6 +735,38 @@
       </form>
       {% endcall %}
       {# ==================== End Add User ==================== #}
+
+
+      {# ==================== Restore Archived User Confirmation ==================== #}
+      {% call modal("restore-archived-user-dialog", "Username already in use") %}
+        <form method="post" action="{{ url_for('admin.create_user_route') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="username" value="{{ archived_username_conflict or '' }}">
+          <input type="hidden" name="name" value="{{ user_name or '' }}">
+          <input type="hidden" name="password" value="{{ user_password or '' }}">
+          <input type="hidden" name="restore_archived" value="true">
+
+          <p class="text-sm text-zinc-400">
+            The username
+            <span class="font-medium text-zinc-200">{{ archived_username_conflict }}</span>
+            belongs to an archived user. Restore that user to continue?
+          </p>
+
+          <div class="mt-6 flex justify-end gap-3">
+            <button type="button" id="cancel-restore-archived-user"
+              class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+              Cancel
+            </button>
+
+            <button type="submit"
+              class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+              <i class="bi bi-arrow-counterclockwise mr-1" aria-hidden="true"></i>
+              Restore &amp; continue
+            </button>
+          </div>
+        </form>
+      {% endcall %}
+      {# ==================== End Restore Archived User Confirmation ==================== #}
 
 
       {# ==================== Edit User ==================== #}

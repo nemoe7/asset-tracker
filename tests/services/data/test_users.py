@@ -7,6 +7,7 @@ from app.services.data.users import (
   get_user,
   get_user_by_username,
   get_users,
+  restore_archived_user,
   restore_user,
   update_user,
   verify_password,
@@ -578,3 +579,37 @@ def test_update_user_to_archived_username_fails(gen_test_data_user):
       user_id,
       username="alice",
     )
+
+
+def test_restore_archived_user_restores_and_updates_credentials(
+  gen_test_data_user,
+):
+  user_id = gen_test_data_user("alice")
+
+  assert archive_user(user_id) is True
+
+  restored_id = restore_archived_user(
+    "alice",
+    name="Alice Updated",
+    password="newpassword123",
+  )
+
+  assert restored_id == user_id
+
+  user = get_user(user_id)
+
+  assert user["archived_at"] is None
+  assert user["name"] == "Alice Updated"
+  assert verify_password(user_id, "newpassword123") is True
+
+
+def test_restore_archived_user_raises_when_not_archived(gen_test_data_user):
+  gen_test_data_user("alice")
+
+  with pytest.raises(UserIsNotArchivedError):
+    restore_archived_user("alice")
+
+
+def test_restore_archived_user_raises_when_missing():
+  with pytest.raises(UserNotFoundError):
+    restore_archived_user("nobody")
