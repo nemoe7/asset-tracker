@@ -290,7 +290,7 @@ def test_nested_namespace_wildcard(
       gen_test_data_admin,
       "field.13.read",
     )
-    is True
+    is False
   )
 
 
@@ -503,6 +503,7 @@ def test_sensitive_namespaces_default_to_deny(gen_test_data_admin):
     "roles.read",
     "permissions.read",
     "audit.read",
+    "field.read",
   ):
     assert (
       check_permission(
@@ -538,6 +539,85 @@ def test_sensitive_read_allowed_by_global_wildcard(gen_test_data_admin):
     check_permission(
       gen_test_data_admin,
       "users.read",
+    )
+    is True
+  )
+
+
+# ==================== Field-Level Permissions ====================
+
+
+def test_field_read_defaults_to_deny(gen_test_data_admin):
+  create_permission(name="field.12.read")
+
+  assert (
+    check_permission(
+      gen_test_data_admin,
+      "field.12.read",
+    )
+    is False
+  )
+
+
+def test_field_read_allowed_with_explicit_grant(gen_test_data_admin):
+  permission_id = create_permission(name="field.12.read")
+
+  set_user_permission(
+    gen_test_data_admin,
+    permission_id,
+    True,
+  )
+
+  assert (
+    check_permission(
+      gen_test_data_admin,
+      "field.12.read",
+    )
+    is True
+  )
+
+
+def test_field_update_does_not_imply_read(gen_test_data_admin):
+  permission_id = create_permission(name="field.12.update")
+
+  set_user_permission(
+    gen_test_data_admin,
+    permission_id,
+    True,
+  )
+
+  assert (
+    check_permission(
+      gen_test_data_admin,
+      "field.12.update",
+    )
+    is True
+  )
+
+  assert (
+    check_permission(
+      gen_test_data_admin,
+      "field.12.read",
+    )
+    is False
+  )
+
+
+def test_field_namespace_wildcard_grants_read(gen_test_data_admin):
+  wildcard_id = create_permission(name="field.*")
+
+  set_user_permission(
+    gen_test_data_admin,
+    wildcard_id,
+    True,
+  )
+
+  create_permission(name="field.12.read")
+
+  assert (
+    check_permission(
+      gen_test_data_admin,
+      "field.12.read",
     )
     is True
   )
