@@ -128,3 +128,24 @@ def test_audit_page_mobile_cards_render(page, live_server, logged_in, create_ite
     page.locator("#audit-rows-mobile").get_by_text("inventory_item")
   ).to_be_visible()
   expect(page.get_by_role("table")).to_be_hidden()
+
+
+@pytest.mark.e2e
+def test_audit_timestamps_use_browser_local_time(page, live_server, logged_in, create_item):
+  create_item("Test Asset")
+
+  page.goto(f"{live_server}/admin?tab=audit")
+
+  cell = page.locator("#audit-rows-desktop [data-audit-timestamp]").first
+  expect(cell).to_be_visible()
+
+  utc = cell.get_attribute("data-utc")
+  assert utc is not None
+  assert len(utc) == 19  # YYYY-MM-DD HH:MM:SS
+
+  # The rendered text must equal the browser's own local rendering of the stored UTC.
+  expected = page.evaluate(
+    "(utc) => new Date(utc.replace(' ', 'T') + 'Z').toLocaleString()",
+    utc,
+  )
+  assert cell.inner_text().strip() == expected

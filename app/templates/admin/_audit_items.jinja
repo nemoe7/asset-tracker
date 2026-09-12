@@ -17,7 +17,7 @@
 
 {% macro desktop_row(log) %}
 <tr data-audit-row="{{ log['id'] }}">
-  <td class="whitespace-nowrap px-5 py-4 text-zinc-300">{{ log["timestamp"] }}</td>
+  <td class="whitespace-nowrap px-5 py-4 text-zinc-300" data-audit-timestamp data-utc="{{ log['timestamp'] }}">{{ log["timestamp"] }}</td>
   <td class="px-5 py-4 font-medium text-zinc-100">{{ log["username"] | e }}</td>
   <td class="px-5 py-4 text-zinc-400">{{ log["action"] | e }}</td>
   <td class="px-5 py-4 text-zinc-400">{{ log["entity_type"] | e }}</td>
@@ -31,7 +31,7 @@
 <div data-audit-card="{{ log['id'] }}" class="px-4 py-3">
   <div class="flex items-baseline justify-between gap-3">
     <p class="truncate text-sm font-medium text-zinc-100">{{ log["username"] | e }}</p>
-    <p class="shrink-0 text-xs text-zinc-500">{{ log["timestamp"] }}</p>
+    <p class="shrink-0 text-xs text-zinc-500" data-audit-timestamp data-utc="{{ log['timestamp'] }}">{{ log["timestamp"] }}</p>
   </div>
   <p class="mt-1 truncate text-xs text-zinc-400" title="{{ log['entity_id'] | e }}">
     {{ log["action"] | e }} &middot; {{ log["entity_type"] | e }} &middot; {{ log["entity_id"] | e }}
