@@ -639,8 +639,8 @@ Future additions may be considered separately.
 The project will be considered complete when:
 
 - [ ] Users can authenticate and access functions according to their effective roles and permissions.
-- [ ] Office Admins can create and manage roles.
-- [ ] Office Admins can assign roles to users.
+- [x] Office Admins can create and manage roles.
+- [x] Office Admins can assign roles to users.
 - [ ] Office Admins can configure per-user permission overrides.
 - [ ] Office Admins can configure which asset fields Checkers can view and edit.
 - [x] Authorized users can create, view, edit, archive, and restore assets as permitted.
