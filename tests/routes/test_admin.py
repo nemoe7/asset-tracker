@@ -1,9 +1,16 @@
+from app.services.auth.context import (
+  reset_current_user,
+  set_current_user,
+)
 from app.services.data.custom_fields import (
   get_custom_field,
   get_custom_fields,
 )
 from app.services.data.db import db_transaction
 from app.services.data.locations import get_location
+from app.services.data.roles import create_role
+from app.services.data.user_roles import get_user_roles
+from app.services.data.users import get_user_by_username
 
 # ==================== Admin Page ====================
 
@@ -41,47 +48,291 @@ def test_admin_page_requires_login(
   assert response.status_code == 302
 
 
-# ==================== User Management (not implemented) ====================
+# ==================== Users Tab ====================
 
 
-def test_admin_user_routes_redirect_to_index_without_side_effects(
+def test_admin_can_create_user(
   gen_test_admin_client,
 ):
   response = gen_test_admin_client.post(
     "/admin/users",
     data={
       "username": "new_user",
-      "display_name": "New User",
+      "name": "New User",
       "password": "password123",
     },
   )
 
   assert response.status_code == 302
-  assert response.location.endswith("/")
+  assert "/admin" in response.location
+
+  user = get_user_by_username("new_user")
+
+  assert user["username"] == "new_user"
+  assert user["name"] == "New User"
+
+
+def test_admin_cannot_create_user_with_duplicate_username(
+  gen_test_admin_client,
+):
+  gen_test_admin_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "name": "New User",
+      "password": "password123",
+    },
+  )
 
   response = gen_test_admin_client.post(
-    "/admin/users/1",
+    "/admin/users",
     data={
-      "username": "renamed_user",
+      "username": "new_user",
+      "name": "Another New",
+      "password": "password123",
+    },
+  )
+
+  assert response.status_code == 200
+  assert "Username already exists" in response.data.decode()
+
+
+def test_admin_cannot_create_user_with_invalid_password(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "name": "New User",
+      "password": "short",
+    },
+  )
+
+  assert response.status_code == 200
+  assert "Password must be at least 8 characters" in response.data.decode()
+
+  assert get_user_by_username("new_user") is None
+
+
+def test_admin_can_edit_user(
+  gen_test_admin_client,
+):
+  gen_test_admin_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "name": "New User",
+      "password": "password123",
+    },
+  )
+
+  user = get_user_by_username("new_user")
+
+  response = gen_test_admin_client.post(
+    f"/admin/users/{user['id']}",
+    data={
+      "username": "new_user",
+      "name": "Renamed User",
     },
   )
 
   assert response.status_code == 302
-  assert response.location.endswith("/")
+
+  updated = get_user_by_username("new_user")
+
+  assert updated["name"] == "Renamed User"
+
+
+def test_admin_can_assign_role_to_user(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  role_id = create_role(name="Checker")
+  reset_current_user(token)
+
+  gen_test_admin_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "name": "New User",
+      "password": "password123",
+    },
+  )
+
+  user = get_user_by_username("new_user")
 
   response = gen_test_admin_client.post(
-    "/admin/users/1/archive",
+    f"/admin/users/{user['id']}",
+    data={
+      "username": "new_user",
+      "role_ids": [str(role_id)],
+    },
   )
 
   assert response.status_code == 302
-  assert response.location.endswith("/")
+
+  roles = get_user_roles(user["id"])
+
+  assert [role["role_id"] for role in roles] == [role_id]
+
+
+def test_admin_can_remove_role_from_user(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  role_id = create_role(name="Checker")
+  reset_current_user(token)
+
+  gen_test_admin_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "name": "New User",
+      "password": "password123",
+    },
+  )
+
+  user = get_user_by_username("new_user")
+
+  gen_test_admin_client.post(
+    f"/admin/users/{user['id']}",
+    data={
+      "username": "new_user",
+      "role_ids": [str(role_id)],
+    },
+  )
 
   response = gen_test_admin_client.post(
-    "/admin/users/1/restore",
+    f"/admin/users/{user['id']}",
+    data={
+      "username": "new_user",
+      "role_ids": [],
+    },
   )
 
   assert response.status_code == 302
-  assert response.location.endswith("/")
+
+  assert get_user_roles(user["id"]) == []
+
+
+def test_admin_cannot_archive_self(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  response = gen_test_admin_client.post(
+    f"/admin/users/{gen_test_admin}/archive",
+  )
+
+  assert response.status_code == 200
+  assert "Cannot archive your own account" in response.data.decode()
+
+
+def test_admin_can_archive_other_user(
+  gen_test_admin_client,
+):
+  gen_test_admin_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "name": "New User",
+      "password": "password123",
+    },
+  )
+
+  user = get_user_by_username("new_user")
+
+  response = gen_test_admin_client.post(
+    f"/admin/users/{user['id']}/archive",
+  )
+
+  assert response.status_code == 302
+
+  archived = get_user_by_username(
+    "new_user",
+    include_archived=True,
+  )
+
+  assert archived["archived_at"] is not None
+
+
+def test_admin_can_restore_user(
+  gen_test_admin_client,
+):
+  gen_test_admin_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "name": "New User",
+      "password": "password123",
+    },
+  )
+
+  user = get_user_by_username("new_user")
+
+  gen_test_admin_client.post(
+    f"/admin/users/{user['id']}/archive",
+  )
+
+  response = gen_test_admin_client.post(
+    f"/admin/users/{user['id']}/restore",
+  )
+
+  assert response.status_code == 302
+
+  restored = get_user_by_username(
+    "new_user",
+    include_archived=True,
+  )
+
+  assert restored["archived_at"] is None
+
+
+def test_admin_user_routes_require_users_manage_permission(
+  gen_test_client,
+  gen_test_admin,
+):
+  _login_restricted_user(gen_test_client)
+
+  response = gen_test_client.post(
+    "/admin/users",
+    data={
+      "username": "new_user",
+      "name": "New User",
+      "password": "password123",
+    },
+  )
+
+  assert response.status_code == 403
+
+  response = gen_test_client.post("/admin/users/1/archive")
+
+  assert response.status_code == 403
+
+
+def test_admin_cannot_edit_missing_user(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/users/999",
+    data={
+      "username": "nobody",
+    },
+  )
+
+  assert response.status_code == 404
+
+
+def test_admin_cannot_archive_missing_user(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/users/999/archive",
+  )
+
+  assert response.status_code == 404
 
 
 # ==================== Locations Tab ====================
