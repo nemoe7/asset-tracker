@@ -76,7 +76,7 @@
 | ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
 | ----- | :---: | ----- | :---: | ----- | ----- | -------- |
 | AUD-005 | P3 | Record custom-field creation/modification/deactivation. | 🟢 | FLD-002, FLD-009, FLD-010 | FLD-015 | |
-| AUD-006 | P3 | Record user/role/permission changes. | 🟡 | USR-001–007 | USR-013 | UI pending |
+| AUD-006 | P3 | Record user/role/permission changes. | 🟢 | USR-001–007 | USR-013 | |
 | AUD-007 | P3 | Record backup/restoration events. | 🟢 | BKP-011, BKP-012 | BKP-014 | |
 | AUD-008 | P3 | Record user responsible for each event. | 🟢 | — | CHK-004 | |
 | AUD-010 | P3 | Record affected field and previous/new values. | 🟢 | AUD-002 | CHK-008 | |
@@ -116,15 +116,15 @@
 | AUT-001 | P4 | Users can log in with assigned credentials. | 🟢 | — | SEC-004 | |
 | AUT-002 | P4 | Users can log out. | 🟢 | AUT-001 | — | |
 | AUT-006 | P4 | Unauthenticated users cannot access protected functionality. | 🟢 | — | SEC-001 | |
-| USR-001 | P4 | Admins can create users. | 🟡 | AUT-003 | USR-002, USR-003, USR-005 | UI pending |
-| USR-002 | P4 | Admins can modify users. | 🟡 | USR-001 | — | UI pending |
-| USR-003 | P4 | Admins can deactivate users. | 🟡 | USR-001 | — | UI pending |
-| USR-004 | P4 | Admins can create/manage roles. | 🟡 | AUT-003 | USR-005, USR-006 | route/UI pending |
-| USR-005 | P4 | Admins can assign roles to users. | 🟡 | USR-001, USR-004 | AUT-003 | route/UI pending |
-| USR-006 | P4 | Admins can configure role permissions. | 🟡 | USR-004 | AUT-003 | route/UI pending |
+| USR-001 | P4 | Admins can create users. | 🟢 | AUT-003 | USR-002, USR-003, USR-005 | |
+| USR-002 | P4 | Admins can modify users. | 🟢 | USR-001 | — | |
+| USR-003 | P4 | Admins can deactivate users. | 🟢 | USR-001 | — | |
+| USR-004 | P4 | Admins can create/manage roles. | 🟢 | AUT-003 | USR-005, USR-006 | |
+| USR-005 | P4 | Admins can assign roles to users. | 🟢 | USR-001, USR-004 | AUT-003 | |
+| USR-006 | P4 | Admins can configure role permissions. | 🟢 | USR-004 | AUT-003 | |
 | USR-007 | P4 | Admins can configure per-user overrides. | 🔴 | USR-001 | USR-008, AUT-013 | |
 | USR-012 | P4 | Admins can configure audit-log visibility. | 🔴 | USR-004 | AUD-011, AUD-012 | |
-| USR-013 | P4 | Record user/role/permission changes. | 🟡 | USR-001–007 | AUD-006 | UI pending |
+| USR-013 | P4 | Record user/role/permission changes. | 🟢 | USR-001–007 | AUD-006 | |
 | FLD-004 | P4 | Admins can specify custom-field data type. | 🟢 | FLD-002, FLD-003 | FLD-005 | |
 | FLD-005 | P4 | Support Text, Integer, Decimal, Boolean, Date, Enum, User. | 🟢 | FLD-004 | FLD-006, FLD-007, FLD-012 | |
 | FLD-009 | P4 | Admins can modify custom-field configuration. | 🟢 | FLD-002 | FLD-015 | |
