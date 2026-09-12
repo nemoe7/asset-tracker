@@ -143,7 +143,7 @@
 
 | ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
 | ----- | :---: | ----- | :---: | ----- | ----- | -------- |
-| AUT-003 | P5 | Restrict functionality according to roles/permissions. | 🟡 | — | SEC-002 | |
+| AUT-003 | P5 | Restrict functionality according to roles/permissions. | 🟢 | — | SEC-002 | |
 | AUT-004 | P5 | Restrict asset information according to permissions. | 🟡 | AUT-003 | SEC-003, FLD-013 | |
 | AUT-005 | P5 | Same permission rules on desktop/mobile. | 🟡 | AUT-003, AUT-004 | SEC-003, USE-003 | |
 | AUT-012 | P5 | Wildcards automatically apply to newly created matching permissions. | 🟢 | AUT-008 | AUT-009 | |

@@ -229,7 +229,7 @@ inventory.*
 
 Permission changes take effect on subsequent authorization checks.
 
-Administrative interfaces and workflows for managing users, roles, and permissions are not yet fully implemented.
+Admins can manage users, roles, and role permissions in the admin settings. Per-user permission overrides are not yet implemented.
 
 ## Asset Identification
 
