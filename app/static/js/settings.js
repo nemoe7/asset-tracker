@@ -198,6 +198,426 @@ document.querySelectorAll('[data-enum-toggle]').forEach((select) => {
 
 syncEnumValues();
 
+// ==================== Known Permissions ====================
+
+const KNOWN_PERMISSIONS = [
+  "locations.manage",
+  "custom_fields.manage",
+  "users.manage",
+  "roles.manage",
+  "audit.read",
+  "backups.create",
+  "backups.restore",
+];
+
+const knownPermissionsList = document.getElementById('known-permissions-list');
+
+if (knownPermissionsList) {
+  for (const permission of KNOWN_PERMISSIONS) {
+    const option = document.createElement('option');
+    option.value = permission;
+    knownPermissionsList.appendChild(option);
+  }
+}
+
+const grantRolePermissionName = document.getElementById('grant-role-permission-name');
+const grantRolePermissionWarning = document.getElementById('grant-role-permission-warning');
+
+function isKnownPermission(value) {
+  return KNOWN_PERMISSIONS.some(
+    (permission) => permission.toLowerCase() === value.toLowerCase(),
+  );
+}
+
+function syncPermissionWarning() {
+  if (!grantRolePermissionWarning || !grantRolePermissionName) {
+    return;
+  }
+
+  const value = grantRolePermissionName.value.trim();
+  grantRolePermissionWarning.classList.toggle('hidden', !value || isKnownPermission(value));
+}
+
+grantRolePermissionName?.addEventListener('input', syncPermissionWarning);
+
+// ==================== End Known Permissions ====================
+
+
+// ==================== Add User Modal ====================
+
+const addUserModal = document.getElementById('add-user-dialog');
+const addUserButton = document.getElementById('add-user-button');
+const cancelAddUser = document.getElementById('cancel-add-user');
+
+for (const button of [addUserButton, document.getElementById('empty-add-user-button')]) {
+  button?.addEventListener('click', () => {
+    openModal(addUserModal);
+  });
+}
+
+cancelAddUser?.addEventListener('click', () => {
+  closeModal();
+});
+
+// ==================== End Add User Modal ====================
+
+
+// ==================== Edit User Modal ====================
+
+const editUserModal = document.getElementById('edit-user-dialog');
+const editUserForm = editUserModal?.querySelector('form');
+const editUserUsername = document.getElementById('edit-user-username');
+const editUserName = document.getElementById('edit-user-name');
+const editUserPassword = document.getElementById('edit-user-password');
+const editUserRoles = document.getElementById('edit-user-roles');
+const cancelEditUser = document.getElementById('cancel-edit-user');
+
+document.querySelectorAll('.edit-user').forEach((button) => {
+  button.addEventListener('click', () => {
+    editUserForm.action = button.dataset.updateUrl;
+    editUserUsername.value = button.dataset.userUsername ?? '';
+    editUserName.value = button.dataset.userName ?? '';
+    editUserPassword.value = '';
+
+    if (editUserRoles) {
+      const selected = (button.dataset.userRoles || '').split(',').filter(Boolean);
+      for (const option of editUserRoles.options) {
+        option.selected = selected.includes(option.value);
+      }
+    }
+
+    openModal(editUserModal);
+  });
+});
+
+cancelEditUser?.addEventListener('click', () => {
+  closeModal();
+});
+
+// ==================== End Edit User Modal ====================
+
+
+// ==================== Archive User Confirmation ====================
+
+const archiveUserModal = document.getElementById('archive-user-dialog');
+const cancelArchiveUser = document.getElementById('cancel-archive-user');
+const confirmArchiveUser = document.getElementById('confirm-archive-user');
+
+let pendingArchiveUserForm = null;
+
+document.querySelectorAll('[data-archive-user]').forEach((form) => {
+  form.addEventListener('submit', (event) => {
+    if (form.dataset.confirmed === 'true') {
+      return;
+    }
+
+    event.preventDefault();
+    pendingArchiveUserForm = form;
+    openModal(archiveUserModal);
+  });
+});
+
+cancelArchiveUser?.addEventListener('click', () => {
+  pendingArchiveUserForm = null;
+  closeModal();
+});
+
+confirmArchiveUser?.addEventListener('click', () => {
+  closeModal();
+
+  if (pendingArchiveUserForm) {
+    pendingArchiveUserForm.dataset.confirmed = 'true';
+    pendingArchiveUserForm.submit();
+    pendingArchiveUserForm = null;
+  }
+});
+
+// ==================== End Archive User Confirmation ====================
+
+
+// ==================== Add Role Modal ====================
+
+const addRoleModal = document.getElementById('add-role-dialog');
+const addRoleButton = document.getElementById('add-role-button');
+const cancelAddRole = document.getElementById('cancel-add-role');
+
+addRoleButton?.addEventListener('click', () => {
+  openModal(addRoleModal);
+});
+
+for (const button of [addRoleButton, document.getElementById('empty-add-role-button')]) {
+  button?.addEventListener('click', () => {
+    openModal(addRoleModal);
+  });
+}
+
+cancelAddRole?.addEventListener('click', () => {
+  closeModal();
+});
+
+// ==================== End Add Role Modal ====================
+
+
+// ==================== Edit Role Modal ====================
+
+const editRoleModal = document.getElementById('edit-role-dialog');
+const editRoleForm = editRoleModal?.querySelector('form');
+const editRoleName = document.getElementById('edit-role-name');
+const editRoleDescription = document.getElementById('edit-role-description');
+const cancelEditRole = document.getElementById('cancel-edit-role');
+
+document.querySelectorAll('.edit-role').forEach((button) => {
+  button.addEventListener('click', () => {
+    editRoleForm.action = button.dataset.updateUrl;
+    editRoleName.value = button.dataset.roleName ?? '';
+    editRoleDescription.value = button.dataset.roleDescription ?? '';
+    openModal(editRoleModal);
+  });
+});
+
+cancelEditRole?.addEventListener('click', () => {
+  closeModal();
+});
+
+// ==================== End Edit Role Modal ====================
+
+
+// ==================== Delete Role Confirmation ====================
+
+const deleteRoleModal = document.getElementById('delete-role-dialog');
+const cancelDeleteRole = document.getElementById('cancel-delete-role');
+const confirmDeleteRole = document.getElementById('confirm-delete-role');
+
+let pendingDeleteRoleForm = null;
+
+document.querySelectorAll('[data-delete-role]').forEach((form) => {
+  form.addEventListener('submit', (event) => {
+    if (form.dataset.confirmed === 'true') {
+      return;
+    }
+
+    event.preventDefault();
+    pendingDeleteRoleForm = form;
+    openModal(deleteRoleModal);
+  });
+});
+
+cancelDeleteRole?.addEventListener('click', () => {
+  pendingDeleteRoleForm = null;
+  closeModal();
+});
+
+confirmDeleteRole?.addEventListener('click', () => {
+  closeModal();
+
+  if (pendingDeleteRoleForm) {
+    pendingDeleteRoleForm.dataset.confirmed = 'true';
+    pendingDeleteRoleForm.submit();
+    pendingDeleteRoleForm = null;
+  }
+});
+
+// ==================== End Delete Role Confirmation ====================
+
+
+// ==================== Manage Role Permissions ====================
+
+const manageRolePermissionsDialog = document.getElementById('manage-role-permissions-dialog');
+const manageRolePermissionsList = document.getElementById('manage-role-permissions-list');
+const manageRolePermissionsStatus = document.getElementById('manage-role-permissions-status');
+const cancelManageRolePermissions = document.getElementById('cancel-manage-role-permissions');
+const grantRolePermissionDialog = document.getElementById('grant-role-permission-dialog');
+const grantRolePermissionForm = document.getElementById('grant-role-permission-form');
+const grantRolePermissionButton = document.getElementById('grant-role-permission-button');
+const cancelGrantRolePermission = document.getElementById('cancel-grant-role-permission');
+
+let currentManageRoleId = null;
+
+document.querySelectorAll('.manage-role-permissions').forEach((button) => {
+  button.addEventListener('click', () => {
+    currentManageRoleId = button.dataset.roleId;
+    renderManagePermissions(currentManageRoleId);
+    openModal(manageRolePermissionsDialog);
+  });
+});
+
+cancelManageRolePermissions?.addEventListener('click', () => {
+  closeModal();
+});
+
+cancelGrantRolePermission?.addEventListener('click', () => {
+  closeModal();
+});
+
+async function renderManagePermissions(roleId) {
+  if (!manageRolePermissionsList) {
+    return;
+  }
+
+  manageRolePermissionsList.innerHTML = '';
+  manageRolePermissionsStatus?.classList.add('hidden');
+
+  try {
+    const response = await fetch(`/admin/roles/${roleId}/permissions`);
+
+    if (!response.ok) {
+      throw new Error('Failed to load permissions');
+    }
+
+    const permissions = await response.json();
+
+    for (const permission of permissions) {
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3';
+
+      const name = document.createElement('div');
+      name.className = 'min-w-0';
+      name.innerHTML = `<p class="truncate text-sm font-medium text-zinc-100">${permission.name}</p>`;
+
+      const actions = document.createElement('div');
+      actions.className = 'flex shrink-0 gap-1';
+
+      const allowedSelect = document.createElement('select');
+      allowedSelect.className = 'form-input';
+      allowedSelect.innerHTML = `
+        <option value="1" ${permission.allowed ? 'selected' : ''}>Allowed</option>
+        <option value="0" ${permission.allowed ? '' : 'selected'}>Denied</option>
+      `;
+
+      allowedSelect.addEventListener('change', async () => {
+        const allowed = allowedSelect.value === '1';
+        const formData = new FormData();
+        formData.append('permission_name', permission.name);
+        formData.append('allowed', allowed ? 'true' : 'false');
+        formData.append('csrf_token', document.querySelector('input[name="csrf_token"]')?.value ?? '');
+
+        grantRolePermissionButton?.setAttribute('disabled', '');
+
+        try {
+          const updateResponse = await fetch(`/admin/roles/${roleId}/permissions`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          const payload = await updateResponse.json().catch(() => ({}));
+
+          if (!updateResponse.ok) {
+            showManagePermissionsError(payload.error || 'Failed to update permission.');
+            return;
+          }
+
+          renderManagePermissions(roleId);
+        } catch {
+          showManagePermissionsError('Failed to update permission.');
+        } finally {
+          grantRolePermissionButton?.removeAttribute('disabled');
+        }
+      });
+
+      const revokeButton = document.createElement('button');
+      revokeButton.type = 'button';
+      revokeButton.className = 'rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300';
+      revokeButton.title = 'Remove permission';
+      revokeButton.setAttribute('aria-label', 'Remove permission');
+      revokeButton.innerHTML = '<i class="bi bi-x-lg" aria-hidden="true"></i>';
+
+      revokeButton.addEventListener('click', async () => {
+        const formData = new FormData();
+        formData.append('csrf_token', document.querySelector('input[name="csrf_token"]')?.value ?? '');
+
+        try {
+          const response = await fetch(`/admin/roles/${roleId}/permissions/${permission.id}/delete`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+            showManagePermissionsError(payload.error || 'Failed to remove permission.');
+            return;
+          }
+
+          renderManagePermissions(roleId);
+        } catch {
+          showManagePermissionsError('Failed to remove permission.');
+        }
+      });
+
+      actions.appendChild(allowedSelect);
+      actions.appendChild(revokeButton);
+      row.appendChild(name);
+      row.appendChild(actions);
+      manageRolePermissionsList.appendChild(row);
+    }
+  } catch {
+    manageRolePermissionsStatus.textContent = 'Failed to load permissions.';
+    manageRolePermissionsStatus.classList.remove('hidden');
+  }
+}
+
+function showManagePermissionsError(message) {
+  if (!manageRolePermissionsStatus) {
+    return;
+  }
+
+  manageRolePermissionsStatus.textContent = message;
+  manageRolePermissionsStatus.classList.remove('hidden');
+  manageRolePermissionsStatus.classList.add('text-red-400');
+}
+
+document.querySelectorAll('.grant-role-permission').forEach((button) => {
+  button.addEventListener('click', () => {
+    currentManageRoleId = button.dataset.roleId;
+    openModal(grantRolePermissionDialog);
+  });
+});
+
+grantRolePermissionForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  const formData = new FormData(grantRolePermissionForm);
+  formData.append('csrf_token', document.querySelector('input[name="csrf_token"]')?.value ?? '');
+
+  const status = document.getElementById('grant-role-permission-status');
+  status?.classList.add('hidden');
+
+  grantRolePermissionButton?.setAttribute('disabled', '');
+
+  try {
+    const response = await fetch(`/admin/roles/${currentManageRoleId}/permissions`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      if (status) {
+        status.textContent = payload.error || 'Failed to grant permission.';
+        status.classList.remove('hidden');
+        status.classList.add('text-red-400');
+      }
+      return;
+    }
+
+    grantRolePermissionForm.reset();
+    grantRolePermissionWarning?.classList.add('hidden');
+    closeModal();
+    renderManagePermissions(currentManageRoleId);
+  } catch {
+    if (status) {
+      status.textContent = 'Failed to grant permission.';
+      status.classList.remove('hidden');
+      status.classList.add('text-red-400');
+    }
+  } finally {
+    grantRolePermissionButton?.removeAttribute('disabled');
+  }
+});
+
+// ==================== End Manage Role Permissions ====================
+
+
 // ==================== Manual Backup ====================
 
 const backupButton = document.getElementById('backup-button');

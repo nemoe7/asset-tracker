@@ -115,10 +115,8 @@ def _users_with_roles():
   return [{**user, "roles": get_user_roles(user["id"])} for user in get_users()]
 
 
-def _roles_with_permissions():
-  return [
-    {**role, "permissions": get_role_permissions(role["id"])} for role in get_roles()
-  ]
+def _roles_with_permissions(roles):
+  return [{**role, "permissions": get_role_permissions(role["id"])} for role in roles]
 
 
 def _render_settings(
@@ -130,6 +128,8 @@ def _render_settings(
   can_view_audit = check_permission(user_id, "audit.read")
   can_manage_users = check_permission(user_id, "users.manage")
   can_manage_roles = check_permission(user_id, "roles.manage")
+
+  all_roles = get_roles()
 
   audit_context = {}
 
@@ -163,29 +163,36 @@ def _render_settings(
 
   if can_manage_roles:
     roles_context = {
-      "roles_with_permissions": _roles_with_permissions(),
+      "roles_with_permissions": _roles_with_permissions(all_roles),
     }
 
-  return render_template(
-    "admin/settings.jinja",
-    locations=get_locations(),
-    custom_fields=get_custom_fields(),
-    archived_custom_fields=get_custom_fields(include_archived=True),
-    active_tab=active_tab,
-    error=error,
-    can_manage_locations=check_permission(user_id, "locations.manage"),
-    can_manage_custom_fields=check_permission(user_id, "custom_fields.manage"),
-    can_manage_backups=(
+  render_context = {
+    "locations": get_locations(),
+    "custom_fields": get_custom_fields(),
+    "archived_custom_fields": get_custom_fields(include_archived=True),
+    "active_tab": active_tab,
+    "error": error,
+    "can_manage_locations": check_permission(user_id, "locations.manage"),
+    "can_manage_custom_fields": check_permission(user_id, "custom_fields.manage"),
+    "can_manage_backups": (
       check_permission(user_id, "backups.create")
       or check_permission(user_id, "backups.restore")
     ),
-    can_view_audit=can_view_audit,
-    can_manage_users=can_manage_users,
-    can_manage_roles=can_manage_roles,
-    debug=config.DEBUG,
+    "can_view_audit": can_view_audit,
+    "can_manage_users": can_manage_users,
+    "can_manage_roles": can_manage_roles,
+    "debug": config.DEBUG,
     **audit_context,
     **users_context,
     **roles_context,
+  }
+
+  if can_manage_users or can_manage_roles:
+    render_context["roles"] = all_roles
+
+  return render_template(
+    "admin/settings.jinja",
+    **render_context,
     **context,
   )
 

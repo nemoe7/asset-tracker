@@ -153,6 +153,7 @@ def get_users():
       SELECT
         id,
         username,
+        name,
         created_at,
         updated_at,
         archived_at
