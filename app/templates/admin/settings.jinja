@@ -965,6 +965,32 @@
           <input id="edit-role-description" name="description" type="text" class="form-input">
         </div>
 
+        <div class="mt-6">
+          <div class="flex items-center justify-between gap-3">
+            <p class="text-sm font-medium text-zinc-300">Permissions</p>
+            <button type="button" id="edit-role-add-permission"
+              class="rounded-lg border border-dashed border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200">
+              <i class="bi bi-plus-lg" aria-hidden="true"></i>
+              Add permission
+            </button>
+          </div>
+          <div id="edit-role-permissions-list" class="mt-3 space-y-2"></div>
+          <div id="edit-role-permission-form" class="hidden mt-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 space-y-3">
+            <div>
+              <label for="edit-role-permission-name" class="mb-1 block text-xs font-medium text-zinc-400">Permission</label>
+              <input id="edit-role-permission-name" name="permission_name" list="known-permissions-list"
+                type="text" autocomplete="off"
+                class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+            </div>
+            <div class="flex items-center gap-3">
+              <input id="edit-role-permission-allowed" name="allowed" type="checkbox" value="true"
+                class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500" checked>
+              <label for="edit-role-permission-allowed" class="text-sm font-medium text-zinc-300">Allowed</label>
+            </div>
+            <p id="edit-role-permission-status" class="hidden text-sm"></p>
+          </div>
+        </div>
+
         <div class="mt-6 flex justify-end gap-3">
           <button type="button" id="cancel-edit-role"
             class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
