@@ -262,3 +262,99 @@ def test_admin_page_grants_custom_permission_to_role(page, live_server, setup_ad
   page.wait_for_url(f"{live_server}/admin?tab=roles")
 
   expect(page.get_by_text("custom.report.view").first).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_admin_page_cancel_add_permission_does_not_persist(
+  page, live_server, setup_admin
+):
+  response = page.request.post(
+    f"{live_server}/admin/roles",
+    form={
+      "name": "Viewer",
+      "description": "Read-only access",
+    },
+    max_redirects=0,
+  )
+  assert response.status == 302
+
+  page.goto(f"{live_server}/admin?tab=roles")
+
+  row = page.locator("#tab-roles tbody tr").filter(has_text="Viewer")
+  role_id = row.locator(".edit-role").get_attribute("data-role-id")
+  expect(row).to_be_visible()
+
+  row.locator(".edit-role").click()
+  dialog = page.locator("#edit-role-dialog")
+  expect(dialog).to_be_visible()
+
+  # Stage a new permission locally, then cancel without saving.
+  dialog.get_by_role("button", name="Add permission").click()
+  page.locator("#edit-role-permission-name").fill("assets.read")
+  page.locator("#edit-role-permission-submit").click()
+  expect(
+    dialog.locator("#edit-role-permissions-list").get_by_text("assets.read")
+  ).to_be_visible()
+
+  dialog.get_by_role("button", name="Cancel").click()
+
+  # Reload and confirm the permission was never persisted.
+  page.goto(f"{live_server}/admin?tab=roles")
+  permissions = page.request.get(
+    f"{live_server}/admin/roles/{role_id}/permissions"
+  ).json()
+  assert not any(p["permission"] == "assets.read" for p in permissions)
+
+
+@pytest.mark.e2e
+def test_admin_page_cancel_remove_permission_does_not_persist(
+  page, live_server, setup_admin
+):
+  response = page.request.post(
+    f"{live_server}/admin/roles",
+    form={
+      "name": "Viewer",
+      "description": "Read-only access",
+    },
+    max_redirects=0,
+  )
+  assert response.status == 302
+
+  page.goto(f"{live_server}/admin?tab=roles")
+
+  row = page.locator("#tab-roles tbody tr").filter(has_text="Viewer")
+  role_id = row.locator(".edit-role").get_attribute("data-role-id")
+
+  # Grant a permission directly so the role has one to remove.
+  grant = page.request.post(
+    f"{live_server}/admin/roles/{role_id}/permissions",
+    form={"permission_name": "assets.read", "allowed": "true"},
+    max_redirects=0,
+  )
+  assert grant.status == 302
+
+  page.goto(f"{live_server}/admin?tab=roles")
+  row = page.locator("#tab-roles tbody tr").filter(has_text="Viewer")
+  row.locator(".edit-role").click()
+  dialog = page.locator("#edit-role-dialog")
+  expect(dialog).to_be_visible()
+
+  # Remove the permission from the staged list, then cancel without saving.
+  expect(
+    dialog.locator("#edit-role-permissions-list").get_by_text("assets.read")
+  ).to_be_visible()
+  dialog.locator("#edit-role-permissions-list").get_by_role(
+    "button", name="Remove permission"
+  ).click()
+  expect(
+    dialog.locator("#edit-role-permissions-list").get_by_text("assets.read")
+  ).to_have_count(0)
+
+  dialog.get_by_role("button", name="Cancel").click()
+
+  # Reload and confirm the permission is still present.
+  page.goto(f"{live_server}/admin?tab=roles")
+  permissions = page.request.get(
+    f"{live_server}/admin/roles/{role_id}/permissions"
+  ).json()
+  assert any(p["permission"] == "assets.read" for p in permissions)
