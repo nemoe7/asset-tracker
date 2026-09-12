@@ -599,6 +599,10 @@ function renderAddItemCustomFields(fields) {
   addItemCustomFields.replaceChildren();
 
   for (const field of fields) {
+    if (field.is_editable === false) {
+      continue;
+    }
+
     const input = buildCustomFieldInput(field);
 
     if (!input) {
@@ -636,6 +640,10 @@ function renderEditItemCustomFields(fields, valuesByName) {
 
     if (!input) {
       continue;
+    }
+
+    if (field.is_editable === false) {
+      input.disabled = true;
     }
 
     setCustomFieldValue(input, valuesByName[field.name]);

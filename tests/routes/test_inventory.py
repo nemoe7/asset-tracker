@@ -867,3 +867,140 @@ def test_export_applies_custom_field_filters(
   assert response.status_code == 200
   assert b"Match" in response.data
   assert b"Other" not in response.data
+
+
+# ==================== Field Edit Permissions ====================
+
+
+def _login_checker_with_field_updates(gen_test_client, admin_id, update_ids=()):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.permissions import (
+    create_permission,
+    get_permission_by_name,
+  )
+  from app.services.data.role_permissions import set_role_permission
+  from app.services.data.roles import create_role
+  from app.services.data.user_roles import set_user_role
+  from app.services.data.users import create_user
+
+  token = set_current_user(admin_id)
+
+  try:
+    user_id = create_user("checker", "checker123", "Checker")
+    role_id = create_role("Checker", "Inspects assets")
+
+    for field_id in update_ids:
+      name = f"field.{field_id}.update"
+      permission = get_permission_by_name(name)
+      permission_id = (
+        permission["id"] if permission is not None else create_permission(name)
+      )
+      set_role_permission(role_id, permission_id, True)
+
+    set_user_role(user_id, role_id)
+  finally:
+    reset_current_user(token)
+
+  gen_test_client.post(
+    "/auth/login",
+    data={
+      "username": "checker",
+      "password": "checker123",
+    },
+  )
+
+
+def test_update_ignores_non_editable_custom_field(
+  gen_test_admin,
+  gen_test_client,
+  gen_test_item,
+):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.custom_field_values import set_custom_field_value
+  from app.services.data.custom_fields import create_custom_field
+  from app.services.data.inventory import get_item
+
+  token = set_current_user(gen_test_admin)
+
+  try:
+    editable_id = create_custom_field("Editable", "text")
+    locked_id = create_custom_field("Locked", "text")
+
+    item_id = gen_test_item(name="Alpha Asset")
+    set_custom_field_value(item_id, locked_id, "original")
+  finally:
+    reset_current_user(token)
+
+  _login_checker_with_field_updates(
+    gen_test_client,
+    gen_test_admin,
+    update_ids={editable_id},
+  )
+
+  response = gen_test_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "f_Editable": "changed",
+      "f_Locked": "tampered",
+    },
+  )
+
+  assert response.status_code == 302
+
+  token = set_current_user(gen_test_admin)
+
+  try:
+    item = get_item(item_id)
+  finally:
+    reset_current_user(token)
+
+  assert item["custom_fields"].get("Editable") == "changed"
+  assert item["custom_fields"].get("Locked") == "original"
+
+
+def test_create_ignores_non_editable_custom_field(
+  gen_test_admin,
+  gen_test_client,
+):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.custom_fields import create_custom_field
+  from app.services.data.inventory import get_item
+
+  token = set_current_user(gen_test_admin)
+
+  try:
+    editable_id = create_custom_field("Editable", "text")
+    create_custom_field("Locked", "text")
+  finally:
+    reset_current_user(token)
+
+  _login_checker_with_field_updates(
+    gen_test_client,
+    gen_test_admin,
+    update_ids={editable_id},
+  )
+
+  response = gen_test_client.post(
+    "/inventory",
+    data={
+      "name": "New Asset",
+      "f_Editable": "kept",
+      "f_Locked": "dropped",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 200
+
+  item_id = response.json["id"]
+
+  token = set_current_user(gen_test_admin)
+
+  try:
+    item = get_item(item_id)
+  finally:
+    reset_current_user(token)
+
+  assert item["custom_fields"] == {"Editable": "kept"}
