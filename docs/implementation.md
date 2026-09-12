@@ -100,7 +100,7 @@
 | SEC-003 | P3 | Users only access permitted information/functions. | 🟡 | AUT-003, AUT-004 | SEC-002 | |
 | SEC-004 | P3 | Credentials are not stored in plaintext. | 🟢 | AUT-001 | — | |
 | SEC-005 | P3 | Audit logs are protected from unauthorized modification. | 🟢 | — | AUD-013 | |
-| SEC-007 | P3 | Backup files are protected from unauthorized access. | 🔴 | BKP-011 | SEC-006 | |
+| SEC-007 | P3 | Backup files are protected from unauthorized access. | 🟢 | BKP-011 | SEC-006 | Manual backups only; no files persist server-side. Scheduled backups (BKP-016+) must add at-rest protection |
 | SEC-008 | P3 | Custom fields cannot bypass integrity/security controls. | 🔴 | FLD-012, FLD-013 | — | Revisit custom fields |
 | QRC-007 | P3 | QR code contains the Asset ID and does not need to contain the asset's complete information. | 🟢 | QRC-001 | QRC-002, QRC-006 | |
 | SRH-007 | P3 | Custom fields can be used for search/filtering. | 🟢 | FLD-014 | SRH-002 | User-type fields excluded (FLD-007 pending) |
