@@ -49,8 +49,10 @@ def live_server(e2e_app):
 
 @pytest.fixture
 def page(page):
-  page.set_default_timeout(5_000)
-  page.set_default_navigation_timeout(5_000)
+  # Firefox under full xdist parallelism needs more than 5s for
+  # navigation and click actions; other engines get the same headroom.
+  page.set_default_timeout(10_000)
+  page.set_default_navigation_timeout(10_000)
   return page
 
 
