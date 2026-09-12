@@ -610,6 +610,6 @@ def test_restore_archived_user_raises_when_not_archived(gen_test_data_user):
     restore_archived_user("alice")
 
 
-def test_restore_archived_user_raises_when_missing():
+def test_restore_archived_user_raises_when_missing(gen_test_data_db):
   with pytest.raises(UserNotFoundError):
     restore_archived_user("nobody")
