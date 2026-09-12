@@ -46,6 +46,17 @@
     hasMore = false;
   };
 
+  const formatAuditTimestamps = () => {
+    for (const node of document.querySelectorAll('[data-audit-timestamp]')) {
+      const utc = node.dataset.utc;
+      const date = utc ? new Date(utc.replace(' ', 'T') + 'Z') : null;
+
+      if (date && !Number.isNaN(date.getTime())) {
+        node.textContent = date.toLocaleString();
+      }
+    }
+  };
+
   const appendChunk = (chunk) => {
     for (const template of chunk.querySelectorAll('template')) {
       const target = document.getElementById(template.dataset.target);
@@ -57,7 +68,10 @@
 
     shown = document.querySelectorAll('#audit-rows-desktop [data-audit-row]').length;
     updateCounter();
+    formatAuditTimestamps();
   };
+
+  formatAuditTimestamps();
 
   const loadChunk = async () => {
     if (loading || !hasMore) return;
