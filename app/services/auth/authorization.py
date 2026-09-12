@@ -13,7 +13,7 @@ from ..exceptions.auth.authorization import PermissionDeniedError
 
 # Namespaces that never default to allow on ".read"; access requires an
 # explicit permission decision (direct, role, or wildcard grant).
-_SENSITIVE_NAMESPACES = ("users", "roles", "permissions", "audit")
+_SENSITIVE_NAMESPACES = ("users", "roles", "permissions", "audit", "field")
 
 
 def _get_permission_precedence(permission_name):
