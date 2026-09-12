@@ -1,13 +1,18 @@
 from flask import (
   Blueprint,
+  abort,
   jsonify,
   redirect,
   request,
+  session,
   url_for,
 )
 
 from ..services.auth.authentication import login_required
-from ..services.auth.authorization import permission_required
+from ..services.auth.authorization import (
+  check_permission,
+  permission_required,
+)
 from ..services.data.custom_fields import (
   archive_custom_field,
   create_custom_field,
@@ -60,17 +65,34 @@ def create():
 @login_required
 def list():
   include_archived = request.args.get("include_archived") == "true"
+  user_id = session.get("user_id")
 
-  return jsonify(
-    get_custom_fields(
-      include_archived=include_archived,
+  fields = []
+
+  for field in get_custom_fields(
+    include_archived=include_archived,
+  ):
+    if not check_permission(user_id, f"field.{field['id']}.read"):
+      continue
+
+    fields.append(
+      {
+        **field,
+        "is_editable": check_permission(user_id, f"field.{field['id']}.update"),
+      }
     )
-  )
+
+  return jsonify(fields)
 
 
 @custom_fields.route("/<int:field_id>", methods=["GET"])
 @login_required
 def get(field_id):
+  user_id = session.get("user_id")
+
+  if not check_permission(user_id, f"field.{field_id}.read"):
+    abort(404)
+
   field = get_custom_field(field_id)
 
   if field is None:

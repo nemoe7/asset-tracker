@@ -8,6 +8,7 @@ from flask import (
   redirect,
   render_template,
   request,
+  session,
   url_for,
 )
 
@@ -18,7 +19,10 @@ from app.services.data.custom_field_values import set_custom_field_value
 from app.services.data.custom_fields import get_custom_fields
 
 from ..services.auth.authentication import login_required
-from ..services.auth.authorization import permission_required
+from ..services.auth.authorization import (
+  check_permission,
+  permission_required,
+)
 from ..services.data.inventory import (
   archive_item,
   create_item,
@@ -58,7 +62,7 @@ def index():
   return redirect(url_for("main.index"))
 
 
-def _parse_custom_field_filters():
+def _parse_custom_field_filters(readable_fields=None):
   f_fields = request.args.getlist("f_field")
   f_ops = request.args.getlist("f_op")
   f_values = request.args.getlist("f_value")
@@ -77,15 +81,17 @@ def _parse_custom_field_filters():
   if not rows:
     return None, []
 
-  fields = get_custom_fields()
+  if readable_fields is None:
+    readable_fields = get_custom_fields()
+
   filters = parse_filters(
     [field_id for field_id, _op, _value in rows],
     [op for _field_id, op, _value in rows],
     [value for _field_id, _op, value in rows],
-    fields,
+    readable_fields,
   )
 
-  fields_by_id = {field["id"]: field for field in fields}
+  fields_by_id = {field["id"]: field for field in readable_fields}
   filtered_fields = []
   seen_ids = set()
 
@@ -97,6 +103,14 @@ def _parse_custom_field_filters():
   return filters, filtered_fields
 
 
+def _visible_field_ids(user_id):
+  return {
+    field["id"]
+    for field in get_custom_fields()
+    if check_permission(user_id, f"field.{field['id']}.read")
+  }
+
+
 @inventory.route("/fragment", methods=["GET"])
 @login_required
 def fragment():
@@ -105,6 +119,12 @@ def fragment():
   sort_by = request.args.get("sort_by", "name")
   sort_order = request.args.get("sort_order", "asc")
   include_archived = request.args.get("include_archived") == "true"
+
+  user_id = session.get("user_id")
+  visible_field_ids = _visible_field_ids(user_id)
+  readable_fields = [
+    field for field in get_custom_fields() if field["id"] in visible_field_ids
+  ]
 
   try:
     if location_id == "__none__":
@@ -116,7 +136,9 @@ def fragment():
     page = int(request.args.get("page", 1))
     per_page = min(int(request.args.get("per_page", 25)), _MAX_PER_PAGE)
 
-    custom_field_filters, filtered_custom_fields = _parse_custom_field_filters()
+    custom_field_filters, filtered_custom_fields = _parse_custom_field_filters(
+      readable_fields
+    )
 
     result = get_items_paginated(
       search=search,
@@ -125,6 +147,7 @@ def fragment():
       sort_by=sort_by,
       sort_order=sort_order,
       custom_field_filters=custom_field_filters,
+      visible_field_ids=visible_field_ids,
       page=page,
       per_page=per_page,
     )
@@ -246,6 +269,12 @@ def export():
   sort_order = request.args.get("sort_order", "asc")
   include_archived = request.args.get("include_archived") == "true"
 
+  user_id = session.get("user_id")
+  visible_field_ids = _visible_field_ids(user_id)
+  readable_fields = [
+    field for field in get_custom_fields() if field["id"] in visible_field_ids
+  ]
+
   try:
     if location_id == "__none__":
       location_id = None
@@ -254,7 +283,9 @@ def export():
     else:
       location_id = _UNSET
 
-    custom_field_filters, _filtered_custom_fields = _parse_custom_field_filters()
+    custom_field_filters, _filtered_custom_fields = _parse_custom_field_filters(
+      readable_fields
+    )
 
     csv_data = build_export(
       search=search,
@@ -264,6 +295,7 @@ def export():
       sort_order=sort_order,
       custom_field_filters=custom_field_filters,
       field_keys=request.args.getlist("fields") or None,
+      visible_field_ids=visible_field_ids,
     )
   except (InvalidInputError, ValueError) as error:
     return jsonify({"error": str(error)}), 400
@@ -287,6 +319,7 @@ def get(item_id):
   item = get_item(
     item_id,
     include_archived=include_archived,
+    visible_field_ids=_visible_field_ids(session.get("user_id")),
   )
 
   if item is None:

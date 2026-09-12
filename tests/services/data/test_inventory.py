@@ -759,6 +759,54 @@ def test_get_items_filter_by_custom_field(gen_test_data_admin):
   assert [item["id"] for item in items] == [it_item_id]
 
 
+def test_get_item_includes_only_visible_custom_fields(gen_test_data_admin):
+  visible_field_id = create_custom_field("Visible", "text")
+  hidden_field_id = create_custom_field("Hidden", "text")
+  item_id = create_item("Laptop")
+
+  set_custom_field_value(item_id, visible_field_id, "shown")
+  set_custom_field_value(item_id, hidden_field_id, "concealed")
+
+  item = get_item(
+    item_id,
+    visible_field_ids={visible_field_id},
+  )
+
+  assert item["custom_fields"] == {"Visible": "shown"}
+
+
+def test_get_items_includes_only_visible_custom_fields(gen_test_data_admin):
+  visible_field_id = create_custom_field("Visible", "text")
+  hidden_field_id = create_custom_field("Hidden", "text")
+  item_id = create_item("Laptop")
+
+  set_custom_field_value(item_id, visible_field_id, "shown")
+  set_custom_field_value(item_id, hidden_field_id, "concealed")
+
+  items = get_items(
+    visible_field_ids={visible_field_id},
+  )
+
+  assert items[0]["custom_fields"] == {"Visible": "shown"}
+
+
+def test_get_items_paginated_includes_only_visible_custom_fields(
+  gen_test_data_admin,
+):
+  visible_field_id = create_custom_field("Visible", "text")
+  hidden_field_id = create_custom_field("Hidden", "text")
+  item_id = create_item("Laptop")
+
+  set_custom_field_value(item_id, visible_field_id, "shown")
+  set_custom_field_value(item_id, hidden_field_id, "concealed")
+
+  result = get_items_paginated(
+    visible_field_ids={visible_field_id},
+  )
+
+  assert result["items"][0]["custom_fields"] == {"Visible": "shown"}
+
+
 def test_get_items_filter_by_multiple_custom_fields(gen_test_data_admin):
   department_id = create_custom_field(
     "Department",
