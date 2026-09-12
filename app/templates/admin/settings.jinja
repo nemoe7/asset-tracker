@@ -720,13 +720,32 @@
 
         {% if roles %}
         <div class="mt-4">
-          <label for="edit-user-roles" class="mb-2 block text-sm font-medium text-zinc-300">Roles</label>
-          <select id="edit-user-roles" name="role_ids" multiple class="form-input">
-            {% for role in roles %}
-            <option value="{{ role.id }}">{{ role.name }}</option>
-            {% endfor %}
-          </select>
-          <p class="mt-1 text-xs text-zinc-500">Hold Ctrl (Cmd on Mac) to select multiple.</p>
+          <label for="edit-user-roles-input" class="mb-2 block text-sm font-medium text-zinc-300">Roles</label>
+
+          <div id="edit-user-roles-list" class="flex flex-wrap gap-2"></div>
+
+          <div class="mt-3 flex gap-2">
+            <label for="edit-user-roles-input" class="sr-only">Add role</label>
+            <input id="edit-user-roles-input" name="add_role" type="text" autocomplete="off"
+              list="edit-user-roles-options" placeholder="Add role..."
+              class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+            <button type="button" id="edit-user-roles-add"
+              class="flex shrink-0 items-center justify-center gap-1 rounded-lg border border-zinc-700 px-3 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100">
+              <i class="bi bi-plus-lg" aria-hidden="true"></i>
+              Add
+            </button>
+          </div>
+
+          <datalist id="edit-user-roles-options"></datalist>
+
+          <p id="edit-user-roles-error" class="mt-2 hidden text-xs text-red-400">
+            Unknown or duplicate role. Pick one of the available roles.
+          </p>
+
+          <p class="mt-1 text-xs text-zinc-500">Roles determine what this user can access.</p>
+
+          <div id="edit-user-roles-values" class="hidden"></div>
+          <script id="edit-user-roles-data" type="application/json">{{ roles | tojson }}</script>
         </div>
         {% endif %}
 

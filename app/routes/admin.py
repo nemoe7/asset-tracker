@@ -198,7 +198,7 @@ def _render_settings(
   }
 
   if can_manage_users or can_manage_roles:
-    render_context["roles"] = all_roles
+    render_context["roles"] = [{"id": r["id"], "name": r["name"]} for r in all_roles]
 
   return render_template(
     "admin/settings.jinja",
