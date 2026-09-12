@@ -131,7 +131,9 @@ def test_audit_page_mobile_cards_render(page, live_server, logged_in, create_ite
 
 
 @pytest.mark.e2e
-def test_audit_timestamps_use_browser_local_time(page, live_server, logged_in, create_item):
+def test_audit_timestamps_use_browser_local_time(
+  page, live_server, logged_in, create_item
+):
   create_item("Test Asset")
 
   page.goto(f"{live_server}/admin?tab=audit")

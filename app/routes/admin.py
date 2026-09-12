@@ -119,7 +119,14 @@ def _users_with_roles():
 
 
 def _roles_with_permissions(roles):
-  return [{**role, "permissions": get_role_permissions(role["id"]), "user_count": get_role_user_count(role["id"])} for role in roles]
+  return [
+    {
+      **role,
+      "permissions": get_role_permissions(role["id"]),
+      "user_count": get_role_user_count(role["id"]),
+    }
+    for role in roles
+  ]
 
 
 def _render_settings(
