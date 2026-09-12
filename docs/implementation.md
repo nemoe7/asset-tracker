@@ -92,7 +92,7 @@
 | FLD-008 | P3 | Admins can mark custom fields required. | 🟢 | FLD-002, FLD-004 | FLD-012 | |
 | FLD-011 | P3 | Deactivating a field preserves existing values. | 🟢 | FLD-010 | — | |
 | FLD-015 | P3 | Record changes to custom-field definitions. | 🟢 | FLD-002, FLD-009, FLD-010 | AUD-005 | |
-| PER-001 | P3 | Normal asset operations respond reasonably. | 🟡 | — | PER-002, PER-003 | No explicit performance target/test established |
+| PER-001 | P3 | Normal asset operations respond reasonably. | 🟢 | — | PER-002, PER-003 | Target: 10k-asset fragment render < 1s |
 | PER-002 | P3 | Search/filtering does not require manual reload. | 🟢 | SRH-001, SRH-002 | — | |
 | PER-003 | P3 | QR scanning opens the asset without unnecessary steps. | 🟢 | QRC-005 | CHK-001 | |
 | SEC-001 | P3 | Protected functions require authentication. | 🟢 | AUT-006 | — | |
@@ -105,7 +105,7 @@
 | QRC-007 | P3 | QR code contains the Asset ID and does not need to contain the asset's complete information. | 🟢 | QRC-001 | QRC-002, QRC-006 | |
 | SRH-007 | P3 | Custom fields can be used for search/filtering. | 🟢 | FLD-014 | SRH-002 | User-type fields excluded (FLD-007 pending) |
 | USE-001 | P3 | Application usable through a standard web browser. | 🟢 | — | CMP-001, CMP-002 | |
-| USE-004 | P3 | Common asset operations require minimal navigation. | 🟡 | AST-001–004, QRC-005 | PER-003 | |
+| USE-004 | P3 | Common asset operations require minimal navigation. | 🟢 | AST-001–004, QRC-005 | PER-003 | Import/export intentionally on the data tab; scope is AST-001–004 and QRC-005 |
 | REL-003 | P3 | Maintain data integrity when creating/modifying records. | 🟢 | AST-007 | REL-001 | |
 | REL-006 | P3 | Retain information identifying most recent successful backup. | 🔴 | BKP-015 | BKP-009 | |
 
