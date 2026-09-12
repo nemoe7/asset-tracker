@@ -52,6 +52,7 @@ from ..services.data.roles import (
 )
 from ..services.data.user_roles import (
   delete_user_role,
+  get_role_user_count,
   get_user_roles,
   is_role_assigned,
   set_user_role,
@@ -117,7 +118,7 @@ def _users_with_roles():
 
 
 def _roles_with_permissions(roles):
-  return [{**role, "permissions": get_role_permissions(role["id"])} for role in roles]
+  return [{**role, "permissions": get_role_permissions(role["id"]), "user_count": get_role_user_count(role["id"])} for role in roles]
 
 
 def _render_settings(

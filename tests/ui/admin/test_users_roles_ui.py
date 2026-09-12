@@ -223,7 +223,7 @@ def test_admin_page_grants_permission_to_role(page, live_server, setup_admin):
 
   page.wait_for_url(f"{live_server}/admin?tab=roles")
 
-  expect(page.get_by_text("1 granted").first).to_be_visible()
+  expect(page.get_by_text("assets.read").first).to_be_visible()
 
 
 @pytest.mark.e2e
