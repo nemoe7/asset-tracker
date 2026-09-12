@@ -96,8 +96,8 @@
 | PER-002 | P3 | Search/filtering does not require manual reload. | 🟢 | SRH-001, SRH-002 | — | |
 | PER-003 | P3 | QR scanning opens the asset without unnecessary steps. | 🟢 | QRC-005 | CHK-001 | |
 | SEC-001 | P3 | Protected functions require authentication. | 🟢 | AUT-006 | — | |
-| SEC-002 | P3 | Enforce role/per-user access control. | 🟡 | AUT-003 | AUT-005, SEC-003 | |
-| SEC-003 | P3 | Users only access permitted information/functions. | 🟡 | AUT-003, AUT-004 | SEC-002 | |
+| SEC-002 | P3 | Enforce role/per-user access control. | 🟢 | AUT-003 | AUT-005, SEC-003 | |
+| SEC-003 | P3 | Users only access permitted information/functions. | 🟡 | AUT-003, AUT-004 | SEC-002 | Field-level access control pending (USR-009, USR-010, FLD-013) |
 | SEC-004 | P3 | Credentials are not stored in plaintext. | 🟢 | AUT-001 | — | |
 | SEC-005 | P3 | Audit logs are protected from unauthorized modification. | 🟢 | — | AUD-013 | |
 | SEC-007 | P3 | Backup files are protected from unauthorized access. | 🟢 | BKP-011 | SEC-006 | Manual backups only; no files persist server-side. Scheduled backups (BKP-016+) must add at-rest protection |
