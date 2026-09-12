@@ -6,10 +6,11 @@ def test_login_returns_retry_after_when_rate_limited(
   gen_test_admin,
   monkeypatch,
 ):
-  import config
+  import sqlite3
+
   from werkzeug.security import generate_password_hash
 
-  import sqlite3
+  import config
 
   connection = sqlite3.connect(config.DB_PATH)
 

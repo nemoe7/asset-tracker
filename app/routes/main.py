@@ -22,6 +22,7 @@ def index():
     username=session.get("username"),
     can_manage_locations=check_permission(user_id, "locations.manage"),
     can_manage_custom_fields=check_permission(user_id, "custom_fields.manage"),
+    can_view_audit=check_permission(user_id, "audit.read"),
   )
 
 

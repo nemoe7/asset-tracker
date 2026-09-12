@@ -5,7 +5,7 @@ import sqlite3
 import pytest
 
 from app.services.data.backups import create_backup
-from app.services.exceptions.data.backups import BackupError
+from app.services.exceptions.data.backups import BackupError, InvalidBackupError
 
 
 def open_backup(data):
@@ -19,7 +19,7 @@ def open_backup(data):
 def test_create_backup_returns_db_bytes_without_storing_any_file(
   gen_test_data_admin,
 ):
-  from app.services.auth.context import set_current_user, reset_current_user
+  from app.services.auth.context import reset_current_user, set_current_user
   from app.services.data.inventory import create_item
 
   token = set_current_user(gen_test_data_admin)
@@ -41,13 +41,11 @@ def test_create_backup_returns_db_bytes_without_storing_any_file(
 
   connection = open_backup(data)
 
-  history = connection.execute(
+  connection.execute(
     "SELECT COUNT(*) FROM backup_history WHERE path IS NULL"
   ).fetchone()
 
-  tables = connection.execute(
-    "SELECT COUNT(*) FROM inventory_items"
-  ).fetchone()
+  tables = connection.execute("SELECT COUNT(*) FROM inventory_items").fetchone()
 
   connection.close()
 
@@ -92,7 +90,7 @@ def test_create_backup_records_history_after_success(gen_test_data_admin):
 
 
 def test_create_backup_failure_writes_no_history(gen_test_data_admin, monkeypatch):
-  import app.services.data.backups as backups
+  from app.services.data import backups
 
   def failing_copy():
     raise BackupError()
@@ -105,9 +103,7 @@ def test_create_backup_failure_writes_no_history(gen_test_data_admin, monkeypatc
   from app.services.data.db import db_connection
 
   with db_connection() as connection:
-    rows = connection.execute(
-      "SELECT COUNT(*) FROM backup_history"
-    ).fetchone()
+    rows = connection.execute("SELECT COUNT(*) FROM backup_history").fetchone()
 
   assert rows[0] == 0
 
@@ -125,7 +121,7 @@ def make_upload(data):
 
 
 def test_restore_backup_round_trip_restores_all_data(gen_test_data_admin):
-  from app.services.auth.context import set_current_user, reset_current_user
+  from app.services.auth.context import reset_current_user, set_current_user
   from app.services.data.backups import restore_backup
   from app.services.data.custom_field_values import set_custom_field_value
   from app.services.data.custom_fields import create_custom_field
@@ -167,7 +163,7 @@ def test_restore_backup_round_trip_restores_all_data(gen_test_data_admin):
 def test_restore_records_restored_audit_log_identifying_backup(
   gen_test_data_admin,
 ):
-  from app.services.auth.context import set_current_user, reset_current_user
+  from app.services.auth.context import reset_current_user, set_current_user
   from app.services.data.backups import restore_backup
   from app.services.data.inventory import create_item
 
@@ -206,7 +202,7 @@ def test_restore_records_restored_audit_log_identifying_backup(
 def test_restore_backup_without_backed_up_entry_records_unknown(
   gen_test_data_admin,
 ):
-  from app.services.auth.context import set_current_user, reset_current_user
+  from app.services.auth.context import reset_current_user, set_current_user
   from app.services.data.backups import restore_backup
 
   token = set_current_user(gen_test_data_admin)
@@ -249,7 +245,7 @@ def test_restore_invalid_file_raises_invalid_backup(gen_test_data_admin):
 
 
 def test_restore_invalid_file_leaves_live_db_untouched(gen_test_data_admin):
-  from app.services.auth.context import set_current_user, reset_current_user
+  from app.services.auth.context import reset_current_user, set_current_user
   from app.services.data.backups import restore_backup
   from app.services.data.inventory import create_item, get_items
 
@@ -260,16 +256,14 @@ def test_restore_invalid_file_leaves_live_db_untouched(gen_test_data_admin):
   finally:
     reset_current_user(token)
 
-  with pytest.raises(Exception):
+  with pytest.raises(InvalidBackupError):
     restore_backup(make_upload(b"garbage"))
 
   assert [item["name"] for item in get_items()] == ["Alpha Asset"]
 
   from app.services.data.audit import get_audit_logs
 
-  assert not any(
-    log["action"] == "restored" for log in get_audit_logs()
-  )
+  assert not any(log["action"] == "restored" for log in get_audit_logs())
 
 
 def test_restore_truncated_backup_raises_invalid_input(gen_test_data_admin):

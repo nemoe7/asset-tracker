@@ -36,9 +36,7 @@ def db_connection(db_path=None):
 
   if connection is not None:
     if db_path is not None:
-      raise ValueError(
-        "db_path is ignored when a connection is already open"
-      )
+      raise ValueError("db_path is ignored when a connection is already open")
 
     yield connection
     return
@@ -61,9 +59,7 @@ def db_transaction(db_path=None):
 
   if not owns_connection:
     if db_path is not None:
-      raise ValueError(
-        "db_path is ignored when a connection is already open"
-      )
+      raise ValueError("db_path is ignored when a connection is already open")
 
     yield connection
     return
