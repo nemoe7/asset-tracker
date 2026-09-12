@@ -216,10 +216,8 @@ def test_admin_page_grants_permission_to_role(page, live_server, setup_admin):
   dialog = page.locator("#edit-role-dialog")
   expect(dialog).to_be_visible()
 
-  dialog.get_by_role("button", name="Add permission").click()
   page.locator("#edit-role-permission-name").fill("assets.read")
-  page.locator("#edit-role-permission-allowed").check()
-  page.locator("#edit-role-permission-submit").click()
+  page.locator("#edit-role-permission-add").click()
 
   expect(
     page.locator("#edit-role-permissions-list").get_by_text("assets.read")
@@ -249,10 +247,8 @@ def test_admin_page_grants_custom_permission_to_role(page, live_server, setup_ad
   dialog = page.locator("#edit-role-dialog")
   expect(dialog).to_be_visible()
 
-  dialog.get_by_role("button", name="Add permission").click()
   page.locator("#edit-role-permission-name").fill("custom.report.view")
-  page.locator("#edit-role-permission-allowed").check()
-  page.locator("#edit-role-permission-submit").click()
+  page.locator("#edit-role-permission-add").click()
 
   expect(
     dialog.locator("#edit-role-permissions-list").get_by_text("custom.report.view")
@@ -289,9 +285,8 @@ def test_admin_page_cancel_add_permission_does_not_persist(
   expect(dialog).to_be_visible()
 
   # Stage a new permission locally, then cancel without saving.
-  dialog.get_by_role("button", name="Add permission").click()
   page.locator("#edit-role-permission-name").fill("assets.read")
-  page.locator("#edit-role-permission-submit").click()
+  page.locator("#edit-role-permission-add").click()
   expect(
     dialog.locator("#edit-role-permissions-list").get_by_text("assets.read")
   ).to_be_visible()
@@ -449,3 +444,38 @@ def test_admin_page_edit_user_roles_rejects_unknown_role(
   expect(
     page.locator("#edit-user-roles-list").get_by_text("NoSuchRole", exact=True)
   ).to_have_count(0)
+
+
+@pytest.mark.e2e
+def test_admin_page_edit_role_rejects_duplicate_permission(
+  page, live_server, setup_admin
+):
+  response = page.request.post(
+    f"{live_server}/admin/roles",
+    form={
+      "name": "Viewer",
+      "description": "Read-only access",
+    },
+    max_redirects=0,
+  )
+  assert response.status == 302
+
+  page.goto(f"{live_server}/admin?tab=roles")
+
+  row = page.locator("#tab-roles tbody tr").filter(has_text="Viewer")
+  row.locator(".edit-role").click()
+  dialog = page.locator("#edit-role-dialog")
+  expect(dialog).to_be_visible()
+
+  page.locator("#edit-role-permission-name").fill("assets.read")
+  page.locator("#edit-role-permission-add").click()
+  expect(
+    dialog.locator("#edit-role-permissions-list").get_by_text("assets.read")
+  ).to_be_visible()
+
+  # Adding the same permission again shows the error and adds no row.
+  page.locator("#edit-role-permission-name").fill("assets.read")
+  page.locator("#edit-role-permission-add").click()
+
+  expect(page.locator("#edit-role-permission-error")).to_be_visible()
+  expect(dialog.locator("#edit-role-permissions-list > div")).to_have_count(1)
