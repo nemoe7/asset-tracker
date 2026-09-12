@@ -22,11 +22,16 @@ from ..services.data.audit import list_audit_logs
 from ..services.data.custom_fields import (
   archive_custom_field,
   create_custom_field,
+  get_custom_field,
   get_custom_fields,
   restore_custom_field,
   update_custom_field,
 )
 from ..services.data.db import reset_database
+from ..services.data.field_permissions import (
+  get_field_role_permissions,
+  set_field_role_permissions,
+)
 from ..services.data.locations import (
   create_location,
   delete_location,
@@ -406,6 +411,52 @@ def restore_custom_field_route(field_id):
     restore_custom_field(field_id)
   except CustomFieldNotFoundError:
     abort(404)
+
+  return redirect(url_for("admin.settings", tab=_CUSTOM_FIELDS_TAB))
+
+
+@admin.route("/custom-fields/<int:field_id>/permissions", methods=["GET"])
+@login_required
+@permission_required("custom_fields.manage")
+def get_field_permissions_route(field_id):
+  if get_custom_field(field_id) is None:
+    abort(404)
+
+  roles = [role for role in get_roles() if not is_admin_role(role["id"])]
+
+  return jsonify(
+    {
+      "roles": [
+        {
+          "id": role["id"],
+          "name": role["name"],
+        }
+        for role in roles
+      ],
+      "permissions": get_field_role_permissions(field_id),
+    }
+  )
+
+
+@admin.route("/custom-fields/<int:field_id>/permissions", methods=["POST"])
+@login_required
+@permission_required("custom_fields.manage")
+def set_field_permissions_route(field_id):
+  if get_custom_field(field_id) is None:
+    abort(404)
+
+  read_role_ids = [
+    int(raw) for raw in request.form.getlist("read_role_ids") if raw.strip().isdigit()
+  ]
+  update_role_ids = [
+    int(raw) for raw in request.form.getlist("update_role_ids") if raw.strip().isdigit()
+  ]
+
+  set_field_role_permissions(
+    field_id,
+    read_role_ids,
+    update_role_ids,
+  )
 
   return redirect(url_for("admin.settings", tab=_CUSTOM_FIELDS_TAB))
 

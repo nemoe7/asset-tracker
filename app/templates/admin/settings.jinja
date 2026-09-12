@@ -460,6 +460,31 @@
       {# ==================== End Edit Custom Field ==================== #}
 
 
+      {# ==================== Field Permissions ==================== #}
+      {% call modal("field-permissions-dialog", "Field permissions") %}
+        <p class="text-sm text-zinc-400">
+          Choose which roles can view and edit this field. The Admin role always has full access.
+        </p>
+
+        <div id="field-permissions-body" class="mt-4">
+          <p class="text-sm text-zinc-500">Loading…</p>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" id="cancel-field-permissions"
+            class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+            Cancel
+          </button>
+
+          <button type="button" id="save-field-permissions"
+            class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+            Save
+          </button>
+        </div>
+      {% endcall %}
+      {# ==================== End Field Permissions ==================== #}
+
+
       {# ==================== Custom Fields List ==================== #}
       {% if custom_fields %}
       <section class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
@@ -509,6 +534,12 @@
                 <td class="px-5 py-4">
                   <div class="flex justify-end gap-1">
                     <button type="button"
+                      class="field-permissions rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+                      data-field-id="{{ field.id }}" data-field-name="{{ field.name }}"
+                      title="Configure field permissions" aria-label="Configure field permissions">
+                      <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                    </button>
+                    <button type="button"
                       class="edit-field rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                       data-field-id="{{ field.id }}" data-field-name="{{ field.name }}"
                       data-field-type="{{ field.field_type }}" data-field-description="{{ field.description or '' }}"
@@ -555,6 +586,12 @@
               </div>
             </div>
             <div class="flex shrink-0 gap-1">
+              <button type="button"
+                class="field-permissions rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+                data-field-id="{{ field.id }}" data-field-name="{{ field.name }}"
+                title="Configure field permissions" aria-label="Configure field permissions">
+                <i class="bi bi-shield-lock" aria-hidden="true"></i>
+              </button>
               <button type="button"
                 class="edit-field rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                 data-field-id="{{ field.id }}" data-field-name="{{ field.name }}"
