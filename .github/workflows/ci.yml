@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -24,7 +29,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.dev.txt
 
+      - name: Install Playwright browsers
+        run: playwright install --with-deps chromium
+
       - name: Run tests
-        run: pytest -n auto -m "not e2e"
+        run: pytest -n auto
         env:
           SECRET_KEY: test-secret-key
