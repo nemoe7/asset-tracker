@@ -358,3 +358,94 @@ def test_admin_page_cancel_remove_permission_does_not_persist(
     f"{live_server}/admin/roles/{role_id}/permissions"
   ).json()
   assert any(p["permission"] == "assets.read" for p in permissions)
+
+
+@pytest.mark.e2e
+def test_admin_page_edit_user_roles_via_chips(page, live_server, setup_admin):
+  response = page.request.post(
+    f"{live_server}/admin/roles",
+    form={
+      "name": "Viewer",
+      "description": "Read-only access",
+    },
+    max_redirects=0,
+  )
+  assert response.status == 302
+
+  response = page.request.post(
+    f"{live_server}/admin/users",
+    form={
+      "username": "jsmith",
+      "name": "John Smith",
+      "password": "password123",
+    },
+    max_redirects=0,
+  )
+  assert response.status == 302
+
+  page.goto(f"{live_server}/admin?tab=users")
+
+  user_row = page.locator("#tab-users tbody tr").filter(has_text="jsmith")
+  expect(user_row).to_be_visible()
+
+  # Add the Viewer role via the chip UI.
+  user_row.locator(".edit-user").click()
+  dialog = page.locator("#edit-user-dialog")
+  expect(dialog).to_be_visible()
+
+  page.locator("#edit-user-roles-input").fill("Viewer")
+  page.locator("#edit-user-roles-add").click()
+  expect(
+    page.locator("#edit-user-roles-list").get_by_text("Viewer", exact=True)
+  ).to_be_visible()
+
+  dialog.get_by_role("button", name="Save changes").click()
+  page.wait_for_url(f"{live_server}/admin?tab=users")
+  expect(user_row.get_by_text("Viewer", exact=True)).to_be_visible()
+
+  # Remove the Viewer role via the chip remove button.
+  user_row.locator(".edit-user").click()
+  expect(
+    page.locator("#edit-user-roles-list").get_by_text("Viewer", exact=True)
+  ).to_be_visible()
+  page.locator("#edit-user-roles-list").get_by_role(
+    "button", name="Remove role"
+  ).click()
+  expect(
+    page.locator("#edit-user-roles-list").get_by_text("Viewer", exact=True)
+  ).to_have_count(0)
+
+  dialog.get_by_role("button", name="Save changes").click()
+  page.wait_for_url(f"{live_server}/admin?tab=users")
+  expect(user_row.get_by_text("Viewer", exact=True)).to_have_count(0)
+
+
+@pytest.mark.e2e
+def test_admin_page_edit_user_roles_rejects_unknown_role(
+  page, live_server, setup_admin
+):
+  response = page.request.post(
+    f"{live_server}/admin/users",
+    form={
+      "username": "jsmith",
+      "name": "John Smith",
+      "password": "password123",
+    },
+    max_redirects=0,
+  )
+  assert response.status == 302
+
+  page.goto(f"{live_server}/admin?tab=users")
+
+  user_row = page.locator("#tab-users tbody tr").filter(has_text="jsmith")
+  user_row.locator(".edit-user").click()
+  dialog = page.locator("#edit-user-dialog")
+  expect(dialog).to_be_visible()
+
+  page.locator("#edit-user-roles-input").fill("NoSuchRole")
+  page.locator("#edit-user-roles-add").click()
+
+  expect(page.locator("#edit-user-roles-error")).to_be_visible()
+  expect(
+    page.locator("#edit-user-roles-list").get_by_text("NoSuchRole", exact=True)
+  ).to_have_count(0)

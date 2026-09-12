@@ -249,8 +249,135 @@ const editUserForm = editUserModal?.querySelector('form');
 const editUserUsername = document.getElementById('edit-user-username');
 const editUserName = document.getElementById('edit-user-name');
 const editUserPassword = document.getElementById('edit-user-password');
-const editUserRoles = document.getElementById('edit-user-roles');
 const cancelEditUser = document.getElementById('cancel-edit-user');
+
+// Chip-based roles, mirroring the export-column add flow.
+const editUserRolesList = document.getElementById('edit-user-roles-list');
+const editUserRolesInput = document.getElementById('edit-user-roles-input');
+const editUserRolesAdd = document.getElementById('edit-user-roles-add');
+const editUserRolesOptions = document.getElementById('edit-user-roles-options');
+const editUserRolesError = document.getElementById('edit-user-roles-error');
+const editUserRolesValues = document.getElementById('edit-user-roles-values');
+const editUserRolesData = document.getElementById('edit-user-roles-data');
+
+// Assignable roles resolved from the page data: by id and by lowercased name.
+let editUserRolesById = {};
+let editUserRolesByName = {};
+
+if (editUserRolesData) {
+  try {
+    const roles = JSON.parse(editUserRolesData.textContent.trim() || '[]');
+    for (const role of roles) {
+      editUserRolesById[String(role.id)] = role;
+      editUserRolesByName[role.name.toLowerCase()] = role;
+    }
+  } catch {
+    editUserRolesById = {};
+    editUserRolesByName = {};
+  }
+}
+
+function buildEditUserRoleRow(role) {
+  const row = document.createElement('div');
+  row.className = 'edit-user-role-row flex w-fit max-w-full items-center gap-1.5 rounded-full border border-zinc-700 py-1 pl-3 pr-1.5';
+  row.dataset.roleId = String(role.id);
+
+  const label = document.createElement('span');
+  label.className = 'edit-user-role-name min-w-0 truncate text-sm text-zinc-200';
+  label.textContent = role.name;
+
+  const removeButton = document.createElement('button');
+  removeButton.type = 'button';
+  removeButton.className = 'edit-user-role-remove flex size-5 shrink-0 items-center justify-center rounded-full text-red-400 hover:bg-red-950 hover:text-red-300';
+  removeButton.title = 'Remove role';
+  removeButton.setAttribute('aria-label', 'Remove role');
+  removeButton.innerHTML = '<i class="bi bi-x-lg block" aria-hidden="true"></i>';
+  removeButton.addEventListener('click', () => {
+    row.remove();
+    syncEditUserRoleInputs();
+    refreshEditUserRoleOptions();
+  });
+
+  row.append(label, removeButton);
+  return row;
+}
+
+function setEditUserRoles(roles) {
+  editUserRolesList?.replaceChildren(...roles.map(buildEditUserRoleRow));
+  syncEditUserRoleInputs();
+  refreshEditUserRoleOptions();
+}
+
+// Rebuild the datalist from all assignable roles minus the ones already added.
+function refreshEditUserRoleOptions() {
+  if (!editUserRolesOptions) return;
+
+  const selected = new Set(
+    [...editUserRolesList.querySelectorAll('.edit-user-role-row')].map(
+      (row) => row.dataset.roleId
+    )
+  );
+
+  editUserRolesOptions.replaceChildren(
+  ...Object.values(editUserRolesById)
+    .filter((role) => !selected.has(String(role.id)))
+    .map((role) => new Option(role.name, role.name))
+  );
+}
+
+// Keep the hidden role_ids inputs in sync with the rendered chips so the form
+// still submits role_ids as a list, matching the backend's getlist contract.
+function syncEditUserRoleInputs() {
+  if (!editUserRolesValues) return;
+
+  editUserRolesValues.replaceChildren(
+    ...[...editUserRolesList.querySelectorAll('.edit-user-role-row')].map((row) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'role_ids';
+      input.value = row.dataset.roleId;
+      return input;
+    })
+  );
+}
+
+function addEditUserRoleByName(rawName) {
+  const name = rawName.trim();
+  if (!name) return;
+
+  const role = editUserRolesByName[name.toLowerCase()];
+  const existing = [...editUserRolesList.querySelectorAll('.edit-user-role-row')]
+    .some((row) => row.dataset.roleId === String(role?.id));
+
+  const valid = role !== undefined && !existing;
+  editUserRolesError?.classList.toggle('hidden', valid);
+
+  if (!valid) return;
+
+  editUserRolesList?.append(buildEditUserRoleRow(role));
+  syncEditUserRoleInputs();
+  refreshEditUserRoleOptions();
+  if (editUserRolesInput) editUserRolesInput.value = '';
+}
+
+function submitEditUserRole() {
+  addEditUserRoleByName(editUserRolesInput.value);
+}
+
+// Hide the error while typing a new value.
+editUserRolesInput?.addEventListener('input', () => {
+  editUserRolesError?.classList.add('hidden');
+});
+
+// Add a role when Enter is pressed instead of submitting the form.
+editUserRolesInput?.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  submitEditUserRole();
+});
+
+// Add a role via the explicit Add button.
+editUserRolesAdd?.addEventListener('click', submitEditUserRole);
 
 document.querySelectorAll('.edit-user').forEach((button) => {
   button.addEventListener('click', () => {
@@ -259,12 +386,11 @@ document.querySelectorAll('.edit-user').forEach((button) => {
     editUserName.value = button.dataset.userName ?? '';
     editUserPassword.value = '';
 
-    if (editUserRoles) {
-      const selected = (button.dataset.userRoles || '').split(',').filter(Boolean);
-      for (const option of editUserRoles.options) {
-        option.selected = selected.includes(option.value);
-      }
-    }
+    const roleIdList = (button.dataset.userRoles || '').split(',').filter(Boolean);
+    const selectedRoles = roleIdList
+      .map((id) => editUserRolesById[id])
+      .filter(Boolean);
+    setEditUserRoles(selectedRoles);
 
     openModal(editUserModal);
   });
