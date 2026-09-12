@@ -814,7 +814,7 @@
                       {% for role in user.roles %}
                       <span
                         class="rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">
-                        {{ role.name }}
+                        {{ role.role_name }}
                       </span>
                       {% endfor %}
                     {% else %}
@@ -827,7 +827,7 @@
                     <button type="button"
                       class="edit-user rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                       data-user-id="{{ user.id }}" data-user-username="{{ user.username }}"
-                      data-user-name="{{ user.name or '' }}" data-user-roles="{{ user.roles | map(attribute='id') | join(',') }}"
+                      data-user-name="{{ user.name or '' }}" data-user-roles="{{ user.roles | map(attribute='role_id') | join(',') }}"
                       data-update-url="{{ url_for('admin.update_user_route', user_id=user.id) }}"
                       title="Edit user" aria-label="Edit user">
                       <i class="bi bi-pencil" aria-hidden="true"></i>
@@ -867,7 +867,7 @@
               <button type="button"
                 class="edit-user rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                 data-user-id="{{ user.id }}" data-user-username="{{ user.username }}"
-                data-user-name="{{ user.name or '' }}" data-user-roles="{{ user.roles | map(attribute='id') | join(',') }}"
+                data-user-name="{{ user.name or '' }}" data-user-roles="{{ user.roles | map(attribute='role_id') | join(',') }}"
                 data-update-url="{{ url_for('admin.update_user_route', user_id=user.id) }}"
                 title="Edit user" aria-label="Edit user">
                 <i class="bi bi-pencil" aria-hidden="true"></i>
@@ -1046,8 +1046,8 @@
                 <td class="px-5 py-4">
                   {% set perms = role.permissions %}
                   {% if perms %}
-                    {% set denied = perms | selectattr('allowed', 'equalto', false) | list %}
-                    {% set granted = perms | rejectattr('allowed', 'equalto', false) | list %}
+                    {% set denied = perms | selectattr('allowed', 'equalto', 0) | list %}
+                    {% set granted = perms | selectattr('allowed', 'equalto', 1) | list %}
                     {% if granted %}
                     <span
                       class="rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">

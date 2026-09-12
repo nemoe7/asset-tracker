@@ -97,7 +97,7 @@ def get_user_roles(user_id):
       SELECT
         ur.user_id,
         ur.role_id,
-        r.name AS role
+        r.name AS role_name
       FROM user_roles ur
       JOIN roles r
         ON r.id = ur.role_id
