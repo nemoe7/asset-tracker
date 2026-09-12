@@ -1199,6 +1199,23 @@
           <tbody class="divide-y divide-zinc-800">
             <tr>
               <th scope="row" class="px-6 py-5 align-top font-normal">
+                <span class="block text-sm font-medium text-zinc-100">Export</span>
+                <span class="mt-1 block text-sm text-zinc-400">
+                  Export assets to a CSV&nbsp;file. Choose specific columns or
+                  leave the selection empty to include all fields.
+                </span>
+              </th>
+              <td class="px-6 py-5 text-right align-middle">
+                <button type="button" id="export-button"
+                  class="min-w-40 shrink-0 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
+                  <i class="bi bi-download mr-1" aria-hidden="true"></i>
+                  Export CSV
+                </button>
+              </td>
+            </tr>
+
+            <tr>
+              <th scope="row" class="px-6 py-5 align-top font-normal">
                 <span class="block text-sm font-medium text-zinc-100">Import</span>
                 <span class="mt-1 block text-sm text-zinc-400">
                   Import asset records from a CSV&nbsp;or&nbsp;.xlsx file. A unique
@@ -1212,23 +1229,6 @@
                   class="min-w-40 shrink-0 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
                   <i class="bi bi-upload mr-1" aria-hidden="true"></i>
                   Import assets
-                </button>
-              </td>
-            </tr>
-
-            <tr>
-              <th scope="row" class="px-6 py-5 align-top font-normal">
-                <span class="block text-sm font-medium text-zinc-100">Export</span>
-                <span class="mt-1 block text-sm text-zinc-400">
-                  Export assets to a CSV&nbsp;file. Choose specific columns or
-                  leave the selection empty to include all fields.
-                </span>
-              </th>
-              <td class="px-6 py-5 text-right align-middle">
-                <button type="button" id="export-button"
-                  class="min-w-40 shrink-0 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
-                  <i class="bi bi-download mr-1" aria-hidden="true"></i>
-                  Export CSV
                 </button>
               </td>
             </tr>
