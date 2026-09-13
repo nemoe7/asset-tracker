@@ -1285,6 +1285,7 @@ const viewItemModal = document.getElementById('view-item-modal');
 const viewItemId = document.getElementById('view-item-id');
 const viewItemName = document.getElementById('view-item-name');
 const viewItemDescription = document.getElementById('view-item-description');
+const viewItemUpdatedAt = document.getElementById('view-item-updated-at');
 const viewItemLocation = document.getElementById('view-item-location');
 const viewItemCopy = document.getElementById('view-item-copy');
 const viewItemEdit = document.getElementById('view-item-edit');
@@ -1323,6 +1324,17 @@ async function openViewItem(itemId) {
     viewItemId.textContent = asset.id;
     viewItemName.textContent = asset.name;
     viewItemDescription.textContent = asset.description || '—';
+    const formatUpdatedAtTimestamps = (timestamp) => {
+      const utc = timestamp
+      const date = utc ? new Date(utc.replace(' ', 'T') + 'Z') : null;
+
+      if (date && !Number.isNaN(date.getTime())) {
+        return date.toLocaleString();
+      }
+
+      return '—'; // Return a default value if the date is invalid
+    };
+    viewItemUpdatedAt.textContent = formatUpdatedAtTimestamps(asset.updated_at); //TODO
     viewItemLocation.textContent = asset.location_name || '—';
 
     renderViewItemCustomFields(
