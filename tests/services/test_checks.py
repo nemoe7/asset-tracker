@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from app.services.checks import check_item
@@ -5,6 +7,7 @@ from app.services.data.audit import get_audit_logs
 from app.services.data.inventory import (
   archive_item,
   create_item,
+  get_item,
 )
 from app.services.exceptions.data.inventory import (
   ItemIsArchivedError,
@@ -44,3 +47,13 @@ def test_check_archived_item(gen_test_data_admin):
 
   with pytest.raises(ItemIsArchivedError):
     check_item(item_id)
+
+
+def test_check_item_updates_updated_at(gen_test_data_admin):
+  item_id = create_item("Laptop")
+  prev_updated_at = get_item(item_id)["updated_at"]
+  time.sleep(2)
+  check_item(item_id)
+  next_updated_at = get_item(item_id)["updated_at"]
+
+  assert prev_updated_at != next_updated_at
