@@ -227,7 +227,7 @@ The system shall maintain records for office assets.
 - **AST-015** `[P5]`: The system shall allow authorized users to provide free-format notes when archiving an asset.
 - **AST-016** `[P5]`: The system shall retain an archived asset's archival reason and notes while the asset remains archived, and shall include them in the archival audit event.
 - **AST-017** `[P5]`: When an archived asset is restored to an active state, the system shall clear its archival reason and notes. The restoration event recorded in the audit log shall include the archival reason and notes recorded for the archived asset.
-- **AST-018** `[P-TBD]`: The system shall expose the built-in Updated At timestamp for each asset in the applicable list views.
+- **AST-018** `[P3]`: The system shall expose the built-in Updated At timestamp for each asset in the applicable list views.
 
 ### 3.4 Configurable Asset Fields
 
@@ -255,11 +255,9 @@ The system shall provide a minimum set of built-in asset fields and allow Office
 - **FLD-013** `[P5]`: Custom fields shall be available for viewing and editing according to user permissions.
 - **FLD-014** `[P4]`: Custom fields shall be available for searching, filtering, and exporting where applicable.
 - **FLD-015** `[P3]`: Changes to custom field definitions shall be recorded in the audit log.
-- **FLD-016** `[P-TBD]`: Office Admins shall be able to mark a custom field as copyable, and the interface shall provide a copy button for the field's value.
-- **FLD-017** `[P-TBD]`: The system shall support an expiry date field (`expires_on`) whose displayed value is the expiry date while today is before it, and "Expired" once today is the expiry date or has passed it.
-- **FLD-018** `[P-TBD]`: The system shall support a status field whose value is an Enum or Text value.
-
-New field and feature requirements introduced in this update are marked with priority `[P-TBD]` (to be determined) until confirmed with the client (OI-008).
+- **FLD-016** `[P4]`: Office Admins shall be able to mark a custom field as copyable, and the interface shall provide a copy button for the field's value.
+- **FLD-017** `[P2]`: The system shall support an expiry date field (`expires_on`) whose displayed value is the expiry date while today is before it, and "Expired" once today is the expiry date or has passed it.
+- **FLD-018** `[P1]`: The system shall support a status field whose value is a Text value.
 
 ### 3.5 Asset Identification and QR Codes
 
@@ -286,7 +284,7 @@ The system shall support physical asset checking through QR scanning.
 - **CHK-007** `[P1]`: A Checker shall be able to update permitted asset information after scanning.
 - **CHK-008** `[P1]`: The system shall record changes resulting from an asset check.
 - **CHK-009** `[P1]`: Archived assets shall be handled according to their status and the user's permissions when scanned.
-- **CHK-010** `[P-TBD]`: An asset check shall update the checked asset's Updated At timestamp.
+- **CHK-010** `[P1]`: An asset check shall update the checked asset's Updated At timestamp.
 
 ### 3.7 Search, Filtering, and List Views
 
@@ -317,7 +315,7 @@ The system shall maintain an audit trail of relevant system activity.
 - **AUD-011** `[P3]`: Authorized users shall be able to view relevant audit and activity logs from supported desktop and mobile devices.
 - **AUD-012** `[P5]`: The system shall restrict log visibility according to the user's permissions.
 - **AUD-013** `[P3]`: Audit logs shall not be editable through normal asset management functions.
-- **AUD-014** `[P-TBD]`: The view-asset interface shall provide a button that opens the audit and activity log page pre-filtered to the selected asset.
+- **AUD-014** `[P2]`: The view-asset interface shall provide a button that opens the audit and activity log page pre-filtered to the selected asset.
 
 ### 3.9 Export
 
@@ -463,9 +461,9 @@ The system shall support field types appropriate to the project's requirements, 
 | Enum | One value selected from an Admin-defined list |
 | User | Reference to a user account within the system |
 | Expiry Date | Calendar date (`expires_on`); shown as the date while today is before it, and as "Expired" once today is the expiry date or has passed it |
-| Status | Value from an Enum or Text field (value type to be determined, OI-008) |
+| Status | Text value |
 
-This set is confirmed as the complete set of custom field types for the initial implementation (OI-003, resolved). The expiry date and status field types are requested; whether the Status field's value is an Enum or Text is to be determined (OI-008).
+The expiry date and status field types are requested (added in v0.9); the Status field's value type is confirmed as Text (OI-008, resolved).
 
 #### 5.1.2 Custom Field Configuration
 
@@ -698,7 +696,7 @@ The project will be considered complete when:
 | OI-005 | Backup retention policy to be confirmed | Open |
 | OI-006 | Backup storage deployment configuration to be finalized | Open |
 | OI-007 | NAS backup support to be evaluated as a lower-priority feature | Open |
-| OI-008 | Confirm whether the Status field's value type is Enum or Text, with priority to be determined | Open |
+| OI-008 | Confirm whether the Status field's value type is Enum or Text, with priority to be determined | Resolved (v0.10) |
 
 ---
 
@@ -715,3 +713,4 @@ The project will be considered complete when:
 | 0.7 | 2026-09-04 | Add archival reason and notes fields. |
 | 0.8 | 2026-09-05 | Resolve `OI-002` (single Admin role, full default permissions) and `OI-003` (custom field types confirmed as implemented). |
 | 0.9 | 2026-09-06 | Add new client requirements (`OI-008`) with priority to be determined: copyable custom fields, expiry date (`expires_on`) field, status field (value type to be determined), exposing the inventory-item Updated At, updating Updated At on asset checks, and a per-asset log view button. |
+| 0.10 | 2026-09-13 | Assign client-confirmed priorities to `AST-018`, `FLD-016`, `FLD-017`, `FLD-018`, `CHK-010`, and `AUD-014`; resolve `OI-008` (Status field value type is Text). |
