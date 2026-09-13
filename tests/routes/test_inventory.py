@@ -1,4 +1,5 @@
 import importlib
+import time
 
 from app.services.data.custom_fields import (
   get_custom_field,
@@ -396,6 +397,22 @@ def test_check_item_archived(gen_test_admin_client, gen_test_item):
 
   assert response.status_code == 400
   assert response.json["error"]
+
+
+def test_check_item_updates_updated_at(gen_test_admin_client, gen_test_item):
+  item_id = gen_test_item("Laptop")
+
+  prev_updated_at = gen_test_admin_client.get(
+    f"/inventory/{item_id}",
+  ).json["updated_at"]
+
+  time.sleep(2)
+
+  next_updated_at = gen_test_admin_client.post(
+    f"/inventory/{item_id}/check",
+  ).json["updated_at"]
+
+  assert prev_updated_at != next_updated_at
 
 
 def test_admin_can_search_inventory(

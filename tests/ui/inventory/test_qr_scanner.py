@@ -1,3 +1,5 @@
+import time
+
 import pytest
 from playwright.sync_api import expect
 
@@ -272,3 +274,49 @@ def test_qr_scanner_error_hides_after_scan(page, live_server, create_item):
   expect(page.locator("#qr-scanner-error")).to_be_hidden()
   expect(page.locator("#view-item-modal")).to_be_visible()
   expect(page.locator("#view-item-name")).to_have_text("Scanned Asset")
+
+
+def test_qr_scanner_updates_updated_at(page, live_server, create_item):
+  item = create_item("Test Asset")
+
+  page.goto(f"{live_server}/")
+
+  # Click the link to open the item modal
+  page.locator(f"a.view-item-link[data-item-id='{item['id']}']:visible").first.click()
+
+  expect(page.locator("#view-item-modal")).to_be_visible()
+  expect(page.locator("#view-item-name")).to_have_text("Test Asset")
+  prev_updated_at = page.locator("#view-item-updated-at").inner_text().strip()
+
+  time.sleep(2)
+
+  page.add_init_script(
+    f"""
+        window.qrScannerStopCalled = false;
+
+        window.Html5Qrcode = class {{
+            async start(config, options, onScan) {{
+                onScan("{item["id"]}");
+            }}
+
+            async stop() {{
+                window.qrScannerStopCalled = true;
+            }}
+
+            clear() {{}}
+        }};
+        """
+  )
+
+  page.goto(f"{live_server}/")
+
+  page.locator("#qr-scanner-button").click()
+
+  page.wait_for_function("window.qrScannerStopCalled === true")
+
+  expect(page.locator("#qr-scanner-modal")).to_be_hidden()
+  expect(page.locator("#view-item-modal")).to_be_visible()
+
+  # Verify that the updated_at field has changed
+  updated_at = page.locator("#view-item-updated-at").inner_text().strip()
+  assert updated_at != prev_updated_at
