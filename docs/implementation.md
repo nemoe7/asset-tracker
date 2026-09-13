@@ -45,7 +45,7 @@
 | CHK-007 | P1 | Checker can update permitted information after scanning. | 🟢 | CHK-002, AUT-003 | AST-003, FLD-013 | |
 | CHK-008 | P1 | Record changes resulting from an asset check. | 🟢 | CHK-007 | AUD-002, AUD-010 | |
 | CHK-009 | P1 | Handle archived assets according to status/permissions. | 🟢 | AST-009, AUT-004 | AST-010 | |
-| CHK-010 | P1 | Asset checks update the checked asset's Updated At timestamp. | 🔴 | CHK-007, CHK-008 | AST-018 | |
+| CHK-010 | P1 | Asset checks update the checked asset's Updated At timestamp. | 🟢 | CHK-007, CHK-008 | AST-018 | |
 | SRH-001 | P1 | Users can search assets. | 🟢 | AST-002 | SRH-004 | |
 | SRH-002 | P1 | Users can filter assets using available fields. | 🟢 | AST-002 | SRH-006 | |
 | SRH-003 | P1 | Users can sort asset results. | 🟢 | AST-002 | SRH-004 | |

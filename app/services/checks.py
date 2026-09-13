@@ -31,4 +31,9 @@ def check_item(item_id):
       entity_id=item_id,
     )
 
+    item = get_item(
+      item_id,
+      include_archived=True,
+    )
+
     return item
