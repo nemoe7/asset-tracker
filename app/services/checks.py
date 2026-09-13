@@ -1,6 +1,6 @@
 from .data.audit import create_audit_log
 from .data.db import db_transaction
-from .data.inventory import get_item
+from .data.inventory import get_item, update_item
 from .exceptions.data.inventory import (
   ItemIsArchivedError,
   ItemNotFoundError,
@@ -19,6 +19,11 @@ def check_item(item_id):
 
     if item["archived_at"] is not None:
       raise ItemIsArchivedError()
+
+    update_item(
+      item_id,
+      check=True,
+    )
 
     create_audit_log(
       action="checked",
