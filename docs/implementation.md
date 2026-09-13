@@ -29,6 +29,7 @@
 | FLD-001 | P1 | Provide required built-in asset fields. | 🟢 | — | AST-001, AST-007, AST-013 | |
 | FLD-002 | P1 | Admins can create custom asset fields. | 🟢 | — | FLD-003 | |
 | FLD-003 | P1 | Admins can name custom fields. | 🟢 | FLD-002 | — | |
+| FLD-018 | P1 | Support a Status field with a Text value. | 🔴 | FLD-002, FLD-004, FLD-005 | FLD-005 | OI-008 resolved: Text value type |
 | QRC-001 | P1 | Associate each asset with a unique Asset ID. | 🟢 | AST-005 | QRC-003 | |
 | QRC-002 | P1 | Encode Asset ID in the QR code. | 🟢 | QRC-001 | QRC-006 | QR generation to be handled externally |
 | QRC-003 | P1 | Asset ID uniquely identifies its asset. | 🟢 | AST-005, AST-008 | QRC-001, CHK-002 | |
@@ -44,6 +45,7 @@
 | CHK-007 | P1 | Checker can update permitted information after scanning. | 🟢 | CHK-002, AUT-003 | AST-003, FLD-013 | |
 | CHK-008 | P1 | Record changes resulting from an asset check. | 🟢 | CHK-007 | AUD-002, AUD-010 | |
 | CHK-009 | P1 | Handle archived assets according to status/permissions. | 🟢 | AST-009, AUT-004 | AST-010 | |
+| CHK-010 | P1 | Asset checks update the checked asset's Updated At timestamp. | 🔴 | CHK-007, CHK-008 | AST-018 | |
 | SRH-001 | P1 | Users can search assets. | 🟢 | AST-002 | SRH-004 | |
 | SRH-002 | P1 | Users can filter assets using available fields. | 🟢 | AST-002 | SRH-006 | |
 | SRH-003 | P1 | Users can sort asset results. | 🟢 | AST-002 | SRH-004 | |
@@ -71,10 +73,18 @@
 | USE-002 | P1 | Provide a desktop-oriented management experience. | 🟢 | — | USE-003 | |
 | USE-003 | P1 | Provide a mobile-oriented checking/scanning experience. | 🟢 | QRC-004, CHK-001 | CMP-002, CMP-003 | |
 
+### P2
+
+| ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
+| ----- | :---: | ----- | :---: | ----- | ----- | -------- |
+| FLD-017 | P2 | Support an expiry date field shown as the date before expiry and "Expired" on/after. | 🔴 | FLD-002, FLD-004, FLD-005 | FLD-005 | |
+| AUD-014 | P2 | View-asset button opens the audit log pre-filtered to the selected asset. | 🔴 | AST-002, AUD-011 | SRH-002 | |
+
 ### P3
 
 | ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
 | ----- | :---: | ----- | :---: | ----- | ----- | -------- |
+| AST-018 | P3 | Expose the built-in Updated At timestamp in applicable list views. | 🔴 | FLD-001, SRH-004 | SRH-003 | |
 | AUD-005 | P3 | Record custom-field creation/modification/deactivation. | 🟢 | FLD-002, FLD-009, FLD-010 | FLD-015 | |
 | AUD-006 | P3 | Record user/role/permission changes. | 🟢 | USR-001–007 | USR-013 | |
 | AUD-007 | P3 | Record backup/restoration events. | 🟢 | BKP-011, BKP-012 | BKP-014 | |
@@ -130,6 +140,7 @@
 | FLD-009 | P4 | Admins can modify custom-field configuration. | 🟢 | FLD-002 | FLD-015 | |
 | FLD-010 | P4 | Admins can deactivate custom fields. | 🟢 | FLD-002 | FLD-011, FLD-015 | |
 | FLD-014 | P4 | Custom fields available for search/filter/export. | 🟢 | FLD-002, FLD-004 | SRH-007, EXP-003 | User-type fields excluded (FLD-007 pending) |
+| FLD-016 | P4 | Admins can mark a custom field copyable; interface provides a copy button. | 🔴 | FLD-002, FLD-013 | — | |
 | EXP-005 | P4 | Authorized users can create saved export templates. | 🔴 | EXP-001 | EXP-006, EXP-007 | |
 | EXP-006 | P4 | Export templates contain filters and field selections. | 🔴 | EXP-005 | EXP-007 | |
 | EXP-007 | P4 | Users can apply saved export templates. | 🔴 | EXP-005, EXP-006 | — | |
