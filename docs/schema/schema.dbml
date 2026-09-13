@@ -41,7 +41,7 @@ Table inventory_items {
 Table custom_fields {
   id integer [pk]
   name text [not null, unique]
-  field_type text [not null]
+  field_type text [not null, note: "values: text, integer, decimal, boolean, date, expiry_date, enum, user"]
   description text
   required integer [not null, default: 0]
   enum_values text

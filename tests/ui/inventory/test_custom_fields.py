@@ -9,6 +9,7 @@ def typed_fields(create_custom_field):
     "integer": create_custom_field("Quantity", "integer"),
     "decimal": create_custom_field("Price", "decimal"),
     "date": create_custom_field("Purchased", "date"),
+    "expiry_date": create_custom_field("Expires On", "expiry_date"),
     "boolean": create_custom_field("Active", "boolean"),
     "enum": create_custom_field(
       "Category",
@@ -44,6 +45,10 @@ def test_add_item_modal_renders_custom_field_inputs(
     "decimal",
   )
   expect(modal.locator('input[name="f_Purchased"]')).to_have_attribute(
+    "type",
+    "date",
+  )
+  expect(modal.locator('input[name="f_Expires On"]')).to_have_attribute(
     "type",
     "date",
   )
@@ -181,6 +186,51 @@ def test_view_modal_shows_custom_field_values(
   expect(view_modal.get_by_text("True")).to_be_visible()
   # Empty Notes + the built-in Description and Location placeholders.
   expect(view_modal.get_by_text("—")).to_have_count(3)
+
+
+@pytest.mark.e2e
+def test_view_modal_shows_expired_for_past_expiry_date(
+  page,
+  live_server,
+  create_custom_field,
+  create_item,
+  set_item_custom_field,
+):
+  expiry_field = create_custom_field("Expires On", "expiry_date")
+
+  item = create_item("Past Expiry")
+
+  set_item_custom_field(item["id"], expiry_field["name"], "2020-01-01")
+
+  page.goto(f"{live_server}/")
+  page.get_by_role("row").filter(has_text="Past Expiry").click()
+
+  view_modal = page.get_by_role("dialog")
+
+  expect(view_modal.get_by_text("Expired")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_view_modal_shows_date_for_future_expiry_date(
+  page,
+  live_server,
+  create_custom_field,
+  create_item,
+  set_item_custom_field,
+):
+  expiry_field = create_custom_field("Expires On", "expiry_date")
+
+  item = create_item("Future Expiry")
+
+  set_item_custom_field(item["id"], expiry_field["name"], "2099-01-01")
+
+  page.goto(f"{live_server}/")
+  page.get_by_role("row").filter(has_text="Future Expiry").click()
+
+  view_modal = page.get_by_role("dialog")
+
+  expect(view_modal.get_by_text("2099-01-01")).to_be_visible()
+  expect(view_modal.get_by_text("Expired")).to_have_count(0)
 
 
 @pytest.mark.e2e

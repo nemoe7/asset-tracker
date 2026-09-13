@@ -29,6 +29,11 @@ def date_field(gen_test_data_admin):
 
 
 @pytest.fixture
+def expiry_date_field(gen_test_data_admin):
+  return _create_field("Expires On", "expiry_date")
+
+
+@pytest.fixture
 def enum_field(gen_test_data_admin):
   return _create_field(
     "Category",

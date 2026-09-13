@@ -696,6 +696,48 @@ def test_set_date_custom_field_value_rejects_invalid_value(
     )
 
 
+def test_set_expiry_date_custom_field_value(gen_test_data_admin):
+  field_id = create_custom_field(
+    name="Expires On",
+    field_type="expiry_date",
+  )
+  item_id = create_item(
+    name="Test Item",
+  )
+
+  set_custom_field_value(
+    item_id,
+    field_id,
+    "2026-08-20",
+  )
+
+  value = get_custom_field_value(
+    item_id,
+    field_id,
+  )
+
+  assert value["value"] == "2026-08-20"
+
+
+def test_set_expiry_date_custom_field_value_rejects_invalid_value(
+  gen_test_data_admin,
+):
+  field_id = create_custom_field(
+    name="Expires On",
+    field_type="expiry_date",
+  )
+  item_id = create_item(
+    name="Test Item",
+  )
+
+  with pytest.raises(InvalidCustomFieldValueError):
+    set_custom_field_value(
+      item_id,
+      field_id,
+      "not a date",
+    )
+
+
 def test_set_enum_custom_field_value(gen_test_data_admin):
   field_id = create_custom_field(
     name="Condition",
