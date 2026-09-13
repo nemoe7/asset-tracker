@@ -29,7 +29,7 @@
 | FLD-001 | P1 | Provide required built-in asset fields. | 🟢 | — | AST-001, AST-007, AST-013 | |
 | FLD-002 | P1 | Admins can create custom asset fields. | 🟢 | — | FLD-003 | |
 | FLD-003 | P1 | Admins can name custom fields. | 🟢 | FLD-002 | — | |
-| FLD-018 | P1 | Support a Status field with a Text value. | 🔴 | FLD-002, FLD-004, FLD-005 | FLD-005 | OI-008 resolved: Text value type |
+| FLD-018 | P1 | Support a Status field with a Text value. | 🟢 | FLD-002, FLD-004, FLD-005 | FLD-005 | The user can just create a custom field with the name "Status" and type "Text" |
 | QRC-001 | P1 | Associate each asset with a unique Asset ID. | 🟢 | AST-005 | QRC-003 | |
 | QRC-002 | P1 | Encode Asset ID in the QR code. | 🟢 | QRC-001 | QRC-006 | QR generation to be handled externally |
 | QRC-003 | P1 | Asset ID uniquely identifies its asset. | 🟢 | AST-005, AST-008 | QRC-001, CHK-002 | |
