@@ -597,7 +597,7 @@ function setCustomFieldValue(input, value) {
 }
 
 function clearCustomFieldRows(container) {
-  for (const row of [...container.querySelectorAll('tr.cf-row')]) {
+  for (const row of [...container.querySelectorAll('.cf-filter-row')]) {
     row.remove();
   }
 }
