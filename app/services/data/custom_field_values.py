@@ -55,7 +55,7 @@ def _validate_value(field, value):
         raise InvalidCustomFieldValueError(f"Value {value} must be a boolean.")
 
   # TODO: verify weird date formats
-  elif field_type == "date":
+  elif field_type in ("date", "expiry_date"):
     if not isinstance(value, str):
       raise InvalidCustomFieldValueError(
         f"Value {value} must be a date in YYYY-MM-DD format"

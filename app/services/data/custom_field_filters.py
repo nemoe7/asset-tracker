@@ -30,6 +30,14 @@ _FIELD_OPERATORS = {
     (">", "After"),
     (">=", "Since"),
   ],
+  "expiry_date": [
+    ("=", "On"),
+    ("!=", "Not on"),
+    ("<", "Before"),
+    ("<=", "Until"),
+    (">", "After"),
+    (">=", "Since"),
+  ],
   "enum": [
     ("=", "Is"),
     ("!=", "Is not"),
@@ -93,7 +101,7 @@ def _validate_value(field, raw_value):
     except ValueError:
       raise InvalidInputError(f"Invalid value for {field_type} field")
 
-  if field_type == "date":
+  if field_type in ("date", "expiry_date"):
     try:
       date.fromisoformat(value)
     except ValueError:

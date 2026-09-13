@@ -591,6 +591,95 @@ def test_admin_can_create_asset_with_custom_field_values(
   }
 
 
+def test_admin_can_create_asset_with_expiry_date_custom_field(
+  gen_test_admin_client,
+):
+  _create_field(gen_test_admin_client, "Expires On", "expiry_date")
+
+  response = gen_test_admin_client.post(
+    "/inventory",
+    data={
+      "name": "Expiry Asset",
+      "f_Expires On": "2027-12-31",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 200
+
+  item_id = response.json["id"]
+
+  response = gen_test_admin_client.get(f"/inventory/{item_id}")
+
+  assert response.json["custom_fields"]["Expires On"] == "2027-12-31"
+
+
+def test_admin_can_create_asset_with_invalid_expiry_date_custom_field(
+  gen_test_admin_client,
+):
+  _create_field(gen_test_admin_client, "Expires On", "expiry_date")
+
+  response = gen_test_admin_client.post(
+    "/inventory",
+    data={
+      "name": "Expiry Asset",
+      "f_Expires On": "not-a-date",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
+def test_fragment_shows_expired_for_past_expiry_date(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  _create_field(gen_test_admin_client, "Expires On", "expiry_date")
+
+  item_id = gen_test_item(name="Expiring Asset")
+
+  gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "f_Expires On": "2020-01-01",
+      "name": "Expiring Asset",
+    },
+  )
+
+  response = gen_test_admin_client.get("/inventory/fragment")
+
+  assert response.status_code == 200
+  assert b"Expired" in response.data
+
+
+def test_fragment_shows_date_for_future_expiry_date(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  _create_field(gen_test_admin_client, "Expires On", "expiry_date")
+
+  item_id = gen_test_item(name="Future Asset")
+
+  gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "f_Expires On": "2099-01-01",
+      "name": "Future Asset",
+    },
+  )
+
+  response = gen_test_admin_client.get("/inventory/fragment")
+
+  assert response.status_code == 200
+  assert b"2099-01-01" in response.data
+
+
 def test_admin_creating_asset_with_empty_optional_value_stores_no_row(
   gen_test_admin_client,
 ):

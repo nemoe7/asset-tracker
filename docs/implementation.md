@@ -77,7 +77,7 @@
 
 | ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
 | ----- | :---: | ----- | :---: | ----- | ----- | -------- |
-| FLD-017 | P2 | Support an expiry date field shown as the date before expiry and "Expired" on/after. | 🔴 | FLD-002, FLD-004, FLD-005 | FLD-005 | |
+| FLD-017 | P2 | Support an expiry date field shown as the date before expiry and "Expired" on/after. | 🟢 | FLD-002, FLD-004, FLD-005 | FLD-005 | |
 | AUD-014 | P2 | View-asset button opens the audit log pre-filtered to the selected asset. | 🔴 | AST-002, AUD-011 | SRH-002 | |
 
 ### P3

@@ -21,7 +21,7 @@ from .services.data.db import (
 )
 from .services.data.user_roles import is_admin_role, is_role_assigned
 from .services.exceptions.auth.authorization import PermissionDeniedError
-from .templatetags import format_datetime
+from .templatetags import format_custom_field_value, format_datetime
 
 
 def _database_initialized():
@@ -129,6 +129,7 @@ def create_app():
   app.jinja_env.globals["is_admin_role"] = is_admin_role
 
   app.jinja_env.filters["datetime"] = format_datetime
+  app.jinja_env.filters["custom_field_value"] = format_custom_field_value
 
   app.jinja_env.autoescape = lambda name: True
 
