@@ -592,8 +592,14 @@ def update_item(
   name=_UNSET,
   description=_UNSET,
   location_id=_UNSET,
+  check=False,
 ):
-  if name is _UNSET and description is _UNSET and location_id is _UNSET:
+  if (
+    name is _UNSET
+    and description is _UNSET
+    and location_id is _UNSET
+    and check is False
+  ):
     raise InvalidInputError("No fields to update")
 
   with db_transaction() as connection:
@@ -649,7 +655,7 @@ def update_item(
           "new": location_id,
         }
 
-    if not updates:
+    if not updates and not check:
       return True
 
     updates.append("updated_at = datetime('now')")
@@ -665,12 +671,13 @@ def update_item(
       values,
     )
 
-    create_audit_log(
-      action="updated",
-      entity_type="inventory_item",
-      entity_id=item_id,
-      details=details,
-    )
+    if not check:
+      create_audit_log(
+        action="updated",
+        entity_type="inventory_item",
+        entity_id=item_id,
+        details=details,
+      )
 
     return True
 
