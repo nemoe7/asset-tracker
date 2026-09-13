@@ -69,3 +69,7 @@
 - Use imperative wording, lowercase after `:`, no period, and under 72 characters.
 - Keep the subject focused on what changed.
 - Avoid vague messages.
+
+## Glossary
+
+- `checks`: a QR code scan
