@@ -40,6 +40,7 @@
 - Preserve existing behavior unless a requirement requires changing it.
 - Leave unrelated code untouched.
 - The tailwindcss watcher/generator may touch `app/static/css/app.css`, ALWAYS include the file in commits. It doesn't need a separate commit.
+- ALWAYS update `docs/implementation.md` when adding or changing functionality.
 
 ## Testing
 

@@ -375,4 +375,30 @@ def test_asset_name_link_is_keyboard_accessible(
   page.locator(f"a.view-item-link[data-item-id='{item['id']}']").first.press("Enter")
 
   expect(page.locator("#view-item-modal")).to_be_visible()
-  expect(page.locator("#view-item-name")).to_have_text("Test Asset")
+
+
+@pytest.mark.e2e
+def test_view_modal_audit_button_navigates_to_filtered_audit_log(
+  page,
+  live_server,
+  create_item,
+):
+  item = create_item("Test Asset")
+
+  page.goto(f"{live_server}/")
+
+  page.locator(f'tr.view-item[data-item-id="{item["id"]}"]').click()
+
+  expect(page.locator("#view-item-modal")).to_be_visible()
+
+  page.locator("#view-item-audit").click()
+
+  page.wait_for_url(f"{live_server}/admin*")
+
+  assert "tab=audit" in page.url
+  assert "entity_type=inventory_item" in page.url
+  assert f"entity_id={item['id']}" in page.url
+  expect(page.locator("#tab-audit")).to_be_visible()
+  expect(
+    page.locator("[data-filter-chip]", has_text=f"ID: {item['id']}"),
+  ).to_have_text(f"ID: {item['id']}")

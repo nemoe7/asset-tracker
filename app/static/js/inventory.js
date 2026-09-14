@@ -1339,6 +1339,7 @@ const viewItemUpdatedAt = document.getElementById('view-item-updated-at');
 const viewItemLocation = document.getElementById('view-item-location');
 const viewItemCopy = document.getElementById('view-item-copy');
 const viewItemEdit = document.getElementById('view-item-edit');
+const viewItemAudit = document.getElementById('view-item-audit');
 const viewItemArchived = document.getElementById('view-item-archived');
 const viewItemRestore = document.getElementById('view-item-restore');
 
@@ -1453,6 +1454,19 @@ viewItemRestore?.addEventListener('click', () => {
 
   currentRestoreItemId = currentViewItemId;
   switchModal(restoreItemModal);
+});
+
+// View → Audit.
+
+viewItemAudit?.addEventListener('click', () => {
+  if (!currentViewItemId) {
+    return;
+  }
+
+  const auditUrl = new URL(viewItemAudit.dataset.auditBase, window.location.href);
+  auditUrl.searchParams.set('entity_type', 'inventory_item');
+  auditUrl.searchParams.set('entity_id', currentViewItemId);
+  window.location.href = auditUrl.toString();
 });
 
 // ==================== End View Asset Modal ====================
