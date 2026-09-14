@@ -196,7 +196,7 @@ Examples:
 inventory.read
 inventory.update
 users.create
-users.archive
+users.delete
 locations.delete
 ```
 
@@ -216,6 +216,23 @@ This allows permissions to be assigned to individual custom fields as well as th
 ```text
 field.*
 ```
+
+The concrete operations are `.create`, `.read`, `.update`, and `.delete`.
+
+`.manage` is not a valid operation and shall not be used. Delete and archive operations use `.delete`; restoring an archived record uses `.create`.
+
+Custom fields use the `field` namespace:
+
+```text
+field.create
+field.delete
+field.<id>.read
+field.<id>.update
+```
+
+`field.create` and `field.delete` are namespace-level operations; per-field read and update operations include the field identifier.
+
+A `.read` permission fails open for non-sensitive namespaces: when no grant or deny matches, `has_permission(user_id, "<namespace>.read")` returns `True` unless the namespace is `users`, `roles`, `permissions`, `audit`, or `field`. An explicit `.read` deny still blocks reading because deny decisions are evaluated before the fail-open default.
 
 ---
 
