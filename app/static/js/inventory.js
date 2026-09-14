@@ -796,7 +796,7 @@ function buildFilterValueControl(field, op) {
       control.append(new Option('Expired', 'expired'), new Option('Not Expired', 'not expired'));
       return control;
     }
-    
+
     control = document.createElement('input');
     control.className = 'form-input min-w-0 flex-1';
     control.name = 'f_value';
@@ -1464,7 +1464,6 @@ viewItemAudit?.addEventListener('click', () => {
   }
 
   const auditUrl = new URL(viewItemAudit.dataset.auditBase, window.location.href);
-  auditUrl.searchParams.set('entity_type', 'inventory_item');
   auditUrl.searchParams.set('entity_id', currentViewItemId);
   window.location.href = auditUrl.toString();
 });

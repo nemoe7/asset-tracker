@@ -85,8 +85,8 @@ def get_audit_logs(entity_type=None, entity_id=None):
       parameters.append(entity_type)
 
     if entity_id is not None:
-      query += " AND entity_id = ?"
-      parameters.append(str(entity_id))
+      query += " AND entity_id LIKE ?"
+      parameters.append(str(entity_id) + "%")
 
     query += " ORDER BY id"
 
@@ -124,8 +124,8 @@ def list_audit_logs(
       parameters.append(entity_type)
 
     if entity_id is not None:
-      where_clauses.append("audit_log.entity_id = ?")
-      parameters.append(str(entity_id))
+      where_clauses.append("audit_log.entity_id LIKE ?")
+      parameters.append(str(entity_id) + "%")
 
     if action is not None:
       where_clauses.append("audit_log.action = ?")
