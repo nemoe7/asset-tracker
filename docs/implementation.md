@@ -78,13 +78,13 @@
 | ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
 | ----- | :---: | ----- | :---: | ----- | ----- | -------- |
 | FLD-017 | P2 | Support an expiry date field shown as the date before expiry and "Expired" on/after. | 🟢 | FLD-002, FLD-004, FLD-005 | FLD-005 | |
-| AUD-014 | P2 | View-asset button opens the audit log pre-filtered to the selected asset. | 🔴 | AST-002, AUD-011 | SRH-002 | |
+| AUD-014 | P2 | View-asset button opens the audit log pre-filtered to the selected asset. | 🟢 | AST-002, AUD-011 | SRH-002 | |
 
 ### P3
 
 | ID⠀⠀⠀⠀⠀ | Prio | Description | Status | Requires | Related | Notes |
 | ----- | :---: | ----- | :---: | ----- | ----- | -------- |
-| AST-018 | P3 | Expose the built-in Updated At timestamp in applicable list views. | 🔴 | FLD-001, SRH-004 | SRH-003 | |
+| AST-018 | P3 | Expose the built-in Updated At timestamp in applicable list views. | 🟢 | FLD-001, SRH-004 | SRH-003 | |
 | AUD-005 | P3 | Record custom-field creation/modification/deactivation. | 🟢 | FLD-002, FLD-009, FLD-010 | FLD-015 | |
 | AUD-006 | P3 | Record user/role/permission changes. | 🟢 | USR-001–007 | USR-013 | |
 | AUD-007 | P3 | Record backup/restoration events. | 🟢 | BKP-011, BKP-012 | BKP-014 | |
@@ -117,7 +117,7 @@
 | USE-001 | P3 | Application usable through a standard web browser. | 🟢 | — | CMP-001, CMP-002 | |
 | USE-004 | P3 | Common asset operations require minimal navigation. | 🟢 | AST-001–004, QRC-005 | PER-003 | Import/export intentionally on the data tab; scope is AST-001–004 and QRC-005 |
 | REL-003 | P3 | Maintain data integrity when creating/modifying records. | 🟢 | AST-007 | REL-001 | |
-| REL-006 | P3 | Retain information identifying most recent successful backup. | 🔴 | BKP-015 | BKP-009 | |
+| REL-006 | P3 | Retain information identifying most recent successful backup. | 🟢 | REL-005 | BKP-009, BKP-015 | backup_history.completed_at records the successful-backup time (written only after the copy succeeds, REL-005); the backed_up audit entry records initiation time only. scheduled_at stays NULL until scheduled backups (BKP-009) exist |
 
 ### P4
 
