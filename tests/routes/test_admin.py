@@ -19,11 +19,18 @@ from app.services.data.role_permissions import (
   set_role_permission,
 )
 from app.services.data.roles import create_role, get_role, get_roles
+from app.services.data.user_permissions import (
+  get_user_permissions,
+  set_user_permission,
+)
 from app.services.data.user_roles import (
   get_user_roles,
   set_user_role,
 )
-from app.services.data.users import get_user_by_username
+from app.services.data.users import (
+  create_user,
+  get_user_by_username,
+)
 
 # ==================== Admin Page ====================
 
@@ -417,6 +424,205 @@ def test_admin_cannot_archive_missing_user(
 ):
   response = gen_test_admin_client.post(
     "/admin/users/999/archive",
+  )
+
+  assert response.status_code == 404
+
+
+def test_admin_can_list_user_permissions(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  user_id = create_user(
+    username="target_user",
+    password="password123",
+  )
+  permission_id = create_permission(name="locations.manage")
+  set_user_permission(user_id, permission_id, True)
+  reset_current_user(token)
+
+  response = gen_test_admin_client.get(
+    f"/admin/users/{user_id}/permissions",
+  )
+
+  assert response.status_code == 200
+  assert response.get_json() == [
+    {
+      "user_id": user_id,
+      "permission_id": permission_id,
+      "permission": "locations.manage",
+      "allowed": 1,
+    },
+  ]
+
+
+def test_admin_can_grant_existing_permission_to_user(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  user_id = create_user(
+    username="target_user",
+    password="password123",
+  )
+  permission_id = create_permission(name="locations.manage")
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    f"/admin/users/{user_id}/permissions",
+    data={
+      "permission_name": "locations.manage",
+      "allowed": "true",
+    },
+  )
+
+  assert response.status_code == 302
+
+  permissions = get_user_permissions(user_id)
+
+  assert permissions[0]["permission_id"] == permission_id
+  assert permissions[0]["allowed"] == 1
+
+
+def test_admin_can_grant_unknown_permission_to_user_creates_row(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  user_id = create_user(
+    username="target_user",
+    password="password123",
+  )
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    f"/admin/users/{user_id}/permissions",
+    data={
+      "permission_name": "future.namespace",
+      "allowed": "true",
+    },
+  )
+
+  assert response.status_code == 302
+
+  permission = get_permission_by_name("future.namespace")
+
+  assert permission is not None
+
+  permissions = get_user_permissions(user_id)
+
+  assert permissions[0]["permission"] == "future.namespace"
+
+
+def test_admin_can_deny_permission_for_user(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  user_id = create_user(
+    username="target_user",
+    password="password123",
+  )
+  permission_id = create_permission(name="users.manage")
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    f"/admin/users/{user_id}/permissions",
+    data={
+      "permission_name": "users.manage",
+      "allowed": "false",
+    },
+  )
+
+  assert response.status_code == 302
+
+  permissions = get_user_permissions(user_id)
+
+  assert permissions[0]["permission_id"] == permission_id
+  assert permissions[0]["allowed"] == 0
+
+
+def test_admin_can_remove_user_permission(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  user_id = create_user(
+    username="target_user",
+    password="password123",
+  )
+  permission_id = create_permission(name="locations.manage")
+  set_user_permission(user_id, permission_id, True)
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    f"/admin/users/{user_id}/permissions/{permission_id}/delete",
+  )
+
+  assert response.status_code == 302
+
+  assert get_user_permissions(user_id) == []
+
+
+def test_admin_user_permission_routes_require_users_manage_permission(
+  gen_test_client,
+  gen_test_admin,
+):
+  _login_restricted_user(gen_test_client)
+
+  response = gen_test_client.get(
+    "/admin/users/1/permissions",
+  )
+
+  assert response.status_code == 403
+
+  response = gen_test_client.post(
+    "/admin/users/1/permissions",
+    data={
+      "permission_name": "locations.manage",
+      "allowed": "true",
+    },
+  )
+
+  assert response.status_code == 403
+
+  response = gen_test_client.post(
+    "/admin/users/1/permissions/1/delete",
+  )
+
+  assert response.status_code == 403
+
+
+def test_admin_cannot_list_permissions_for_missing_user(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.get(
+    "/admin/users/999/permissions",
+  )
+
+  assert response.status_code == 404
+
+
+def test_admin_cannot_grant_permission_to_missing_user(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/users/999/permissions",
+    data={
+      "permission_name": "locations.manage",
+      "allowed": "true",
+    },
+  )
+
+  assert response.status_code == 404
+
+
+def test_admin_cannot_remove_permission_for_missing_user(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/admin/users/999/permissions/1/delete",
   )
 
   assert response.status_code == 404

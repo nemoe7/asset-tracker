@@ -55,6 +55,11 @@ from ..services.data.roles import (
   get_roles,
   update_role,
 )
+from ..services.data.user_permissions import (
+  delete_user_permission,
+  get_user_permissions,
+  set_user_permission,
+)
 from ..services.data.user_roles import (
   delete_user_role,
   get_role_user_count,
@@ -85,16 +90,21 @@ from ..services.exceptions.data.locations import (
 )
 from ..services.exceptions.data.permissions import (
   PermissionAlreadyExistsError,
+  PermissionNotFoundError,
 )
 from ..services.exceptions.data.roles import (
   RoleAlreadyExistsError,
   RoleNotFoundError,
+)
+from ..services.exceptions.data.user_permissions import (
+  UserPermissionNotFoundError,
 )
 from ..services.exceptions.data.users import (
   UserIsArchivedError,
   UserIsNotArchivedError,
   UsernameAlreadyExistsError,
   UsernameIsArchivedError,
+  UserNotFoundError,
 )
 
 admin = Blueprint(
@@ -603,6 +613,82 @@ def restore_user_route(user_id):
       _USERS_TAB,
       error=str(error),
     )
+
+  return redirect(url_for("admin.settings", tab=_USERS_TAB))
+
+
+@admin.route("/users/<int:user_id>/permissions", methods=["GET"])
+@login_required
+@permission_required("users.manage")
+def list_user_permissions_route(user_id):
+  if get_user(user_id) is None:
+    abort(404)
+
+  return jsonify([dict(row) for row in get_user_permissions(user_id)])
+
+
+@admin.route("/users/<int:user_id>/permissions", methods=["POST"])
+@login_required
+@permission_required("users.manage")
+def grant_user_permission_route(user_id):
+  if get_user(user_id) is None:
+    abort(404)
+
+  permission_name = request.form.get("permission_name", "").strip()
+  allowed = request.form.get("allowed") in ("1", "true", "on")
+
+  if not permission_name:
+    return _render_settings(
+      _USERS_TAB,
+      error="Permission name cannot be empty",
+    )
+
+  permission = get_permission_by_name(permission_name)
+
+  if permission is None:
+    try:
+      permission_id = create_permission(permission_name)
+    except (
+      InvalidInputError,
+      PermissionAlreadyExistsError,
+    ) as error:
+      return _render_settings(
+        _USERS_TAB,
+        error=str(error),
+      )
+  else:
+    permission_id = permission["id"]
+
+  try:
+    set_user_permission(user_id, permission_id, allowed)
+  except (
+    UserNotFoundError,
+    PermissionNotFoundError,
+  ):
+    abort(404)
+  except InvalidInputError as error:
+    return _render_settings(
+      _USERS_TAB,
+      error=str(error),
+    )
+
+  return redirect(url_for("admin.settings", tab=_USERS_TAB))
+
+
+@admin.route(
+  "/users/<int:user_id>/permissions/<int:permission_id>/delete",
+  methods=["POST"],
+)
+@login_required
+@permission_required("users.manage")
+def remove_user_permission_route(user_id, permission_id):
+  if get_user(user_id) is None:
+    abort(404)
+
+  try:
+    delete_user_permission(user_id, permission_id)
+  except UserPermissionNotFoundError:
+    abort(404)
 
   return redirect(url_for("admin.settings", tab=_USERS_TAB))
 
