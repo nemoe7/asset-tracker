@@ -24,6 +24,14 @@
 <button type="button" id="view-item-edit" class="icon-button" title="Edit asset" aria-label="Edit asset">
   <i class="bi bi-pencil block size-4" aria-hidden="true"></i>
 </button>
+
+{% if can_view_audit %}
+{# View Asset Activity #}
+<button type="button" id="view-item-audit" class="icon-button" title="View asset activity" aria-label="View asset activity"
+  data-audit-base="{{ url_for('admin.settings', tab='audit') }}">
+  <i class="bi bi-activity block size-4" aria-hidden="true"></i>
+</button>
+{% endif %}
 {% endset %}
 
 {% call modal(
