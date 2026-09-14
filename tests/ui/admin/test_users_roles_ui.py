@@ -220,7 +220,7 @@ def test_admin_page_grants_permission_to_role(page, live_server, setup_admin):
   # which must be rendered inside the body block to survive template inheritance.
   datalist = page.locator("#known-permissions-list")
   expect(datalist).to_have_count(1)
-  expect(datalist.locator("option[value='locations.manage']")).to_have_count(1)
+  expect(datalist.locator("option[value='locations.update']")).to_have_count(1)
 
   page.locator("#edit-role-permission-name").fill("assets.read")
   page.locator("#edit-role-permission-add").click()

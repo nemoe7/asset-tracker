@@ -1,6 +1,8 @@
 from app.services.auth.context import reset_current_user, set_current_user
 from app.services.data.custom_fields import (
+  archive_custom_field,
   create_custom_field,
+  get_custom_field,
   get_custom_fields,
 )
 from app.services.data.permissions import (
@@ -740,3 +742,99 @@ def test_admin_cannot_update_custom_field_without_fields(
 
   assert response.status_code == 400
   assert response.json["error"] == "No fields to update"
+
+
+def test_custom_field_create_requires_field_create_permission(
+  gen_test_client,
+  gen_test_admin,
+  gen_user_with_permission,
+):
+  gen_user_with_permission("field.create")
+
+  create_response = gen_test_client.post(
+    "/custom-fields",
+    data={
+      "name": "Serial Number",
+      "field_type": "text",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert create_response.status_code == 200
+  field_id = create_response.json["id"]
+
+  archive_response = gen_test_client.post(
+    f"/custom-fields/{field_id}/archive",
+  )
+
+  assert archive_response.status_code == 403
+
+
+def test_custom_field_update_requires_field_update_permission(
+  gen_test_client,
+  gen_test_admin,
+  gen_user_with_permission,
+):
+  token = set_current_user(gen_test_admin)
+
+  try:
+    field_id = create_custom_field("Serial", "text")
+  finally:
+    reset_current_user(token)
+
+  gen_user_with_permission(f"field.{field_id}.update")
+
+  response = gen_test_client.post(
+    f"/custom-fields/{field_id}",
+    data={
+      "name": "Asset Serial",
+    },
+  )
+
+  assert response.status_code == 302
+
+  token = set_current_user(gen_test_admin)
+
+  try:
+    renamed = get_custom_field(field_id)
+  finally:
+    reset_current_user(token)
+
+  assert renamed["name"] == "Asset Serial"
+
+  create_response = gen_test_client.post(
+    "/custom-fields",
+    data={
+      "name": "Other",
+      "field_type": "text",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert create_response.status_code == 403
+
+
+def test_custom_field_restore_uses_field_create_permission(
+  gen_test_client,
+  gen_test_admin,
+  gen_user_with_permission,
+):
+  token = set_current_user(gen_test_admin)
+
+  try:
+    field_id = create_custom_field("Serial", "text")
+    archive_custom_field(field_id)
+  finally:
+    reset_current_user(token)
+
+  gen_user_with_permission("field.create")
+
+  response = gen_test_client.post(
+    f"/custom-fields/{field_id}/restore",
+  )
+
+  assert response.status_code == 302

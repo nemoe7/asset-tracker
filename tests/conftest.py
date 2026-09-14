@@ -203,6 +203,44 @@ def gen_test_admin_client(gen_test_admin, gen_test_client, gen_password):
 
 
 @pytest.fixture
+def gen_user_with_permission(gen_test_client, gen_test_admin):
+  from app.services.data.permissions import (
+    create_permission,
+    get_permission_by_name,
+  )
+  from app.services.data.role_permissions import set_role_permission
+  from app.services.data.roles import create_role
+  from app.services.data.user_roles import set_user_role
+
+  def _login(permission_name):
+    token = set_current_user(gen_test_admin)
+
+    try:
+      user_id = create_user("perm_user", "password123", "Perm User")
+      role_id = create_role("Perm Role", "Single permission")
+      permission = get_permission_by_name(permission_name)
+      permission_id = (
+        permission["id"]
+        if permission is not None
+        else create_permission(permission_name)
+      )
+      set_role_permission(role_id, permission_id, True)
+      set_user_role(user_id, role_id)
+    finally:
+      reset_current_user(token)
+
+    gen_test_client.post(
+      "/auth/login",
+      data={
+        "username": "perm_user",
+        "password": "password123",
+      },
+    )
+
+  return _login
+
+
+@pytest.fixture
 def gen_test_item(gen_test_admin):
   def _create(name="Test Asset", location_id=None):
     token = set_current_user(gen_test_admin)

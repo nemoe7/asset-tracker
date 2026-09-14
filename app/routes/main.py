@@ -20,8 +20,18 @@ def index():
   return render_template(
     "inventory/index.jinja",
     username=session.get("username"),
-    can_manage_locations=check_permission(user_id, "locations.manage"),
-    can_manage_custom_fields=check_permission(user_id, "custom_fields.manage"),
+    can_manage_locations=any(
+      check_permission(user_id, permission_name)
+      for permission_name in (
+        "locations.create",
+        "locations.update",
+        "locations.delete",
+      )
+    ),
+    can_manage_custom_fields=any(
+      check_permission(user_id, permission_name)
+      for permission_name in ("field.create", "field.delete")
+    ),
     can_view_audit=check_permission(user_id, "audit.read"),
   )
 

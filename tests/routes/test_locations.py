@@ -449,3 +449,42 @@ def test_admin_can_delete_location_with_json_response(
   assert response.json["deleted"] is True
   assert response.json["id"] == location_id
   assert get_location(location_id) is None
+
+
+def test_location_operations_require_concrete_permissions(
+  gen_test_client,
+  gen_test_admin,
+  gen_user_with_permission,
+):
+  gen_user_with_permission("locations.create")
+
+  create_response = gen_test_client.post(
+    "/locations",
+    data={
+      "name": "Warehouse",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert create_response.status_code == 200
+  location_id = create_response.json["id"]
+
+  update_response = gen_test_client.post(
+    f"/locations/{location_id}",
+    data={
+      "name": "Renamed",
+    },
+  )
+
+  assert update_response.status_code == 403
+
+  delete_response = gen_test_client.post(
+    f"/locations/{location_id}/delete",
+    data={
+      "confirm": "true",
+    },
+  )
+
+  assert delete_response.status_code == 403

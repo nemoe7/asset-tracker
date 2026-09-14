@@ -320,13 +320,12 @@ syncEnumValues();
 // ==================== Known Permissions ====================
 
 const KNOWN_PERMISSIONS = [
-  "locations.manage",
-  "custom_fields.manage",
-  "users.manage",
-  "roles.manage",
+  "locations.create", "locations.read", "locations.update", "locations.delete",
+  "field.create", "field.delete",
+  "users.read", "users.create", "users.update", "users.delete",
+  "roles.read", "roles.create", "roles.update", "roles.delete",
   "audit.read",
-  "backups.create",
-  "backups.restore",
+  "backups.create", "backups.restore",
 ];
 
 const knownPermissionsList = document.getElementById('known-permissions-list');

@@ -384,7 +384,7 @@ def test_unregistered_non_read_permission_defaults_to_deny(
   assert (
     check_permission(
       gen_test_data_admin,
-      "locations.manage",
+      "inventory.export",
     )
     is False
   )
@@ -404,7 +404,7 @@ def test_unregistered_permission_allowed_by_direct_global_wildcard(
   assert (
     check_permission(
       gen_test_data_admin,
-      "locations.manage",
+      "inventory.export",
     )
     is True
   )
@@ -422,7 +422,7 @@ def test_unregistered_permission_allowed_by_role_global_wildcard(
   assert (
     check_permission(
       gen_test_data_admin,
-      "locations.manage",
+      "inventory.export",
     )
     is True
   )
@@ -430,7 +430,7 @@ def test_unregistered_permission_allowed_by_role_global_wildcard(
   assert (
     check_permission(
       gen_test_data_admin,
-      "users.manage",
+      "roles.export",
     )
     is True
   )

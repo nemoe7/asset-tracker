@@ -32,7 +32,7 @@ custom_fields = Blueprint(
 
 
 @custom_fields.route("", methods=["POST"])
-@permission_required("custom_fields.manage")
+@permission_required("field.create")
 @login_required
 def create():
   name = request.form.get("name", "").strip()
@@ -102,9 +102,13 @@ def get(field_id):
 
 
 @custom_fields.route("/<int:field_id>", methods=["POST"])
-@permission_required("custom_fields.manage")
 @login_required
 def update(field_id):
+  user_id = session.get("user_id")
+
+  if not check_permission(user_id, f"field.{field_id}.update"):
+    abort(403)
+
   kwargs = {}
 
   if "name" in request.form:
@@ -144,7 +148,7 @@ def update(field_id):
 
 
 @custom_fields.route("/<int:field_id>/archive", methods=["POST"])
-@permission_required("custom_fields.manage")
+@permission_required("field.delete")
 @login_required
 def archive(field_id):
   try:
@@ -164,7 +168,7 @@ def archive(field_id):
 
 
 @custom_fields.route("/<int:field_id>/restore", methods=["POST"])
-@permission_required("custom_fields.manage")
+@permission_required("field.create")
 @login_required
 def restore(field_id):
   try:
