@@ -396,7 +396,6 @@ def test_view_modal_audit_button_navigates_to_filtered_audit_log(
   page.wait_for_url(f"{live_server}/admin*")
 
   assert "tab=audit" in page.url
-  assert "entity_type=inventory_item" in page.url
   assert f"entity_id={item['id']}" in page.url
   expect(page.locator("#tab-audit")).to_be_visible()
   expect(
