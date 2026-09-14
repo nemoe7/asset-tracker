@@ -36,4 +36,8 @@ def format_custom_field_value(value, field_type, today=None):
     if today >= expiry:
       return "Expired"
 
+    days_left = (expiry - today).days
+    day_word = "day" if days_left == 1 else "days"
+    return f"Expires in {days_left} {day_word} [{value}]"
+
   return value
