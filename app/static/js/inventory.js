@@ -785,7 +785,16 @@ function buildFilterValueControl(field, op) {
   let control;
 
   if (field.field_type === 'boolean') {
-    // ...
+    control = document.createElement('select');
+    control.className = 'form-select';
+    control.name = 'f_value';
+
+    // "—" filters items with no stored value for the field.
+    control.append(new Option('—', EMPTY_FILTER_VALUE));
+
+    control.append(new Option('True', 'true'), new Option('False', 'false'));
+
+    return control;
   }
 
   if (field.field_type === 'expiry_date') {
