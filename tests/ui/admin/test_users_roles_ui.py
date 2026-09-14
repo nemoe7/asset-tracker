@@ -479,3 +479,80 @@ def test_admin_page_edit_role_rejects_duplicate_permission(
 
   expect(page.locator("#edit-role-permission-error")).to_be_visible()
   expect(dialog.locator("#edit-role-permissions-list > div")).to_have_count(1)
+
+
+@pytest.mark.e2e
+def test_admin_page_grants_permission_to_user(page, live_server, setup_admin):
+  response = page.request.post(
+    f"{live_server}/admin/users",
+    form={
+      "username": "jsmith",
+      "name": "John Smith",
+      "password": "password123",
+    },
+    max_redirects=0,
+  )
+  assert response.status == 302
+
+  page.goto(f"{live_server}/admin?tab=users")
+
+  user_row = page.locator("#tab-users tbody tr").filter(has_text="jsmith")
+  user_id = user_row.locator(".edit-user").get_attribute("data-user-id")
+  user_row.locator(".edit-user").click()
+
+  dialog = page.locator("#edit-user-dialog")
+  expect(dialog).to_be_visible()
+
+  page.locator("#edit-user-permission-name").fill("audit.read")
+  page.locator("#edit-user-permission-add").click()
+  expect(
+    dialog.locator("#edit-user-permissions-list").get_by_text("audit.read")
+  ).to_be_visible()
+
+  dialog.get_by_role("button", name="Save changes").click()
+  page.wait_for_url(f"{live_server}/admin?tab=users")
+
+  permissions = page.request.get(
+    f"{live_server}/admin/users/{user_id}/permissions"
+  ).json()
+  assert any(p["permission"] == "audit.read" and p["allowed"] == 1 for p in permissions)
+
+
+@pytest.mark.e2e
+def test_admin_page_cancel_add_permission_for_user_does_not_persist(
+  page, live_server, setup_admin
+):
+  response = page.request.post(
+    f"{live_server}/admin/users",
+    form={
+      "username": "jsmith",
+      "name": "John Smith",
+      "password": "password123",
+    },
+    max_redirects=0,
+  )
+  assert response.status == 302
+
+  page.goto(f"{live_server}/admin?tab=users")
+
+  user_row = page.locator("#tab-users tbody tr").filter(has_text="jsmith")
+  user_id = user_row.locator(".edit-user").get_attribute("data-user-id")
+  user_row.locator(".edit-user").click()
+  dialog = page.locator("#edit-user-dialog")
+  expect(dialog).to_be_visible()
+
+  # Stage a new permission locally, then cancel without saving.
+  page.locator("#edit-user-permission-name").fill("audit.read")
+  page.locator("#edit-user-permission-add").click()
+  expect(
+    dialog.locator("#edit-user-permissions-list").get_by_text("audit.read")
+  ).to_be_visible()
+
+  dialog.get_by_role("button", name="Cancel").click()
+
+  # Reload and confirm the permission was never persisted.
+  page.goto(f"{live_server}/admin?tab=users")
+  permissions = page.request.get(
+    f"{live_server}/admin/users/{user_id}/permissions"
+  ).json()
+  assert not any(p["permission"] == "audit.read" for p in permissions)
