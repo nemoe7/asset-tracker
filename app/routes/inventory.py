@@ -144,7 +144,7 @@ def fragment():
     page = int(request.args.get("page", 1))
     per_page = min(int(request.args.get("per_page", 25)), _MAX_PER_PAGE)
 
-    custom_field_filters, _filtered_custom_fields = _parse_custom_field_filters(
+    custom_field_filters, filtered_custom_fields = _parse_custom_field_filters(
       readable_fields
     )
 
@@ -165,7 +165,7 @@ def fragment():
   return render_template(
     "inventory/fragment.jinja",
     search=search,
-    readable_fields=readable_fields,
+    table_fields=filtered_custom_fields,
     **result,
   )
 
