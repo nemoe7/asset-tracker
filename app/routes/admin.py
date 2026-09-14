@@ -153,8 +153,14 @@ def _render_settings(
 ):
   user_id = session.get("user_id")
   can_view_audit = check_permission(user_id, "audit.read")
-  can_manage_users = check_permission(user_id, "users.manage")
-  can_manage_roles = check_permission(user_id, "roles.manage")
+  can_manage_users = any(
+    check_permission(user_id, permission_name)
+    for permission_name in ("users.create", "users.update", "users.delete")
+  )
+  can_manage_roles = any(
+    check_permission(user_id, permission_name)
+    for permission_name in ("roles.create", "roles.update", "roles.delete")
+  )
 
   all_roles = get_roles()
 
@@ -199,8 +205,18 @@ def _render_settings(
     "archived_custom_fields": get_custom_fields(include_archived=True),
     "active_tab": active_tab,
     "error": error,
-    "can_manage_locations": check_permission(user_id, "locations.manage"),
-    "can_manage_custom_fields": check_permission(user_id, "custom_fields.manage"),
+    "can_manage_locations": any(
+      check_permission(user_id, permission_name)
+      for permission_name in (
+        "locations.create",
+        "locations.update",
+        "locations.delete",
+      )
+    ),
+    "can_manage_custom_fields": any(
+      check_permission(user_id, permission_name)
+      for permission_name in ("field.create", "field.delete")
+    ),
     "can_manage_backups": (
       check_permission(user_id, "backups.create")
       or check_permission(user_id, "backups.restore")
@@ -251,12 +267,12 @@ def settings():
   active_tab = _get_active_tab()
 
   permission_by_tab = {
-    _LOCATION_TAB: ("locations.manage",),
-    _CUSTOM_FIELDS_TAB: ("custom_fields.manage",),
+    _LOCATION_TAB: ("locations.create", "locations.update", "locations.delete"),
+    _CUSTOM_FIELDS_TAB: ("field.create", "field.delete"),
     _DATA_TAB: (),
     _AUDIT_TAB: ("audit.read",),
-    _USERS_TAB: ("users.manage",),
-    _ROLES_TAB: ("roles.manage",),
+    _USERS_TAB: ("users.create", "users.update", "users.delete"),
+    _ROLES_TAB: ("roles.create", "roles.update", "roles.delete"),
   }
 
   tab_permissions = permission_by_tab[active_tab]
@@ -273,7 +289,7 @@ def settings():
 
 @admin.route("/locations", methods=["POST"])
 @login_required
-@permission_required("locations.manage")
+@permission_required("locations.create")
 def create_location_route():
   name = request.form.get("name", "").strip()
   description = request.form.get("description") or None
@@ -296,7 +312,7 @@ def create_location_route():
 
 @admin.route("/locations/<int:location_id>", methods=["POST"])
 @login_required
-@permission_required("locations.manage")
+@permission_required("locations.update")
 def update_location_route(location_id):
   name = request.form.get("name", "").strip()
   description = request.form.get("description") or None
@@ -320,7 +336,7 @@ def update_location_route(location_id):
 
 @admin.route("/locations/<int:location_id>/delete", methods=["POST"])
 @login_required
-@permission_required("locations.manage")
+@permission_required("locations.delete")
 def delete_location_route(location_id):
   if get_location(location_id) is None:
     abort(404)
@@ -332,7 +348,7 @@ def delete_location_route(location_id):
 
 @admin.route("/custom-fields", methods=["POST"])
 @login_required
-@permission_required("custom_fields.manage")
+@permission_required("field.create")
 def create_custom_field_route():
   name = request.form.get("name", "").strip()
   field_type = request.form.get("field_type", "")
@@ -364,8 +380,12 @@ def create_custom_field_route():
 
 @admin.route("/custom-fields/<int:field_id>", methods=["POST"])
 @login_required
-@permission_required("custom_fields.manage")
 def update_custom_field_route(field_id):
+  user_id = session.get("user_id")
+
+  if not check_permission(user_id, f"field.{field_id}.update"):
+    abort(403)
+
   name = request.form.get("name", "").strip()
   field_type = request.form.get("field_type")
   description = request.form.get("description")
@@ -405,7 +425,7 @@ def update_custom_field_route(field_id):
 
 @admin.route("/custom-fields/<int:field_id>/archive", methods=["POST"])
 @login_required
-@permission_required("custom_fields.manage")
+@permission_required("field.delete")
 def archive_custom_field_route(field_id):
   try:
     archive_custom_field(field_id)
@@ -417,7 +437,7 @@ def archive_custom_field_route(field_id):
 
 @admin.route("/custom-fields/<int:field_id>/restore", methods=["POST"])
 @login_required
-@permission_required("custom_fields.manage")
+@permission_required("field.create")
 def restore_custom_field_route(field_id):
   try:
     restore_custom_field(field_id)
@@ -429,8 +449,12 @@ def restore_custom_field_route(field_id):
 
 @admin.route("/custom-fields/<int:field_id>/permissions", methods=["GET"])
 @login_required
-@permission_required("custom_fields.manage")
 def get_field_permissions_route(field_id):
+  user_id = session.get("user_id")
+
+  if not check_permission(user_id, f"field.{field_id}.read"):
+    abort(403)
+
   if get_custom_field(field_id) is None:
     abort(404)
 
@@ -452,8 +476,12 @@ def get_field_permissions_route(field_id):
 
 @admin.route("/custom-fields/<int:field_id>/permissions", methods=["POST"])
 @login_required
-@permission_required("custom_fields.manage")
 def set_field_permissions_route(field_id):
+  user_id = session.get("user_id")
+
+  if not check_permission(user_id, f"field.{field_id}.update"):
+    abort(403)
+
   if get_custom_field(field_id) is None:
     abort(404)
 
@@ -475,7 +503,7 @@ def set_field_permissions_route(field_id):
 
 @admin.route("/users", methods=["POST"])
 @login_required
-@permission_required("users.manage")
+@permission_required("users.create")
 def create_user_route():
   username = request.form.get("username", "").strip()
   name = request.form.get("name", "").strip() or None
@@ -529,7 +557,7 @@ def create_user_route():
 
 @admin.route("/users/<int:user_id>", methods=["POST"])
 @login_required
-@permission_required("users.manage")
+@permission_required("users.update")
 def update_user_route(user_id):
   if get_user(user_id) is None:
     abort(404)
@@ -577,7 +605,7 @@ def update_user_route(user_id):
 
 @admin.route("/users/<int:user_id>/archive", methods=["POST"])
 @login_required
-@permission_required("users.manage")
+@permission_required("users.delete")
 def archive_user_route(user_id):
   if user_id == session.get("user_id"):
     return _render_settings(
@@ -601,7 +629,7 @@ def archive_user_route(user_id):
 
 @admin.route("/users/<int:user_id>/restore", methods=["POST"])
 @login_required
-@permission_required("users.manage")
+@permission_required("users.create")
 def restore_user_route(user_id):
   if get_user(user_id) is None:
     abort(404)
@@ -619,7 +647,7 @@ def restore_user_route(user_id):
 
 @admin.route("/users/<int:user_id>/permissions", methods=["GET"])
 @login_required
-@permission_required("users.manage")
+@permission_required("users.read")
 def list_user_permissions_route(user_id):
   if get_user(user_id) is None:
     abort(404)
@@ -629,7 +657,7 @@ def list_user_permissions_route(user_id):
 
 @admin.route("/users/<int:user_id>/permissions", methods=["POST"])
 @login_required
-@permission_required("users.manage")
+@permission_required("users.update")
 def grant_user_permission_route(user_id):
   if get_user(user_id) is None:
     abort(404)
@@ -680,7 +708,7 @@ def grant_user_permission_route(user_id):
   methods=["POST"],
 )
 @login_required
-@permission_required("users.manage")
+@permission_required("users.update")
 def remove_user_permission_route(user_id, permission_id):
   if get_user(user_id) is None:
     abort(404)
@@ -695,7 +723,7 @@ def remove_user_permission_route(user_id, permission_id):
 
 @admin.route("/roles", methods=["POST"])
 @login_required
-@permission_required("roles.manage")
+@permission_required("roles.create")
 def create_role_route():
   name = request.form.get("name", "").strip()
   description = request.form.get("description", "").strip() or None
@@ -721,7 +749,7 @@ def create_role_route():
 
 @admin.route("/roles/<int:role_id>", methods=["POST"])
 @login_required
-@permission_required("roles.manage")
+@permission_required("roles.update")
 def update_role_route(role_id):
   if get_role(role_id) is None:
     abort(404)
@@ -750,7 +778,7 @@ def update_role_route(role_id):
 
 @admin.route("/roles/<int:role_id>/delete", methods=["POST"])
 @login_required
-@permission_required("roles.manage")
+@permission_required("roles.delete")
 def delete_role_route(role_id):
   if get_role(role_id) is None:
     abort(404)
@@ -774,7 +802,7 @@ def delete_role_route(role_id):
 
 @admin.route("/roles/<int:role_id>/permissions", methods=["GET"])
 @login_required
-@permission_required("roles.manage")
+@permission_required("roles.read")
 def list_role_permissions_route(role_id):
   if get_role(role_id) is None:
     abort(404)
@@ -784,7 +812,7 @@ def list_role_permissions_route(role_id):
 
 @admin.route("/roles/<int:role_id>/permissions", methods=["POST"])
 @login_required
-@permission_required("roles.manage")
+@permission_required("roles.update")
 def grant_role_permission_route(role_id):
   if get_role(role_id) is None:
     abort(404)
@@ -833,7 +861,7 @@ def grant_role_permission_route(role_id):
   methods=["POST"],
 )
 @login_required
-@permission_required("roles.manage")
+@permission_required("roles.update")
 def remove_role_permission_route(role_id, permission_id):
   if get_role(role_id) is None:
     abort(404)

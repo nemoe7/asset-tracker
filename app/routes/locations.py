@@ -37,7 +37,7 @@ def index():
 
 
 @locations.route("", methods=["POST"])
-@permission_required("locations.manage")
+@permission_required("locations.create")
 @login_required
 def create():
   name = request.form.get("name", "").strip()
@@ -83,7 +83,7 @@ def get(location_id):
 
 
 @locations.route("/<int:location_id>", methods=["POST"])
-@permission_required("locations.manage")
+@permission_required("locations.update")
 @login_required
 def update(location_id):
   name = request.form.get("name", _UNSET)
@@ -122,7 +122,7 @@ def update(location_id):
 
 
 @locations.route("/<int:location_id>/delete", methods=["POST"])
-@permission_required("locations.manage")
+@permission_required("locations.delete")
 @login_required
 def delete(location_id):
   if get_location(location_id) is None:
