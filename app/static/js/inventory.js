@@ -382,7 +382,7 @@ async function loadCustomFields() {
   return customFieldsCache;
 }
 
-function formatCustomFieldValue(value) {
+function formatCustomFieldValue(value, fieldType) {
   if (value === null || value === undefined || value === '') {
     return '—';
   }
@@ -395,6 +395,19 @@ function formatCustomFieldValue(value) {
     return 'False';
   }
 
+  if (fieldType === 'expiry_date' && value) {
+    const parts = value.split('-').map(Number);
+    const expiry = new Date(parts[0], parts[1] - 1, parts[2]);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (today >= expiry) {
+      return 'Expired';
+    }
+    const daysLeft = Math.floor((expiry - today) / (1000 * 60 * 60 * 24));
+    const dayWord = daysLeft === 1 ? 'day' : 'days';
+    return `Expires in ${daysLeft} ${dayWord} [${value}]`;
+  }
+
   return String(value);
 }
 
@@ -404,6 +417,7 @@ const CUSTOM_FIELD_TYPE_LABELS = {
   decimal: 'Decimal',
   boolean: 'Boolean',
   date: 'Date',
+  expiry_date: 'Expiry Date',
   enum: 'Enum'
 };
 
@@ -552,7 +566,7 @@ function buildCustomFieldInput(field) {
       input.pattern = '[+-]?[0-9]+(\\.[0-9]+)?';
       input.title = 'Enter a number';
       attachDecimalValidation(input);
-    } else if (field.field_type === 'date') {
+    } else if (field.field_type === 'date' || field.field_type === 'expiry_date') {
       input.type = 'date';
     } else {
       input = document.createElement('textarea');
@@ -586,7 +600,7 @@ function setCustomFieldValue(input, value) {
 }
 
 function clearCustomFieldRows(container) {
-  for (const row of [...container.querySelectorAll('tr.cf-row')]) {
+  for (const row of [...container.querySelectorAll('.cf-filter-row')]) {
     row.remove();
   }
 }
@@ -698,7 +712,7 @@ function renderViewItemCustomFields(fields, valuesByName) {
     const cell = document.createElement('td');
 
     cell.className = 'px-4 py-3 text-zinc-100';
-    cell.textContent = formatCustomFieldValue(valuesByName[field.name]);
+    cell.textContent = formatCustomFieldValue(valuesByName[field.name], field.field_type);
 
     const row = document.createElement('tr');
 
@@ -740,6 +754,14 @@ const FILTER_OPERATORS = {
     ['>=', '>=']
   ],
   date: [
+    ['=', 'On'],
+    ['!=', 'Not on'],
+    ['<', 'Before'],
+    ['<=', 'Until'],
+    ['>', 'After'],
+    ['>=', 'Since']
+  ],
+  expiry_date: [
     ['=', 'On'],
     ['!=', 'Not on'],
     ['<', 'Before'],
@@ -803,7 +825,7 @@ function buildFilterValueControl(field) {
     control.pattern = '[+-]?[0-9]+(\\.[0-9]+)?';
     control.title = 'Enter a number';
     attachDecimalValidation(control);
-  } else if (field.field_type === 'date') {
+  } else if (field.field_type === 'date' || field.field_type === 'expiry_date') {
     control.type = 'date';
   } else {
     control.type = 'text';

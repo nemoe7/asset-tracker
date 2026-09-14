@@ -45,6 +45,7 @@ CREATE TABLE custom_fields (
       'decimal',
       'boolean',
       'date',
+      'expiry_date',
       'enum',
       'user'
     )
