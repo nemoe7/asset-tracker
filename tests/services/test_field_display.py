@@ -3,8 +3,16 @@ from datetime import datetime, timezone
 from app.templatetags import format_custom_field_value
 
 
-def test_expiry_date_future_shows_date():
-  assert format_custom_field_value("2099-01-01", "expiry_date") == "2099-01-01"
+def test_expiry_date_future_shows_days_left():
+  today = datetime(2026, 9, 14, tzinfo=timezone.utc).date()
+  assert (
+    format_custom_field_value("2026-09-15", "expiry_date", today=today)
+    == "Expires in 1 day [2026-09-15]"
+  )
+  assert (
+    format_custom_field_value("2026-09-16", "expiry_date", today=today)
+    == "Expires in 2 days [2026-09-16]"
+  )
 
 
 def test_expiry_date_past_shows_expired():

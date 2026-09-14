@@ -678,6 +678,7 @@ def test_fragment_shows_date_for_future_expiry_date(
 
   assert response.status_code == 200
   assert b"2099-01-01" in response.data
+  assert b"Expires in" in response.data
 
 
 def test_admin_creating_asset_with_empty_optional_value_stores_no_row(

@@ -229,7 +229,7 @@ def test_view_modal_shows_date_for_future_expiry_date(
 
   view_modal = page.get_by_role("dialog")
 
-  expect(view_modal.get_by_text("2099-01-01")).to_be_visible()
+  expect(view_modal.get_by_text("Expires in").first).to_be_visible()
   expect(view_modal.get_by_text("Expired")).to_have_count(0)
 
 

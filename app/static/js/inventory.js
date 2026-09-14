@@ -403,6 +403,9 @@ function formatCustomFieldValue(value, fieldType) {
     if (today >= expiry) {
       return 'Expired';
     }
+    const daysLeft = Math.floor((expiry - today) / (1000 * 60 * 60 * 24));
+    const dayWord = daysLeft === 1 ? 'day' : 'days';
+    return `Expires in ${daysLeft} ${dayWord} [${value}]`;
   }
 
   return String(value);
