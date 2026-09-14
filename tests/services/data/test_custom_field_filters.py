@@ -289,6 +289,64 @@ def test_parse_filters_rejects_operator_on_boolean_field(
     )
 
 
+def test_parse_filters_expiry_date_valid(fields, expiry_date_field):
+  # 'is' operator
+  filters = parse_filters(
+    [str(expiry_date_field["id"])],
+    ["is"],
+    ["expired"],
+    list(fields.values()),
+  )
+  assert filters == [(expiry_date_field["id"], "is", "expired")]
+
+  # 'expires_in' operator
+  filters = parse_filters(
+    [str(expiry_date_field["id"])],
+    ["expires_in"],
+    ["30"],
+    list(fields.values()),
+  )
+  assert filters == [(expiry_date_field["id"], "expires_in", 30)]
+
+  # 'before' operator
+  filters = parse_filters(
+    [str(expiry_date_field["id"])],
+    ["before"],
+    ["2026-12-31"],
+    list(fields.values()),
+  )
+  assert filters == [(expiry_date_field["id"], "before", "2026-12-31")]
+
+
+def test_parse_filters_expiry_date_invalid(fields, expiry_date_field):
+  # invalid 'is' value
+  with pytest.raises(InvalidInputError):
+    parse_filters(
+      [str(expiry_date_field["id"])],
+      ["is"],
+      ["unknown"],
+      list(fields.values()),
+    )
+
+  # invalid 'expires_in' value
+  with pytest.raises(InvalidInputError):
+    parse_filters(
+      [str(expiry_date_field["id"])],
+      ["expires_in"],
+      ["-5"],
+      list(fields.values()),
+    )
+
+  # invalid 'before' value
+  with pytest.raises(InvalidInputError):
+    parse_filters(
+      [str(expiry_date_field["id"])],
+      ["before"],
+      ["not-a-date"],
+      list(fields.values()),
+    )
+
+
 def test_parse_filters_rejects_user_type_field(gen_test_data_admin):
   user_field = create_custom_field("Assignee", "user")
 
@@ -339,6 +397,14 @@ def test_get_operators_text_uses_contains_excludes():
   assert get_operators("text") == [
     ("contains", "Contains"),
     ("excludes", "Excludes"),
+  ]
+
+
+def test_get_operators_expiry_date_uses_custom_labels():
+  assert get_operators("expiry_date") == [
+    ("is", "Is"),
+    ("before", "Before"),
+    ("expires_in", "Expires in"),
   ]
 
 

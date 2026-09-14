@@ -31,12 +31,9 @@ _FIELD_OPERATORS = {
     (">=", "Since"),
   ],
   "expiry_date": [
-    ("=", "On"),
-    ("!=", "Not on"),
-    ("<", "Before"),
-    ("<=", "Until"),
-    (">", "After"),
-    (">=", "Since"),
+    ("is", "Is"),
+    ("before", "Before"),
+    ("expires_in", "Expires in"),
   ],
   "enum": [
     ("=", "Is"),
@@ -88,7 +85,7 @@ def _validate_operator(field, op):
   return op
 
 
-def _validate_value(field, raw_value):
+def _validate_value(field, raw_value, op=None):
   field_type = field["field_type"]
   value = str(raw_value)
 
@@ -101,13 +98,33 @@ def _validate_value(field, raw_value):
     except ValueError:
       raise InvalidInputError(f"Invalid value for {field_type} field")
 
-  if field_type in ("date", "expiry_date"):
+  if field_type == "date":
     try:
       date.fromisoformat(value)
     except ValueError:
       raise InvalidInputError("Invalid date value")
 
     return value
+
+  if field_type == "expiry_date":
+    if op == "is":
+      if value not in ("expired", "not expired"):
+        raise InvalidInputError("Invalid value for expiry date 'is' filter")
+      return value
+    elif op == "expires_in":
+      try:
+        val = int(value)
+        if val < 0:
+          raise ValueError()
+        return val
+      except ValueError:
+        raise InvalidInputError("Invalid integer value for 'expires_in'")
+    elif op == "before":
+      try:
+        date.fromisoformat(value)
+      except ValueError:
+        raise InvalidInputError("Invalid date value")
+      return value
 
   if field_type == "boolean":
     if value not in ("true", "false"):
@@ -147,7 +164,7 @@ def parse_filters(f_fields, f_ops, f_values, fields):
     validated_value = (
       EMPTY_FILTER_VALUE
       if validated_op == EMPTY_FILTER_VALUE
-      else _validate_value(field, raw_value)
+      else _validate_value(field, raw_value, validated_op)
     )
 
     filters.append((field["id"], validated_op, validated_value))

@@ -116,7 +116,21 @@ def _filter_row_condition(connection, field_id, op, value):
     inner = f"CAST(inventory_item_fields.value AS NUMERIC) {comparison} ?"
     parameters = [field_id, value]
 
-  elif field_type in ("date", "expiry_date", "enum"):
+  elif field_type == "expiry_date":
+    if op == "is":
+      comparison = "<" if value == "expired" else ">="
+      inner = f"inventory_item_fields.value {comparison} date('now')"
+      parameters = [field_id]
+    elif op == "expires_in":
+      inner = "inventory_item_fields.value >= date('now') AND inventory_item_fields.value <= date('now', ?)"
+      parameters = [field_id, f"+{value} days"]
+    elif op == "before":
+      inner = "inventory_item_fields.value < ?"
+      parameters = [field_id, value]
+    else:
+      raise InvalidInputError(f"Invalid operator {op} for expiry_date")
+
+  elif field_type in ("date", "enum"):
     comparison = "=" if negated else op
     inner = f"inventory_item_fields.value {comparison} ?"
     parameters = [field_id, value]
@@ -139,8 +153,8 @@ def _filter_row_condition(connection, field_id, op, value):
   return f"{exists_base} AND {inner}\n    )", parameters
 
 
-_EQUALITY_OPS = {"=", "contains", "contains_cs", EMPTY_FILTER_VALUE}
-_ORDERING_OPS = {"<", "<=", ">", ">="}
+_EQUALITY_OPS = {"=", "contains", "contains_cs", EMPTY_FILTER_VALUE, "is"}
+_ORDERING_OPS = {"<", "<=", ">", ">=", "before", "expires_in"}
 _NEGATED_OPS = {"!=", "excludes", "excludes_cs"}
 
 

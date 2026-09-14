@@ -383,3 +383,46 @@ def test_get_items_empty_operator_ignores_value(integer_field):
   )
   items = get_items(custom_field_filters=filters)
   assert _ids(items) == {empty}
+
+
+def test_get_items_expiry_date_filters(expiry_date_field):
+  from datetime import datetime, timedelta, timezone
+
+  today = datetime.now(timezone.utc).date()
+  yesterday = (today - timedelta(days=1)).isoformat()
+  tomorrow = (today + timedelta(days=1)).isoformat()
+  in_10_days = (today + timedelta(days=10)).isoformat()
+  in_20_days = (today + timedelta(days=20)).isoformat()
+
+  expired_item = _make_item("Expired Item", expiry_date_field, yesterday)
+  tomorrow_item = _make_item("Tomorrow Item", expiry_date_field, tomorrow)
+  ten_days_item = _make_item("Ten Days Item", expiry_date_field, in_10_days)
+  twenty_days_item = _make_item("Twenty Days Item", expiry_date_field, in_20_days)
+
+  # Test 'is expired'
+  filters = _filter(
+    [expiry_date_field], [str(expiry_date_field["id"])], ["is"], ["expired"]
+  )
+  items = get_items(custom_field_filters=filters)
+  assert _ids(items) == {expired_item}
+
+  # Test 'is not expired'
+  filters = _filter(
+    [expiry_date_field], [str(expiry_date_field["id"])], ["is"], ["not expired"]
+  )
+  items = get_items(custom_field_filters=filters)
+  assert _ids(items) == {tomorrow_item, ten_days_item, twenty_days_item}
+
+  # Test 'expires_in' 15 days
+  filters = _filter(
+    [expiry_date_field], [str(expiry_date_field["id"])], ["expires_in"], ["15"]
+  )
+  items = get_items(custom_field_filters=filters)
+  assert _ids(items) == {tomorrow_item, ten_days_item}
+
+  # Test 'before' date
+  filters = _filter(
+    [expiry_date_field], [str(expiry_date_field["id"])], ["before"], [in_10_days]
+  )
+  items = get_items(custom_field_filters=filters)
+  assert _ids(items) == {expired_item, tomorrow_item}

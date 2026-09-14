@@ -762,12 +762,9 @@ const FILTER_OPERATORS = {
     ['>=', 'Since']
   ],
   expiry_date: [
-    ['=', 'On'],
-    ['!=', 'Not on'],
-    ['<', 'Before'],
-    ['<=', 'Until'],
-    ['>', 'After'],
-    ['>=', 'Since']
+    ['is', 'Is'],
+    ['before', 'Before'],
+    ['expires_in', 'Expires in']
   ],
   enum: [
     ['=', 'Is'],
@@ -784,23 +781,39 @@ function operatorOptionsFor(fieldType) {
   return FILTER_OPERATORS[fieldType] ?? [];
 }
 
-function buildFilterValueControl(field) {
+function buildFilterValueControl(field, op) {
   let control;
 
   if (field.field_type === 'boolean') {
-    control = document.createElement('select');
-    control.className = 'form-select';
+    // ...
+  }
+
+  if (field.field_type === 'expiry_date') {
+    if (op === 'is') {
+      control = document.createElement('select');
+      control.className = 'form-select';
+      control.name = 'f_value';
+      control.append(new Option('Expired', 'expired'), new Option('Not Expired', 'not expired'));
+      return control;
+    }
+    
+    control = document.createElement('input');
+    control.className = 'form-input min-w-0 flex-1';
     control.name = 'f_value';
 
-    // "—" filters items with no stored value for the field.
-    control.append(new Option('—', EMPTY_FILTER_VALUE));
-
-    control.append(new Option('True', 'true'), new Option('False', 'false'));
-
+    if (op === 'expires_in') {
+      control.type = 'number';
+      control.step = '1';
+      control.min = '0';
+    } else {
+      control.type = 'date';
+    }
     return control;
   }
 
   if (field.field_type === 'enum') {
+    // ...
+
     control = document.createElement('select');
     control.className = 'form-select';
     control.name = 'f_value';
@@ -892,7 +905,7 @@ function updateFilterRowControls(row, field) {
       matchCaseLabel.append(matchCase, document.createTextNode('Match Case'));
     }
 
-    const valueControl = buildFilterValueControl(field);
+    let valueControl = buildFilterValueControl(field, opSelect.value);
 
     let valueNode = valueControl;
 
@@ -913,6 +926,20 @@ function updateFilterRowControls(row, field) {
 
     inputLine.append(valueNode, hiddenValue);
 
+    const refreshValueControl = () => {
+      if (field.field_type === 'expiry_date') {
+        const newValueControl = buildFilterValueControl(field, opSelect.value);
+        let newValueNode = newValueControl;
+        if (newValueControl.tagName === 'SELECT') {
+          newValueNode = wrapSelectWithChevron(newValueControl);
+          newValueNode.classList.add('cf-filter-value-wrap', 'flex-1');
+        }
+        inputLine.replaceChild(newValueNode, valueNode);
+        valueControl = newValueControl;
+        valueNode = newValueNode;
+      }
+    };
+
     const valueRow = document.createElement('div');
 
     valueRow.className = 'flex w-full flex-col gap-2';
@@ -926,6 +953,7 @@ function updateFilterRowControls(row, field) {
     // The value row is hidden while "—" filters for items with no stored
     // value; the hidden sentinel is submitted instead of the value control.
     const applyMode = () => {
+      refreshValueControl();
       const isEmpty = opSelect.value === EMPTY_FILTER_VALUE;
 
       valueRow.classList.toggle('hidden', isEmpty);

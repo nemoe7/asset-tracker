@@ -653,7 +653,7 @@ def test_fragment_shows_expired_for_past_expiry_date(
   )
 
   response = gen_test_admin_client.get(
-    f"/inventory/fragment?f_field={field['id']}&f_op==&f_value=2020-01-01"
+    f"/inventory/fragment?f_field={field['id']}&f_op=is&f_value=expired"
   )
 
   assert response.status_code == 200
@@ -677,7 +677,7 @@ def test_fragment_shows_date_for_future_expiry_date(
   )
 
   response = gen_test_admin_client.get(
-    f"/inventory/fragment?f_field={field['id']}&f_op==&f_value=2099-01-01"
+    f"/inventory/fragment?f_field={field['id']}&f_op=is&f_value=not+expired"
   )
 
   assert response.status_code == 200
