@@ -442,3 +442,58 @@ def test_list_audit_logs_returns_filter_options(gen_test_data_admin):
 
   assert result["entity_types"] == ["inventory_item", "user"]
   assert result["actions"] == ["created", "updated"]
+
+
+def test_get_audit_logs_filters_by_entity_id_prefix(gen_test_data_admin):
+  """Test that filtering by asset_id also returns custom field value changes.
+
+  Custom field value entries use entity_id format "asset_id:field_id"
+  e.g., "abc123-def456:field123" for field changes on asset "abc123-def456".
+
+  This test verifies that filtering by "abc123-def456" returns both direct
+  asset updates and custom field value changes for that asset.
+  """
+  asset_id = "abc123-def456"
+  field_id = "field123"
+
+  create_audit_log(
+    action="updated",
+    entity_type="inventory_item",
+    entity_id=asset_id,
+  )
+
+  _insert_audit_log(
+    user_id=gen_test_data_admin,
+    action="updated",
+    entity_type="custom_field_value",
+    entity_id=f"{asset_id}:{field_id}",
+  )
+
+  logs = get_audit_logs(entity_id=asset_id)
+
+  assert len(logs) == 2
+  assert all(log["entity_id"].startswith(asset_id) for log in logs)
+
+
+def test_list_audit_logs_filters_by_entity_id_prefix(gen_test_data_admin):
+  """Test that list_audit_logs also matches custom field value changes via prefix."""
+  asset_id = "xyz789-abc012"
+  field_id = "custom_field_456"
+
+  create_audit_log(
+    action="updated",
+    entity_type="inventory_item",
+    entity_id=asset_id,
+  )
+
+  _insert_audit_log(
+    user_id=gen_test_data_admin,
+    action="created",
+    entity_type="custom_field_value",
+    entity_id=f"{asset_id}:{field_id}",
+  )
+
+  result = list_audit_logs(entity_id=asset_id)
+
+  assert len(result["logs"]) == 2
+  assert all(log["entity_id"].startswith(asset_id) for log in result["logs"])
