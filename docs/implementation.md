@@ -132,8 +132,8 @@
 | USR-004 | P4 | Admins can create/manage roles. | 🟢 | AUT-003 | USR-005, USR-006 | |
 | USR-005 | P4 | Admins can assign roles to users. | 🟢 | USR-001, USR-004 | AUT-003 | |
 | USR-006 | P4 | Admins can configure role permissions. | 🟢 | USR-004 | AUT-003 | |
-| USR-007 | P4 | Admins can configure per-user overrides. | 🔴 | USR-001 | USR-008, AUT-013 | |
-| USR-012 | P4 | Admins can configure audit-log visibility. | 🔴 | USR-004 | AUD-011, AUD-012 | |
+| USR-007 | P4 | Admins can configure per-user overrides. | 🟢 | USR-001 | USR-008, AUT-013 | |
+| USR-012 | P4 | Admins can configure audit-log visibility. | 🟢 | USR-004 | AUD-011, AUD-012 | Visibility is configured through standard permission grants (roles tab + per-user overrides); there is no dedicated visibility panel |
 | USR-013 | P4 | Record user/role/permission changes. | 🟢 | USR-001–007 | AUD-006 | |
 | FLD-004 | P4 | Admins can specify custom-field data type. | 🟢 | FLD-002, FLD-003 | FLD-005 | |
 | FLD-005 | P4 | Support Text, Integer, Decimal, Boolean, Date, Enum, User. | 🟢 | FLD-004 | FLD-006, FLD-007, FLD-012 | |
@@ -163,7 +163,7 @@
 | AUT-015 | P5 | Equal-specificity conflicting role permissions deny. | 🟢 | AUT-003 | AUT-014 | |
 | AUT-016 | P5 | Permission changes apply on subsequent checks without re-login. | 🟢 | AUT-003 | — | |
 | AUT-017 | P5 | Authorization checks use `namespace.operation`. | 🟢 | AUT-007 | — | |
-| AUD-012 | P5 | Restrict audit-log visibility by permission. | 🔴 | USR-012, AUT-003 | AUD-011 | |
+| AUD-012 | P5 | Restrict audit-log visibility by permission. | 🟢 | USR-012, AUT-003 | AUD-011 | |
 | BKP-001 | P5 | Automatic backups disabled by default. | 🔴 | — | BKP-003 | |
 | BKP-002 | P5 | Prompt Admin to configure backups on first initialization. | 🔴 | BKP-001 | — | |
 | BKP-003 | P5 | Admins can enable/disable automatic backups. | 🔴 | BKP-001 | BKP-004 | |
