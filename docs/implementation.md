@@ -117,7 +117,7 @@
 | USE-001 | P3 | Application usable through a standard web browser. | 🟢 | — | CMP-001, CMP-002 | |
 | USE-004 | P3 | Common asset operations require minimal navigation. | 🟢 | AST-001–004, QRC-005 | PER-003 | Import/export intentionally on the data tab; scope is AST-001–004 and QRC-005 |
 | REL-003 | P3 | Maintain data integrity when creating/modifying records. | 🟢 | AST-007 | REL-001 | |
-| REL-006 | P3 | Retain information identifying most recent successful backup. | 🟢 | REL-005 | BKP-009, BKP-015 | backup_history.completed_at records the successful-backup time (written only after the copy succeeds, REL-005); the backed_up audit entry records initiation time only. scheduled_at stays NULL until scheduled backups (BKP-009) exist |
+| REL-006 | P3 | Retain information identifying most recent successful backup. | 🟢 | REL-005 | BKP-009, BKP-015 | Manual backups only; scheduled_at stays NULL until scheduled backups (BKP-009) exist |
 
 ### P4
 
