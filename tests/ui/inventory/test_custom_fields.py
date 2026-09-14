@@ -513,3 +513,81 @@ def test_decimal_custom_field_strips_illegal_characters(
   price_input.press_sequentially("11ddddawd")
 
   expect(price_input).to_have_value("11")
+
+
+@pytest.mark.e2e
+def test_edit_modal_does_not_duplicate_custom_fields_on_reopen(
+  page,
+  live_server,
+  create_custom_field,
+  create_item,
+  set_item_custom_field,
+):
+  """Opening edit modal multiple times should not duplicate custom field rows."""
+  text_field = create_custom_field("Serial Number", "text")
+
+  item = create_item("Reopen Asset")
+
+  set_item_custom_field(item["id"], text_field["name"], "SN-500")
+
+  page.goto(f"{live_server}/")
+
+  row = page.get_by_role("row").filter(has_text="Reopen Asset")
+
+  # Open edit modal first time
+  row.locator(".edit-item").click()
+
+  edit_modal = page.get_by_role("dialog")
+
+  tbody = edit_modal.locator("#edit-item-custom-fields")
+
+  expect(tbody.locator("tr").filter(has_text="Serial Number")).to_have_count(1)
+
+  # Close and reopen
+  edit_modal.locator(".modal-close").click()
+
+  row.locator(".edit-item").click()
+
+  edit_modal = page.get_by_role("dialog")
+
+  # Should still only have one Serial Number row (no duplicates)
+  expect(tbody.locator("tr").filter(has_text="Serial Number")).to_have_count(1)
+
+
+@pytest.mark.e2e
+def test_view_modal_does_not_duplicate_custom_fields_on_reopen(
+  page,
+  live_server,
+  create_custom_field,
+  create_item,
+  set_item_custom_field,
+):
+  """Opening view modal multiple times should not duplicate custom field rows."""
+  text_field = create_custom_field("Serial Number", "text")
+
+  item = create_item("Reopen View Asset")
+
+  set_item_custom_field(item["id"], text_field["name"], "SN-600")
+
+  page.goto(f"{live_server}/")
+
+  row = page.get_by_role("row").filter(has_text="Reopen View Asset")
+
+  # Open view modal first time
+  row.click()
+
+  view_modal = page.get_by_role("dialog")
+
+  tbody = view_modal.locator("#view-item-custom-fields")
+
+  expect(tbody.locator("tr").filter(has_text="Serial Number")).to_have_count(1)
+
+  # Close and reopen
+  view_modal.locator(".modal-close").click()
+
+  row.click()
+
+  view_modal = page.get_by_role("dialog")
+
+  # Should still only have one Serial Number row (no duplicates)
+  expect(tbody.locator("tr").filter(has_text="Serial Number")).to_have_count(1)
