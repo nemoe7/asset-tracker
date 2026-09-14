@@ -426,3 +426,36 @@ def test_get_items_expiry_date_filters(expiry_date_field):
   )
   items = get_items(custom_field_filters=filters)
   assert _ids(items) == {expired_item, tomorrow_item}
+
+
+def test_get_items_expiry_date_today_is_expired_boundary(expiry_date_field):
+  """An item expiring today displays as "Expired" (FLD-017) and must be treated
+  as expired by the is / not-expired filters: included in "is expired" and
+  excluded from "is not expired"."""
+  from datetime import datetime, timedelta, timezone
+
+  today = datetime.now(timezone.utc).date()
+
+  today_item = _make_item("Today Item", expiry_date_field, today.isoformat())
+  future_item = _make_item(
+    "Future Item", expiry_date_field, (today + timedelta(days=1)).isoformat()
+  )
+
+  # 'is expired' must include items expiring today (display shows "Expired").
+  filters = _filter(
+    [expiry_date_field], [str(expiry_date_field["id"])], ["is"], ["expired"]
+  )
+  items = get_items(custom_field_filters=filters)
+  assert _ids(items) == {today_item}
+
+  # 'is not expired' must exclude items expiring today, while still returning
+  # genuinely future items.
+  filters = _filter(
+    [expiry_date_field],
+    [str(expiry_date_field["id"])],
+    ["is"],
+    ["not expired"],
+  )
+  items = get_items(custom_field_filters=filters)
+  assert _ids(items) == {future_item}
+  assert today_item not in _ids(items)

@@ -118,7 +118,7 @@ def _filter_row_condition(connection, field_id, op, value):
 
   elif field_type == "expiry_date":
     if op == "is":
-      comparison = "<" if value == "expired" else ">="
+      comparison = "<=" if value == "expired" else ">"
       inner = f"inventory_item_fields.value {comparison} date('now')"
       parameters = [field_id]
     elif op == "expires_in":
