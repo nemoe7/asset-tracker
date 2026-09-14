@@ -216,6 +216,12 @@ def test_admin_page_grants_permission_to_role(page, live_server, setup_admin):
   dialog = page.locator("#edit-role-dialog")
   expect(dialog).to_be_visible()
 
+  # The permission input's type hints come from the known-permissions datalist,
+  # which must be rendered inside the body block to survive template inheritance.
+  datalist = page.locator("#known-permissions-list")
+  expect(datalist).to_have_count(1)
+  expect(datalist.locator("option[value='locations.manage']")).to_have_count(1)
+
   page.locator("#edit-role-permission-name").fill("assets.read")
   page.locator("#edit-role-permission-add").click()
 
