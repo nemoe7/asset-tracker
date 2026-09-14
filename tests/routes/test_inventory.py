@@ -640,7 +640,7 @@ def test_fragment_shows_expired_for_past_expiry_date(
   gen_test_admin_client,
   gen_test_item,
 ):
-  _create_field(gen_test_admin_client, "Expires On", "expiry_date")
+  field = _create_field(gen_test_admin_client, "Expires On", "expiry_date")
 
   item_id = gen_test_item(name="Expiring Asset")
 
@@ -652,7 +652,9 @@ def test_fragment_shows_expired_for_past_expiry_date(
     },
   )
 
-  response = gen_test_admin_client.get("/inventory/fragment")
+  response = gen_test_admin_client.get(
+    f"/inventory/fragment?f_field={field['id']}&f_op==&f_value=2020-01-01"
+  )
 
   assert response.status_code == 200
   assert b"Expired" in response.data
@@ -662,7 +664,7 @@ def test_fragment_shows_date_for_future_expiry_date(
   gen_test_admin_client,
   gen_test_item,
 ):
-  _create_field(gen_test_admin_client, "Expires On", "expiry_date")
+  field = _create_field(gen_test_admin_client, "Expires On", "expiry_date")
 
   item_id = gen_test_item(name="Future Asset")
 
@@ -674,7 +676,9 @@ def test_fragment_shows_date_for_future_expiry_date(
     },
   )
 
-  response = gen_test_admin_client.get("/inventory/fragment")
+  response = gen_test_admin_client.get(
+    f"/inventory/fragment?f_field={field['id']}&f_op==&f_value=2099-01-01"
+  )
 
   assert response.status_code == 200
   assert b"2099-01-01" in response.data
