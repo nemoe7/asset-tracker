@@ -8,6 +8,7 @@
 - Follow documented architecture/conventions and existing project patterns.
 - Reuse existing APIs, services, fixtures, exceptions, and components.
 - Avoid duplication, unnecessary dependencies, scope creep, and architectural changes.
+- Use the venv `.venv` if present
 
 ## Documentation
 
@@ -45,6 +46,7 @@
 ## Testing
 
 - Use `pytest`.
+- Prefer `pytest --testmon -q` as the default test gate after code changes.
 - Use installed/project test tooling and plugins when appropriate; inspect project configuration and dependencies before choosing alternatives.
 - Use `pytest-xdist`/parallel test execution when available and compatible with the tests.
 - Add/update tests for changed behavior.
@@ -52,6 +54,7 @@
 - Cover relevant success, failure, and authorization cases.
 - Do not weaken, remove, or bypass tests.
 - Run relevant tests after changes and investigate failures.
+- Run the full `pytest -q` suite when Testmon coverage is uncertain or changes affect shared fixtures, test infrastructure, configuration, or broadly used code.
 
 ## Requirements
 
