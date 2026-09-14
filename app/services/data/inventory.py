@@ -116,7 +116,7 @@ def _filter_row_condition(connection, field_id, op, value):
     inner = f"CAST(inventory_item_fields.value AS NUMERIC) {comparison} ?"
     parameters = [field_id, value]
 
-  elif field_type in ("date", "enum"):
+  elif field_type in ("date", "expiry_date", "enum"):
     comparison = "=" if negated else op
     inner = f"inventory_item_fields.value {comparison} ?"
     parameters = [field_id, value]

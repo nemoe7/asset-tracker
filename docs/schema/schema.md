@@ -51,7 +51,7 @@ erDiagram
     custom_fields {
         integer id PK
         text name UK "NOT NULL"
-        text field_type "NOT NULL, CHECK in (text, integer, decimal, boolean, date, enum, user)"
+        text field_type "NOT NULL, CHECK in (text, integer, decimal, boolean, date, expiry_date, enum, user)"
         text description
         integer required "NOT NULL DEFAULT 0, CHECK in (0, 1)"
         text enum_values

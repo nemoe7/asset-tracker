@@ -3,7 +3,7 @@
 {# Formatted value for a filtered custom field on an item. #}
 {% macro filtered_field_value(item, field) -%}
 {%- set value = item["custom_fields"].get(field["name"]) -%}
-{%- if value is none -%}&#8212;{%- elif value is sameas true -%}True{%- elif value is sameas false -%}False{%- else -%}{{ value }}{%- endif -%}
+{%- if value is none -%}&#8212;{%- elif value is sameas true -%}True{%- elif value is sameas false -%}False{%- else -%}{{ value | custom_field_value(field.field_type) }}{%- endif -%}
 {%- endmacro %}
 
 <section class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
@@ -23,7 +23,7 @@
             Location
           </th>
 
-          {% for field in filtered_custom_fields %}
+          {% for field in readable_fields %}
           <th class="px-5 py-3 font-medium text-zinc-400">
             {{ field["name"] }}
           </th>
@@ -66,7 +66,7 @@
             {{ item["location_name"] or "—" }}
           </td>
 
-          {% for field in filtered_custom_fields %}
+          {% for field in readable_fields %}
           <td class="px-5 py-4 text-zinc-400">
             {{ filtered_field_value(item, field) }}
           </td>
@@ -146,7 +146,7 @@
             {{ item["location_name"] or "—" }}
           </p>
 
-          {% for field in filtered_custom_fields %}
+          {% for field in readable_fields %}
           <p class="mt-1 text-sm text-zinc-400">
             <span class="text-zinc-500">{{ field["name"] }}:</span>
             {{ filtered_field_value(item, field) }}

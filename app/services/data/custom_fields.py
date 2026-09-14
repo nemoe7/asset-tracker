@@ -12,6 +12,7 @@ _VALID_FIELD_TYPES = {
   "decimal",
   "boolean",
   "date",
+  "expiry_date",
   "enum",
   "user",
 }
