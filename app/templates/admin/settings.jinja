@@ -822,6 +822,30 @@
         </div>
         {% endif %}
 
+        <div class="mt-6">
+          <p class="mb-2 text-sm font-medium text-zinc-300">Permission overrides</p>
+
+          <div id="edit-user-permissions-list" class="flex flex-wrap gap-2"></div>
+
+          <div class="mt-3 flex gap-2">
+            <label for="edit-user-permission-name" class="sr-only">Add permission</label>
+            <input id="edit-user-permission-name" type="text" autocomplete="off"
+              list="known-permissions-list" placeholder="Add permission..."
+              class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+            <button type="button" id="edit-user-permission-add"
+              class="flex shrink-0 items-center justify-center gap-1 rounded-lg border border-zinc-700 px-3 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100">
+              <i class="bi bi-plus-lg" aria-hidden="true"></i>
+              Add
+            </button>
+          </div>
+
+          <p id="edit-user-permission-error" class="mt-2 hidden text-xs text-red-400">
+            Duplicate permission.
+          </p>
+
+          <p class="mt-1 text-xs text-zinc-500">Direct overrides win over role permissions. Click a chip to toggle allow/deny.</p>
+        </div>
+
         <div class="mt-6 flex justify-end gap-3">
           <button type="button" id="cancel-edit-user"
             class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
@@ -1073,8 +1097,6 @@
               Add
             </button>
           </div>
-
-          <datalist id="known-permissions-list"></datalist>
 
           <p id="edit-role-permission-error" class="mt-2 hidden text-xs text-red-400">
             Duplicate permission.
@@ -1617,6 +1639,7 @@
 {% endblock %}
 {# ==================== End Body Block ==================== #}
 
+<datalist id="known-permissions-list"></datalist>
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/modal-manager.js') }}"></script>

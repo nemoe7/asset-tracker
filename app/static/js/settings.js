@@ -528,7 +528,9 @@ document.querySelectorAll('.edit-user').forEach((button) => {
       .filter(Boolean);
     setEditUserRoles(selectedRoles);
 
+    editUserPermissionError?.classList.add('hidden');
     openModal(editUserModal);
+    renderEditUserPermissions(button.dataset.userId);
   });
 });
 
@@ -536,7 +538,184 @@ cancelEditUser?.addEventListener('click', () => {
   closeModal();
 });
 
-// ==================== End Edit User Modal ====================
+// ==================== Edit User Permission Overrides ====================
+
+const editUserPermissionsList = document.getElementById('edit-user-permissions-list');
+const editUserPermissionName = document.getElementById('edit-user-permission-name');
+const editUserPermissionAdd = document.getElementById('edit-user-permission-add');
+const editUserPermissionError = document.getElementById('edit-user-permission-error');
+let currentEditUserId = null;
+let editUserOriginalPermissions = [];
+let editUserStagedPermissions = [];
+
+function renderStagedUserPermissions() {
+  if (!editUserPermissionsList) return;
+  editUserPermissionsList.innerHTML = '';
+
+  for (const permission of editUserStagedPermissions) {
+    const wrapper = document.createElement('div');
+    wrapper.className = `edit-user-permission-chip flex w-fit max-w-full items-center gap-1.5 rounded-full border py-1 pl-1.5 pr-1.5 ${
+      permission.allowed
+        ? 'border-emerald-900 bg-emerald-900 text-emerald-100'
+        : 'border-red-900 bg-red-900 text-red-100'
+    }`;
+
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'flex min-w-0 items-center gap-1.5 pl-1.5';
+    chip.title = permission.allowed ? 'Allowed - click to deny' : 'Denied - click to allow';
+    chip.setAttribute('aria-pressed', String(permission.allowed));
+    chip.addEventListener('click', () => {
+      permission.allowed = !permission.allowed;
+      renderStagedUserPermissions();
+    });
+
+    const label = document.createElement('span');
+    label.className = 'edit-user-permission-name min-w-0 truncate text-sm font-medium';
+    label.textContent = permission.permission;
+
+    chip.append(label);
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'flex size-5 shrink-0 items-center justify-center rounded-full text-red-400 hover:bg-red-950 hover:text-red-300';
+    removeButton.title = 'Remove permission';
+    removeButton.setAttribute('aria-label', 'Remove permission');
+    removeButton.innerHTML = '<i class="bi bi-x-lg block" aria-hidden="true"></i>';
+    removeButton.addEventListener('click', () => {
+      editUserStagedPermissions = editUserStagedPermissions.filter((p) => p !== permission);
+      renderStagedUserPermissions();
+    });
+
+    wrapper.append(chip, removeButton);
+    editUserPermissionsList.appendChild(wrapper);
+  }
+
+  refreshKnownPermissionOptions(editUserStagedPermissions);
+}
+
+async function renderEditUserPermissions(userId) {
+  if (!editUserPermissionsList) return;
+  currentEditUserId = userId;
+  editUserPermissionError?.classList.add('hidden');
+
+  try {
+    const response = await fetch(`/admin/users/${userId}/permissions`);
+    if (!response.ok) throw new Error('Failed to load permissions');
+    const permissions = await response.json();
+
+    editUserOriginalPermissions = permissions.map((p) => ({
+      permission_id: p.permission_id,
+      permission: p.permission,
+      allowed: !!p.allowed,
+    }));
+    editUserStagedPermissions = editUserOriginalPermissions.map((p) => ({ ...p, isNew: false }));
+    renderStagedUserPermissions();
+  } catch {
+    editUserPermissionsList.innerHTML = '<p class="text-sm text-red-400">Failed to load permissions.</p>';
+  }
+}
+
+function showEditUserPermissionError(message) {
+  if (!editUserPermissionError) return;
+  editUserPermissionError.textContent = message;
+  editUserPermissionError.classList.remove('hidden');
+}
+
+function addEditUserPermission() {
+  if (!currentEditUserId || !editUserPermissionName) return;
+
+  const permissionName = editUserPermissionName.value.trim();
+  if (!permissionName) return;
+
+  const duplicate = editUserStagedPermissions.some(
+    (p) => p.permission.toLowerCase() === permissionName.toLowerCase()
+  );
+  editUserPermissionError?.classList.toggle('hidden', !duplicate);
+
+  if (duplicate) return;
+
+  editUserStagedPermissions.push({ permission: permissionName, allowed: true, isNew: true });
+
+  editUserPermissionName.value = '';
+  editUserPermissionName.focus();
+  renderStagedUserPermissions();
+}
+
+function submitEditUserPermission() {
+  addEditUserPermission();
+}
+
+// Hide the error while typing a new value.
+editUserPermissionName?.addEventListener('input', () => {
+  editUserPermissionError?.classList.add('hidden');
+});
+
+// Add a permission when Enter is pressed instead of submitting the form.
+editUserPermissionName?.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  submitEditUserPermission();
+});
+
+// Add a permission via the explicit Add button.
+editUserPermissionAdd?.addEventListener('click', submitEditUserPermission);
+
+// Persist staged permission changes only on explicit save. A fetched response
+// that followed a 302 is a success; a validation error renders the page (200).
+async function persistEditUserPermissionChanges() {
+  if (!currentEditUserId) return true;
+  const csrf = editUserForm?.querySelector('input[name="csrf_token"]')?.value ?? '';
+  const originalByName = new Map(editUserOriginalPermissions.map((p) => [p.permission, p]));
+
+  // Deletes: permissions that existed on load but were removed from the staging list.
+  for (const original of editUserOriginalPermissions) {
+    if (!editUserStagedPermissions.some((p) => p.permission === original.permission)) {
+      const body = new FormData();
+      body.append('csrf_token', csrf);
+      const res = await fetch(
+        `/admin/users/${currentEditUserId}/permissions/${original.permission_id}/delete`,
+        { method: 'POST', body },
+      );
+      if (!res.redirected) {
+        showEditUserPermissionError('Failed to remove a permission.');
+        return false;
+      }
+    }
+  }
+
+  // Sets: newly added permissions or allow/deny toggles.
+  for (const staged of editUserStagedPermissions) {
+    const original = originalByName.get(staged.permission);
+    if (staged.isNew || !original || original.allowed !== staged.allowed) {
+      const body = new FormData();
+      body.append('csrf_token', csrf);
+      body.append('permission_name', staged.permission);
+      body.append('allowed', staged.allowed ? 'true' : 'false');
+      const res = await fetch(`/admin/users/${currentEditUserId}/permissions`, {
+        method: 'POST',
+        body,
+      });
+      if (!res.redirected) {
+        showEditUserPermissionError('Failed to save a permission.');
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+editUserForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const persisted = await persistEditUserPermissionChanges();
+  if (!persisted) return;
+  // The native submit still handles the username/name/password/roles update
+  // and its validation + redirect; submit() bypasses this submit listener.
+  editUserForm.submit();
+});
+
+// ==================== End Edit User Permission Overrides ====================
 
 
 // ==================== Archive User Confirmation ====================
@@ -620,13 +799,14 @@ let currentEditRoleId = null;
 let originalPermissions = [];
 let stagedPermissions = [];
 
-// Keep the known-permissions autocomplete in sync with staged permissions so
-// permissions already added (or already present on load) are not offered again.
-function refreshKnownPermissionOptions() {
+// Keep the known-permissions autocomplete in sync with the active modal's
+// staged permissions so permissions already added (or already present on load)
+// are not offered again.
+function refreshKnownPermissionOptions(staged = []) {
   if (!knownPermissionsList) return;
-  const staged = new Set(stagedPermissions.map((p) => p.permission.toLowerCase()));
+  const stagedSet = new Set(staged.map((p) => p.permission.toLowerCase()));
   knownPermissionsList.replaceChildren(
-    ...KNOWN_PERMISSIONS.filter((p) => !staged.has(p.toLowerCase())).map(
+    ...KNOWN_PERMISSIONS.filter((p) => !stagedSet.has(p.toLowerCase())).map(
       (p) => new Option(p, p)
     )
   );
@@ -677,7 +857,7 @@ function renderStagedPermissions() {
     editRolePermissionsList.appendChild(wrapper);
   }
 
-  refreshKnownPermissionOptions();
+  refreshKnownPermissionOptions(stagedPermissions);
 }
 
 async function renderEditRolePermissions(roleId) {
