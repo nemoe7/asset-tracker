@@ -34,3 +34,4 @@ code_review.md
 node_modules/
 
 .testmondata*
+.vscode/
