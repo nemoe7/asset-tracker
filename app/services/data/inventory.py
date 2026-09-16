@@ -696,7 +696,18 @@ def update_item(
     return True
 
 
-def archive_item(item_id):
+_ARCHIVAL_REASONS = ("Invalid", "Damaged", "Disposed")
+
+
+def archive_item(item_id, archival_reason=None, notes=None):
+  if archival_reason not in _ARCHIVAL_REASONS:
+    raise InvalidInputError(
+      "Archival reason must be one of: Invalid, Damaged, Disposed"
+    )
+
+  if notes is not None and not notes.strip():
+    notes = None
+
   with db_transaction() as connection:
     existing = connection.execute(
       """
@@ -717,16 +728,26 @@ def archive_item(item_id):
       """
       UPDATE inventory_items
       SET archived_at = datetime('now'),
+          archival_reason = ?,
+          archival_notes = ?,
           updated_at = datetime('now')
       WHERE id = ?
       """,
-      (item_id,),
+      (
+        archival_reason,
+        notes,
+        item_id,
+      ),
     )
 
     create_audit_log(
       action="archived",
       entity_type="inventory_item",
       entity_id=item_id,
+      details={
+        "archival_reason": archival_reason,
+        "archival_notes": notes,
+      },
     )
 
     return True
@@ -736,7 +757,7 @@ def restore_item(item_id):
   with db_transaction() as connection:
     existing = connection.execute(
       """
-      SELECT archived_at
+      SELECT archived_at, archival_reason, archival_notes
       FROM inventory_items
       WHERE id = ?
       """,
@@ -753,6 +774,8 @@ def restore_item(item_id):
       """
       UPDATE inventory_items
       SET archived_at = NULL,
+          archival_reason = NULL,
+          archival_notes = NULL,
           updated_at = datetime('now')
       WHERE id = ?
       """,
@@ -763,6 +786,10 @@ def restore_item(item_id):
       action="restored",
       entity_type="inventory_item",
       entity_id=item_id,
+      details={
+        "archival_reason": existing["archival_reason"],
+        "archival_notes": existing["archival_notes"],
+      },
     )
 
     return True

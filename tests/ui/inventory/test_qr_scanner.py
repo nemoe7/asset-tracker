@@ -197,6 +197,7 @@ def test_qr_scanner_reports_archived_item(page, live_server, create_item):
 
   response = page.request.post(
     f"{live_server}/inventory/{item['id']}/archive",
+    form={"archival_reason": "Damaged"},
     headers={"Accept": "application/json"},
   )
   assert response.ok

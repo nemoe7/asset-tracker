@@ -159,6 +159,7 @@ def test_item_can_open_archive_confirmation(
   page.locator("#archive-item-button").click()
 
   expect(page.locator("#archive-item-modal")).to_be_visible()
+  expect(page.locator("#archive-item-reason")).to_be_visible()
 
 
 @pytest.mark.e2e
@@ -175,12 +176,57 @@ def test_item_can_be_archived(
 
   page.locator("#archive-item-button").click()
 
+  page.locator("#archive-item-reason").select_option("Damaged")
+  page.locator("#archive-item-notes").fill("Screen cracked")
+
   page.get_by_role(
     "button",
     name="Archive asset",
   ).last.click()
 
   expect(page.locator(f'tr.view-item[data-item-id="{item["id"]}"]')).not_to_be_visible()
+
+
+@pytest.mark.e2e
+def test_archived_item_shows_reason_and_notes_in_view_modal(
+  page,
+  live_server,
+  create_item,
+):
+  item = create_item("Test Asset")
+
+  page.goto(f"{live_server}/")
+
+  page.locator(f'tr .edit-item[data-item-id="{item["id"]}"]').click()
+
+  page.locator("#archive-item-button").click()
+
+  page.locator("#archive-item-reason").select_option("Disposed")
+  page.locator("#archive-item-notes").fill("End of life")
+
+  page.get_by_role(
+    "button",
+    name="Archive asset",
+  ).last.click()
+
+  expect(page.locator(f'tr.view-item[data-item-id="{item["id"]}"]')).not_to_be_visible()
+
+  page.locator("#filter-item-button").click()
+
+  page.get_by_role(
+    "checkbox",
+    name="Include Archived",
+  ).check()
+
+  page.get_by_role(
+    "button",
+    name="Apply",
+  ).click()
+
+  page.locator(f"a.view-item-link[data-item-id='{item['id']}']").first.click()
+
+  expect(page.locator("#view-item-archival-reason")).to_have_text("Disposed")
+  expect(page.locator("#view-item-archival-notes")).to_have_text("End of life")
 
 
 @pytest.mark.e2e

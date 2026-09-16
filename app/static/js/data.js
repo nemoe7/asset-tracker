@@ -96,7 +96,9 @@ const BUILTIN_EXPORT_FIELDS = [
   ['description', 'Description'],
   ['location', 'Location'],
   ['created_at', 'Created at'],
-  ['updated_at', 'Updated at']
+  ['updated_at', 'Updated at'],
+  ['archival_reason', 'Archival reason'],
+  ['archival_notes', 'Archival notes']
 ];
 
 const exportItemModal = document.getElementById('export-item-modal');

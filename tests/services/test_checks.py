@@ -43,7 +43,7 @@ def test_check_item_not_found(gen_test_data_admin):
 def test_check_archived_item(gen_test_data_admin):
   item_id = create_item("Laptop")
 
-  archive_item(item_id)
+  archive_item(item_id, "Damaged")
 
   with pytest.raises(ItemIsArchivedError):
     check_item(item_id)

@@ -162,4 +162,7 @@ def test_export_without_columns_keeps_all_fields(
 
   header = content.strip().splitlines()[0]
 
-  assert header == "id,name,description,location,created_at,updated_at,Serial"
+  assert header == (
+    "id,name,description,location,created_at,updated_at,"
+    "archival_reason,archival_notes,Serial"
+  )
