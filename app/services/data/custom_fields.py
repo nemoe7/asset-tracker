@@ -62,13 +62,19 @@ def _deserialize_enum_values(field):
     return None
 
 
+def _validate_copyable(copyable):
+  if not isinstance(copyable, bool):
+    raise InvalidCustomFieldCopyableError()
+
+
 def create_custom_field(
-  name, field_type, description=None, required=False, enum_values=None
+  name, field_type, description=None, required=False, enum_values=None, copyable=False
 ):
   _validate_name(name)
   _validate_field_type(field_type)
   _validate_required(required)
   _validate_enum_values(field_type, enum_values)
+  _validate_copyable(copyable)
 
   with db_transaction() as connection:
     existing = connection.execute(
@@ -94,9 +100,10 @@ def create_custom_field(
         field_type,
         description,
         required,
-        enum_values
+        enum_values,
+        copyable
       )
-      VALUES (?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?)
       """,
       (
         name,
@@ -104,6 +111,7 @@ def create_custom_field(
         description,
         int(required),
         serialized_enum_values,
+        int(copyable),
       ),
     )
 
@@ -129,6 +137,7 @@ def get_custom_field(field_id):
         description,
         required,
         enum_values,
+        copyable,
         archived_at
       FROM custom_fields
       WHERE id = ?
@@ -156,6 +165,7 @@ def get_custom_field_by_name(name):
         description,
         required,
         enum_values,
+        copyable,
         archived_at
       FROM custom_fields
       WHERE name = ?
@@ -182,6 +192,7 @@ def get_custom_fields(include_archived=False):
         description,
         required,
         enum_values,
+        copyable,
         archived_at
       FROM custom_fields
     """
@@ -210,6 +221,7 @@ def update_custom_field(
   description=_UNSET,
   required=_UNSET,
   enum_values=_UNSET,
+  copyable=_UNSET,
 ):
   if all(
     value is _UNSET
@@ -219,6 +231,7 @@ def update_custom_field(
       description,
       required,
       enum_values,
+      copyable,
     )
   ):
     raise InvalidInputError("No fields to update")
@@ -232,6 +245,9 @@ def update_custom_field(
   if required is not _UNSET:
     _validate_required(required)
 
+  if copyable is not _UNSET:
+    _validate_copyable(copyable)
+
   with db_transaction() as connection:
     existing = connection.execute(
       """
@@ -242,6 +258,7 @@ def update_custom_field(
         description,
         required,
         enum_values,
+        copyable,
         archived_at
       FROM custom_fields
       WHERE id = ?
@@ -339,6 +356,15 @@ def update_custom_field(
         "new": required,
       }
 
+    if copyable is not _UNSET and bool(existing["copyable"]) != copyable:
+      updates.append("copyable = ?")
+      values.append(int(copyable))
+
+      details["copyable"] = {
+        "old": bool(existing["copyable"]),
+        "new": copyable,
+      }
+
     if enum_values is not _UNSET and existing_enum_values != enum_values:
       serialized_enum_values = (
         json.dumps(enum_values) if enum_values is not None else None
@@ -360,7 +386,7 @@ def update_custom_field(
     connection.execute(
       f"""
       UPDATE custom_fields
-      SET {", ".join(updates)}
+      SET {', '.join(updates)}
       WHERE id = ?
       """,
       values,
