@@ -364,6 +364,15 @@
           </label>
         </div>
 
+        <div class="mt-4 flex items-center gap-3">
+          <input id="add-field-copyable" name="copyable" type="checkbox" value="true" {{ 'checked' if field_copyable }}
+            class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500">
+
+          <label for="add-field-copyable" class="text-sm font-medium text-zinc-300">
+            Copyable
+          </label>
+        </div>
+
         <div class="mt-4" data-enum-values>
           <label for="add-field-enum-values" class="mb-2 block text-sm font-medium text-zinc-300">
             Enum values
@@ -429,6 +438,15 @@
 
           <label for="edit-field-required" class="text-sm font-medium text-zinc-300">
             Required
+          </label>
+        </div>
+
+        <div class="mt-4 flex items-center gap-3">
+          <input id="edit-field-copyable" name="copyable" type="checkbox" value="true"
+            class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500">
+
+          <label for="edit-field-copyable" class="text-sm font-medium text-zinc-300">
+            Copyable
           </label>
         </div>
 
@@ -546,6 +564,7 @@
                       data-field-id="{{ field.id }}" data-field-name="{{ field.name }}"
                       data-field-type="{{ field.field_type }}" data-field-description="{{ field.description or '' }}"
                       data-field-required="{{ 'true' if field.required else 'false' }}"
+                      data-field-copyable="{{ 'true' if field.copyable else 'false' }}"
                       data-field-enum-values="{{ field.enum_values | join('\n') if field.enum_values else '' }}"
                       data-update-url="{{ url_for('admin.update_custom_field_route', field_id=field.id) }}"
                       title="Edit custom field" aria-label="Edit custom field">
@@ -599,6 +618,7 @@
                 data-field-id="{{ field.id }}" data-field-name="{{ field.name }}"
                 data-field-type="{{ field.field_type }}" data-field-description="{{ field.description or '' }}"
                 data-field-required="{{ 'true' if field.required else 'false' }}"
+                data-field-copyable="{{ 'true' if field.copyable else 'false' }}"
                 data-field-enum-values="{{ field.enum_values | join('\n') if field.enum_values else '' }}"
                 data-update-url="{{ url_for('admin.update_custom_field_route', field_id=field.id) }}"
                 title="Edit custom field" aria-label="Edit custom field">

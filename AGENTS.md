@@ -47,6 +47,7 @@
 
 - Use `pytest`.
 - Prefer `pytest --testmon -q` as the default test gate after code changes.
+- After testmon passes, run the full `pytest -q` suite and record both results.
 - Use installed/project test tooling and plugins when appropriate; inspect project configuration and dependencies before choosing alternatives.
 - Use `pytest-xdist`/parallel test execution when available and compatible with the tests.
 - Add/update tests for changed behavior.

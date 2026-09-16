@@ -42,6 +42,7 @@ def create():
     field_id = create_custom_field(
       name=name,
       field_type=field_type,
+      copyable=request.form.get("copyable") == "true",
     )
   except InvalidInputError as error:
     if request.headers.get("Accept") == "application/json":
@@ -55,6 +56,7 @@ def create():
         "id": field_id,
         "name": name,
         "field_type": field_type,
+        "copyable": request.form.get("copyable") == "true",
       }
     )
 
@@ -122,6 +124,9 @@ def update(field_id):
 
   if "required" in request.form:
     kwargs["required"] = request.form["required"] == "true"
+
+  if "copyable" in request.form:
+    kwargs["copyable"] = request.form["copyable"] == "true"
 
   if "enum_values" in request.form:
     kwargs["enum_values"] = [

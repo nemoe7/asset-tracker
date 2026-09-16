@@ -591,3 +591,57 @@ def test_view_modal_does_not_duplicate_custom_fields_on_reopen(
 
   # Should still only have one Serial Number row (no duplicates)
   expect(tbody.locator("tr").filter(has_text="Serial Number")).to_have_count(1)
+
+
+@pytest.mark.e2e
+def test_view_modal_shows_copy_button_for_copyable_field(
+  page,
+  live_server,
+  create_custom_field,
+  create_item,
+  set_item_custom_field,
+):
+  text_field = create_custom_field("Serial Number", "text", copyable=True)
+  non_copyable_field = create_custom_field("Notes", "text", copyable=False)
+
+  item = create_item("Copyable Asset")
+
+  set_item_custom_field(item["id"], text_field["name"], "SN-700")
+  set_item_custom_field(item["id"], non_copyable_field["name"], "Some notes")
+
+  page.goto(f"{live_server}/")
+  row = page.get_by_role("row").filter(has_text="Copyable Asset")
+  row.click()
+
+  view_modal = page.get_by_role("dialog")
+
+  # Copyable field has a copy button next to its value
+  serial_cell = view_modal.locator("td").filter(has_text="SN-700")
+  expect(serial_cell.locator("button[title='Copy value']")).to_be_visible()
+
+  # Non-copyable field does not have a copy button
+  notes_cell = view_modal.locator("td").filter(has_text="Some notes")
+  expect(notes_cell.locator("button[title='Copy value']")).to_have_count(0)
+
+
+@pytest.mark.e2e
+def test_view_modal_does_not_show_copy_button_for_non_copyable_field(
+  page,
+  live_server,
+  create_custom_field,
+  create_item,
+  set_item_custom_field,
+):
+  text_field = create_custom_field("Serial Number", "text", copyable=False)
+
+  item = create_item("Non-Copyable Asset")
+
+  set_item_custom_field(item["id"], text_field["name"], "SN-800")
+
+  page.goto(f"{live_server}/")
+  row = page.get_by_role("row").filter(has_text="Non-Copyable Asset")
+  row.click()
+
+  view_modal = page.get_by_role("dialog")
+
+  expect(view_modal.locator("button[title='Copy value']")).to_have_count(0)

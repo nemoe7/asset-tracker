@@ -714,12 +714,51 @@ function renderViewItemCustomFields(fields, valuesByName) {
     cell.className = 'px-4 py-3 text-zinc-100';
     cell.textContent = formatCustomFieldValue(valuesByName[field.name], field.field_type);
 
+    if (field.copyable) {
+      const copyButton = document.createElement('button');
+      copyButton.type = 'button';
+      copyButton.className = 'ml-2 inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100';
+      copyButton.title = 'Copy value';
+      copyButton.setAttribute('aria-label', 'Copy value');
+      copyButton.innerHTML = '<i class="bi bi-copy block size-3" aria-hidden="true"></i>';
+      copyButton.dataset.fieldValue = cell.textContent;
+      copyButton.addEventListener('click', handleCopyFieldValue);
+      cell.append(copyButton);
+    }
+
     const row = document.createElement('tr');
 
     row.className = 'cf-row';
     row.append(label, cell);
     viewItemCustomFields.append(row);
   }
+}
+
+async function handleCopyFieldValue(event) {
+  event.stopPropagation();
+
+  const button = event.currentTarget;
+  const value = button.dataset.fieldValue;
+
+  if (!value) {
+    return;
+  }
+
+  await navigator.clipboard.writeText(value);
+
+  const icon = button.querySelector('i');
+
+  if (!icon) {
+    return;
+  }
+
+  icon.classList.remove('bi-copy');
+  icon.classList.add('bi-check-lg');
+
+  setTimeout(() => {
+    icon.classList.remove('bi-check-lg');
+    icon.classList.add('bi-copy');
+  }, 1500);
 }
 
 // ==================== End Custom Fields ====================
