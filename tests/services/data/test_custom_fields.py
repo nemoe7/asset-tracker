@@ -644,3 +644,67 @@ def test_get_custom_field_by_name(gen_test_data_admin):
 
 def test_get_nonexistent_custom_field_by_name(gen_test_data_admin):
   assert get_custom_field_by_name("does-not-exist") is None
+
+
+def test_create_custom_field_copyable(gen_test_data_admin):
+  """Test that create_custom_field() accepts and stores the copyable parameter."""
+  field_id = create_custom_field(
+    name="Test Copyable",
+    field_type="text",
+    copyable=True
+  )
+  
+  field = get_custom_field(field_id)
+  assert field is not None
+  assert field["copyable"] == 1
+
+
+def test_create_custom_field_copyable_defaults_false(gen_test_data_admin):
+  """Test that copyable defaults to False (0)."""
+  field_id = create_custom_field(
+    name="Test Copyable Default",
+    field_type="text",
+  )
+  
+  field = get_custom_field(field_id)
+  assert field is not None
+  assert field["copyable"] == 0
+
+
+def test_create_custom_field_rejects_non_boolean_copyable(gen_test_data_admin):
+  with pytest.raises(InvalidCustomFieldCopyableError):
+    create_custom_field(
+      name="Test Copyable Invalid",
+      field_type="text",
+      copyable=1,
+    )
+
+
+def test_update_custom_field_copyable(gen_test_data_admin):
+  """Test that update_custom_field() accepts and stores the copyable parameter."""
+  field_id = create_custom_field(
+    name="Test Copyable Update",
+    field_type="text"
+  )
+  
+  update_custom_field(field_id, copyable=True)
+  
+  field = get_custom_field(field_id)
+  assert field is not None
+  assert field["copyable"] == 1
+
+
+def test_get_custom_field_copyable(gen_test_data_admin):
+  """Test that get_custom_field() and get_custom_fields() include the copyable parameter."""
+  field_id = create_custom_field(
+    name="Test Copyable Get",
+    field_type="text",
+    copyable=True
+  )
+  
+  field = get_custom_field(field_id)
+  assert field is not None
+  assert field["copyable"] == 1
+  
+  fields = get_custom_fields()
+  assert any(f["id"] == field_id and f["copyable"] == 1 for f in fields)

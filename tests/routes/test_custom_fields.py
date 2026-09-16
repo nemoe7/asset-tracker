@@ -838,3 +838,90 @@ def test_custom_field_restore_uses_field_create_permission(
   )
 
   assert response.status_code == 302
+
+
+def test_admin_can_create_custom_field_with_copyable(
+  gen_test_admin_client,
+):
+  response = gen_test_admin_client.post(
+    "/custom-fields",
+    data={
+      "name": "Copyable Field",
+      "field_type": "text",
+      "copyable": "true",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 200
+  assert response.json["copyable"] is True
+
+  field = get_custom_field(response.json["id"])
+  assert field["copyable"] == 1
+
+
+def test_admin_can_update_custom_field_copyable(
+  gen_test_admin_client,
+):
+  create_response = gen_test_admin_client.post(
+    "/custom-fields",
+    data={
+      "name": "Copyable Update",
+      "field_type": "text",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  field_id = create_response.json["id"]
+
+  response = gen_test_admin_client.post(
+    f"/custom-fields/{field_id}",
+    data={
+      "copyable": "true",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 302
+
+  field = get_custom_field(field_id)
+  assert field["copyable"] == 1
+
+
+def test_admin_can_update_custom_field_copyable_false(
+  gen_test_admin_client,
+):
+  create_response = gen_test_admin_client.post(
+    "/custom-fields",
+    data={
+      "name": "Copyable False",
+      "field_type": "text",
+      "copyable": "true",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  field_id = create_response.json["id"]
+
+  response = gen_test_admin_client.post(
+    f"/custom-fields/{field_id}",
+    data={
+      "copyable": "false",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 302
+
+  field = get_custom_field(field_id)
+  assert field["copyable"] == 0

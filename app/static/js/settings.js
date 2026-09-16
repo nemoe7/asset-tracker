@@ -127,6 +127,7 @@ const editFieldName = document.getElementById('edit-field-name');
 const editFieldType = document.getElementById('edit-field-type');
 const editFieldDescription = document.getElementById('edit-field-description');
 const editFieldRequired = document.getElementById('edit-field-required');
+const editFieldCopyable = document.getElementById('edit-field-copyable');
 const editFieldEnumValues = document.getElementById('edit-field-enum-values');
 
 document.querySelectorAll('.edit-field').forEach((button) => {
@@ -136,6 +137,7 @@ document.querySelectorAll('.edit-field').forEach((button) => {
     editFieldType.value = button.dataset.fieldType ?? 'text';
     editFieldDescription.value = button.dataset.fieldDescription ?? '';
     editFieldRequired.checked = button.dataset.fieldRequired === 'true';
+    editFieldCopyable.checked = button.dataset.fieldCopyable === 'true';
     editFieldEnumValues.value = button.dataset.fieldEnumValues ?? '';
 
     syncEnumValues();
