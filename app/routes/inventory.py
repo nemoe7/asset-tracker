@@ -396,14 +396,27 @@ def update(item_id):
 @inventory.route("/<item_id>/archive", methods=["POST"])
 @login_required
 def archive(item_id):
+  if request.is_json:
+    payload = request.get_json(silent=True) or {}
+  else:
+    payload = request.form
+
+  archival_reason = (payload.get("archival_reason") or "").strip() or None
+  archival_notes = payload.get("archival_notes")
+  archival_notes = archival_notes.strip() if isinstance(archival_notes, str) else None
+
   try:
-    archive_item(item_id)
+    archive_item(
+      item_id,
+      archival_reason=archival_reason,
+      notes=archival_notes,
+    )
   except ItemNotFoundError as error:
     if request.headers.get("Accept") == "application/json":
       return jsonify({"error": str(error)}), 404
 
     return redirect(url_for("main.index", error=str(error)))
-  except ItemIsArchivedError as error:
+  except (InvalidInputError, ItemIsArchivedError) as error:
     if request.headers.get("Accept") == "application/json":
       return jsonify({"error": str(error)}), 400
 

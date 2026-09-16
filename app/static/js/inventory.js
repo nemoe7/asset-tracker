@@ -1390,6 +1390,10 @@ const viewItemEdit = document.getElementById('view-item-edit');
 const viewItemAudit = document.getElementById('view-item-audit');
 const viewItemArchived = document.getElementById('view-item-archived');
 const viewItemRestore = document.getElementById('view-item-restore');
+const viewItemArchivalReasonRow = document.getElementById('view-item-archival-reason-row');
+const viewItemArchivalReason = document.getElementById('view-item-archival-reason');
+const viewItemArchivalNotesRow = document.getElementById('view-item-archival-notes-row');
+const viewItemArchivalNotes = document.getElementById('view-item-archival-notes');
 
 let currentViewItemId = null;
 
@@ -1419,6 +1423,10 @@ async function openViewItem(itemId) {
     viewItemArchived.classList.toggle('hidden', !isArchived);
     viewItemEdit.classList.toggle('hidden', isArchived);
     viewItemRestore.classList.toggle('hidden', !isArchived);
+    viewItemArchivalReasonRow.classList.toggle('hidden', !isArchived);
+    viewItemArchivalNotesRow.classList.toggle('hidden', !isArchived);
+    viewItemArchivalReason.textContent = isArchived ? (asset.archival_reason || '—') : '';
+    viewItemArchivalNotes.textContent = isArchived ? (asset.archival_notes || '—') : '';
 
     viewItemId.textContent = asset.id;
     viewItemName.textContent = asset.name;
@@ -1552,11 +1560,30 @@ confirmArchiveItem?.addEventListener('click', async () => {
     return;
   }
 
+  const reasonEl = document.getElementById('archive-item-reason');
+  const notesEl = document.getElementById('archive-item-notes');
+
+  if (reasonEl && !reasonEl.value) {
+    reasonEl.reportValidity();
+    return;
+  }
+
+  const body = new FormData();
+
+  if (reasonEl) {
+    body.set('archival_reason', reasonEl.value);
+  }
+
+  if (notesEl && notesEl.value.trim()) {
+    body.set('archival_notes', notesEl.value);
+  }
+
   const response = await fetch(
     `/inventory/${currentEditItemId}/archive`,
     {
       method: 'POST',
-      headers: { 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value ?? '' }
+      headers: { 'X-CSRF-Token': document.querySelector('input[name="csrf_token"]')?.value ?? '' },
+      body
     }
   );
 

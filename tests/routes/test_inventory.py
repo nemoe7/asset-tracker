@@ -195,6 +195,7 @@ def test_admin_can_archive_asset(
 
   response = gen_test_admin_client.post(
     f"/inventory/{item_id}/archive",
+    data={"archival_reason": "Damaged"},
   )
 
   assert response.status_code == 302
@@ -212,6 +213,7 @@ def test_archived_asset_can_be_viewed(
 
   response = gen_test_admin_client.post(
     f"/inventory/{item_id}/archive",
+    data={"archival_reason": "Damaged"},
   )
 
   assert response.status_code == 302
@@ -224,6 +226,31 @@ def test_archived_asset_can_be_viewed(
   print(response.json)
   assert response.json["id"] == item_id
   assert response.json["archived_at"] is not None
+  assert response.json["archival_reason"] == "Damaged"
+  assert response.json["archival_notes"] is None
+
+
+def test_archived_asset_view_shows_reason_and_notes(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  item_id = gen_test_item(name="Test Asset")
+
+  gen_test_admin_client.post(
+    f"/inventory/{item_id}/archive",
+    data={
+      "archival_reason": "Invalid",
+      "archival_notes": "Duplicate entry",
+    },
+  )
+
+  response = gen_test_admin_client.get(
+    f"/inventory/{item_id}?include_archived=true",
+  )
+
+  assert response.status_code == 200
+  assert response.json["archival_reason"] == "Invalid"
+  assert response.json["archival_notes"] == "Duplicate entry"
 
 
 def test_admin_can_restore_asset(
@@ -234,6 +261,7 @@ def test_admin_can_restore_asset(
 
   gen_test_admin_client.post(
     f"/inventory/{item_id}/archive",
+    data={"archival_reason": "Damaged"},
   )
 
   response = gen_test_admin_client.post(
@@ -249,6 +277,8 @@ def test_admin_can_restore_asset(
   assert response.status_code == 200
   assert response.json["id"] == item_id
   assert response.json["archived_at"] is None
+  assert response.json["archival_reason"] is None
+  assert response.json["archival_notes"] is None
 
 
 def test_admin_cannot_archive_already_archived_asset(
@@ -259,6 +289,7 @@ def test_admin_cannot_archive_already_archived_asset(
 
   gen_test_admin_client.post(
     f"/inventory/{item_id}/archive",
+    data={"archival_reason": "Damaged"},
   )
 
   response = gen_test_admin_client.post(
@@ -270,6 +301,41 @@ def test_admin_cannot_archive_already_archived_asset(
 
   assert response.status_code == 400
   assert response.json["error"]
+
+
+def test_archive_without_reason_returns_400(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  item_id = gen_test_item(name="Test Asset")
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}/archive",
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 400
+  assert "Archival reason" in response.json["error"]
+
+
+def test_archive_with_invalid_reason_returns_400(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  item_id = gen_test_item(name="Test Asset")
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}/archive",
+    data={"archival_reason": "Broken"},
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 400
+  assert "Archival reason" in response.json["error"]
 
 
 def test_admin_cannot_restore_active_asset(
@@ -389,6 +455,7 @@ def test_check_item_archived(gen_test_admin_client, gen_test_item):
 
   gen_test_admin_client.post(
     f"/inventory/{item_id}/archive",
+    data={"archival_reason": "Damaged"},
   )
 
   response = gen_test_admin_client.post(

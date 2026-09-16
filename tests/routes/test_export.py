@@ -41,6 +41,8 @@ def test_export_returns_csv_with_built_in_fields(
     "location",
     "created_at",
     "updated_at",
+    "archival_reason",
+    "archival_notes",
   ]
   assert len(rows) == 2
   assert rows[1][0] == item_id
@@ -98,7 +100,10 @@ def test_export_filters_exclude_archived_items(
 ):
   gen_test_item(name="Alpha Asset")
   archived_id = gen_test_item(name="Archived Asset")
-  gen_test_admin_client.post(f"/inventory/{archived_id}/archive")
+  gen_test_admin_client.post(
+    f"/inventory/{archived_id}/archive",
+    data={"archival_reason": "Damaged"},
+  )
 
   response = gen_test_admin_client.get("/inventory/export")
 
@@ -148,6 +153,60 @@ def test_export_selected_fields(
 
   assert rows[0] == ["name", "location"]
   assert rows[1] == ["Alpha Asset", "Office"]
+
+
+def test_export_archival_reason_and_notes(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  item_id = gen_test_item(name="Archived Asset")
+
+  gen_test_admin_client.post(
+    f"/inventory/{item_id}/archive",
+    data={
+      "archival_reason": "Disposed",
+      "archival_notes": "End of life",
+    },
+  )
+
+  response = gen_test_admin_client.get(
+    "/inventory/export",
+    query_string={
+      "fields": ["name", "archival_reason", "archival_notes"],
+      "include_archived": "true",
+    },
+  )
+
+  assert response.status_code == 200
+
+  rows = list(
+    csv.reader(
+      io.StringIO(response.get_data(as_text=True)),
+    )
+  )
+
+  assert rows[0] == ["name", "archival_reason", "archival_notes"]
+  assert rows[1] == ["Archived Asset", "Disposed", "End of life"]
+
+
+def test_export_active_items_have_empty_archival_fields(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  gen_test_item(name="Alpha Asset")
+
+  response = gen_test_admin_client.get(
+    "/inventory/export",
+    query_string={"fields": ["name", "archival_reason", "archival_notes"]},
+  )
+
+  rows = list(
+    csv.reader(
+      io.StringIO(response.get_data(as_text=True)),
+    )
+  )
+
+  assert rows[1] == ["Alpha Asset", "", ""]
 
 
 def test_export_empty_field_selection_is_rejected(gen_test_admin_client):
@@ -215,11 +274,15 @@ def test_export_includes_custom_fields(
     "location",
     "created_at",
     "updated_at",
+    "archival_reason",
+    "archival_notes",
     "Quantity",
     "Serial Number",
   ]
   assert rows[1][6] == ""
-  assert rows[1][7] == "SN-001"
+  assert rows[1][7] == ""
+  assert rows[1][8] == ""
+  assert rows[1][9] == "SN-001"
 
 
 def test_export_selected_custom_fields(
@@ -339,6 +402,8 @@ def test_export_empty_result_returns_headers(gen_test_admin_client):
       "location",
       "created_at",
       "updated_at",
+      "archival_reason",
+      "archival_notes",
     ]
   ]
 

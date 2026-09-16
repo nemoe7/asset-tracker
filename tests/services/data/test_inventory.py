@@ -274,7 +274,7 @@ def test_update_nonexistent_item(gen_test_data_admin):
 def test_update_archived_item_fails(gen_test_data_admin):
   item_id = create_item("Laptop")
 
-  archive_item(item_id)
+  archive_item(item_id, "Damaged")
 
   with pytest.raises(ItemIsArchivedError):
     update_item(
@@ -479,17 +479,67 @@ def test_update_item_creates_audit_log_for_location_change(
 def test_archive_item(gen_test_data_admin):
   item_id = create_item("Laptop")
 
-  assert archive_item(item_id) is True
+  assert archive_item(item_id, "Damaged") is True
 
   item = get_item(item_id)
 
   assert item is None
 
 
-def test_archive_item_creates_audit_log(gen_test_data_admin):
+def test_archived_item_retains_reason_and_notes(gen_test_data_admin):
   item_id = create_item("Laptop")
 
-  assert archive_item(item_id) is True
+  archive_item(item_id, "Damaged", notes="Screen cracked")
+
+  item = get_item(
+    item_id,
+    include_archived=True,
+  )
+
+  assert item["archival_reason"] == "Damaged"
+  assert item["archival_notes"] == "Screen cracked"
+
+
+def test_active_item_has_null_reason_and_notes(gen_test_data_admin):
+  item_id = create_item("Laptop")
+
+  item = get_item(item_id)
+
+  assert item["archival_reason"] is None
+  assert item["archival_notes"] is None
+
+
+def test_archive_item_without_reason_fails(gen_test_data_admin):
+  item_id = create_item("Laptop")
+
+  with pytest.raises(InvalidInputError):
+    archive_item(item_id)
+
+
+def test_archive_item_with_invalid_reason_fails(gen_test_data_admin):
+  item_id = create_item("Laptop")
+
+  with pytest.raises(InvalidInputError):
+    archive_item(item_id, "Broken")
+
+
+def test_archive_item_empty_notes_stored_as_null(gen_test_data_admin):
+  item_id = create_item("Laptop")
+
+  archive_item(item_id, "Disposed", notes="   ")
+
+  item = get_item(
+    item_id,
+    include_archived=True,
+  )
+
+  assert item["archival_notes"] is None
+
+
+def test_archive_item_creates_audit_log_with_details(gen_test_data_admin):
+  item_id = create_item("Laptop")
+
+  assert archive_item(item_id, "Invalid", notes="Duplicate entry") is True
 
   logs = get_audit_logs(
     entity_type="inventory_item",
@@ -499,26 +549,46 @@ def test_archive_item_creates_audit_log(gen_test_data_admin):
   assert len(logs) == 2
   assert logs[0]["action"] == "created"
   assert logs[1]["action"] == "archived"
+  assert logs[1]["details"] == {
+    "archival_reason": "Invalid",
+    "archival_notes": "Duplicate entry",
+  }
+
+
+def test_archive_item_audit_log_has_null_notes(gen_test_data_admin):
+  item_id = create_item("Laptop")
+
+  archive_item(item_id, "Disposed")
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert logs[1]["details"] == {
+    "archival_reason": "Disposed",
+    "archival_notes": None,
+  }
 
 
 def test_archive_already_archived_item_fails(gen_test_data_admin):
   item_id = create_item("Laptop")
 
-  assert archive_item(item_id) is True
+  assert archive_item(item_id, "Damaged") is True
 
   with pytest.raises(ItemIsArchivedError):
-    archive_item(item_id)
+    archive_item(item_id, "Damaged")
 
 
 def test_archive_nonexistent_item(gen_test_data_admin):
   with pytest.raises(ItemNotFoundError):
-    archive_item("does-not-exist")
+    archive_item("does-not-exist", "Damaged")
 
 
 def test_archived_item_excluded_from_get_items(gen_test_data_admin):
   item_id = create_item("Laptop")
 
-  archive_item(item_id)
+  archive_item(item_id, "Damaged")
 
   assert get_items() == []
 
@@ -526,7 +596,7 @@ def test_archived_item_excluded_from_get_items(gen_test_data_admin):
 def test_archived_item_included_when_requested(gen_test_data_admin):
   item_id = create_item("Laptop")
 
-  archive_item(item_id)
+  archive_item(item_id, "Damaged")
 
   items = get_items(include_archived=True)
 
@@ -535,11 +605,10 @@ def test_archived_item_included_when_requested(gen_test_data_admin):
   assert items[0]["name"] == "Laptop"
   assert items[0]["archived_at"] is not None
 
-
 def test_restore_item(gen_test_data_admin):
   item_id = create_item("Laptop")
 
-  archive_item(item_id)
+  archive_item(item_id, "Damaged")
 
   assert restore_item(item_id) is True
 
@@ -548,12 +617,17 @@ def test_restore_item(gen_test_data_admin):
   assert item is not None
   assert item["name"] == "Laptop"
   assert item["archived_at"] is None
+  assert item["archival_reason"] is None
+  assert item["archival_notes"] is None
 
 
-def test_restore_item_creates_audit_log(gen_test_data_admin):
+def test_restore_item_creates_audit_log_with_prior_details(
+  gen_test_data_admin,
+):
   item_id = create_item("Laptop")
 
-  archive_item(item_id)
+  archive_item(item_id, "Invalid", notes="Wrong entry")
+
   assert restore_item(item_id) is True
 
   logs = get_audit_logs(
@@ -565,6 +639,28 @@ def test_restore_item_creates_audit_log(gen_test_data_admin):
   assert logs[0]["action"] == "created"
   assert logs[1]["action"] == "archived"
   assert logs[2]["action"] == "restored"
+  assert logs[2]["details"] == {
+    "archival_reason": "Invalid",
+    "archival_notes": "Wrong entry",
+  }
+
+
+def test_restore_item_audit_log_has_null_prior_notes(gen_test_data_admin):
+  item_id = create_item("Laptop")
+
+  archive_item(item_id, "Damaged")
+
+  restore_item(item_id)
+
+  logs = get_audit_logs(
+    entity_type="inventory_item",
+    entity_id=item_id,
+  )
+
+  assert logs[2]["details"] == {
+    "archival_reason": "Damaged",
+    "archival_notes": None,
+  }
 
 
 def test_restore_active_item_fails(gen_test_data_admin):
@@ -582,7 +678,7 @@ def test_restore_nonexistent_item(gen_test_data_admin):
 def test_archived_item_can_be_restored_and_found_again(gen_test_data_admin):
   item_id = create_item("Laptop")
 
-  archive_item(item_id)
+  archive_item(item_id, "Disposed")
 
   assert get_item(item_id) is None
 
@@ -660,7 +756,7 @@ def test_archived_asset_is_distinguishable(
   active_item = get_item(item_id)
   assert active_item["archived_at"] is None
 
-  archive_item(item_id)
+  archive_item(item_id, "Damaged")
 
   archived_item = get_item(
     item_id,
@@ -1002,7 +1098,7 @@ def test_archived_items_are_excluded_from_search_and_sort(
   active_id = create_item("Laptop")
   archived_id = create_item("Monitor")
 
-  archive_item(archived_id)
+  archive_item(archived_id, "Disposed")
 
   items = get_items(
     search="",
@@ -1035,7 +1131,7 @@ def test_archived_items_are_excluded_from_custom_field_filter(
     "IT",
   )
 
-  archive_item(archived_id)
+  archive_item(archived_id, "Disposed")
 
   items = get_items(
     custom_fields={
@@ -1052,7 +1148,7 @@ def test_archived_items_can_be_included_in_search_and_sort(
   active_id = create_item("Laptop")
   archived_id = create_item("Monitor")
 
-  archive_item(archived_id)
+  archive_item(archived_id, "Disposed")
 
   items = get_items(
     include_archived=True,

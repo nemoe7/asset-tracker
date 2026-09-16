@@ -32,6 +32,10 @@ CREATE TABLE inventory_items (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   archived_at TEXT,
+  archival_reason TEXT CHECK (
+    archival_reason IN ('Invalid', 'Damaged', 'Disposed')
+  ),
+  archival_notes TEXT,
   FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE
   SET NULL
 );

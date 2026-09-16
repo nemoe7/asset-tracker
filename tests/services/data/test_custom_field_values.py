@@ -1052,7 +1052,7 @@ def test_custom_field_values_are_preserved_when_inventory_item_is_archived(
     "SN-123",
   )
 
-  archive_item(item_id)
+  archive_item(item_id, "Disposed")
 
   value = get_custom_field_value(
     item_id,

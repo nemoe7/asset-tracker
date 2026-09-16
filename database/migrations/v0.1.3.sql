@@ -46,4 +46,10 @@ FROM custom_fields;
 DROP TABLE custom_fields;
 ALTER TABLE custom_fields_new RENAME TO custom_fields;
 
+-- v0.1.3: add archival reason and notes to inventory_items.
+ALTER TABLE inventory_items ADD COLUMN archival_reason TEXT CHECK (
+  archival_reason IN ('Invalid', 'Damaged', 'Disposed')
+);
+ALTER TABLE inventory_items ADD COLUMN archival_notes TEXT;
+
 PRAGMA foreign_keys = ON;

@@ -14,6 +14,8 @@ _BUILTIN_COLUMNS = [
   ("location", lambda item: item["location_name"]),
   ("created_at", lambda item: item["created_at"]),
   ("updated_at", lambda item: item["updated_at"]),
+  ("archival_reason", lambda item: item["archival_reason"]),
+  ("archival_notes", lambda item: item["archival_notes"]),
 ]
 
 

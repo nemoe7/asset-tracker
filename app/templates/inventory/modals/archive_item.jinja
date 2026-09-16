@@ -3,21 +3,54 @@
 {% call modal("archive-item-modal", title=None) %}
 
 {# ==================== Archive Confirmation ==================== #}
-<div class="flex items-start gap-4">
+<div class="flex flex-col gap-2">
 
-  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-950 text-red-400">
-    <i class="bi bi-archive" aria-hidden="true"></i>
+  <div class="flex items-start gap-4">
+    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-950 text-red-400">
+      <i class="bi bi-archive" aria-hidden="true"></i>
+    </div>
+
+    <div>
+      <h2 class="text-lg font-semibold">
+        Archive asset?
+      </h2>
+
+      <p class="mt-1 text-sm text-zinc-400">
+        This will remove the asset from the active list.
+        You can restore it later.
+      </p>
+    </div>
   </div>
 
   <div>
-    <h2 class="text-lg font-semibold">
-      Archive asset?
-    </h2>
+    <div class="space-y-3">
 
-    <p class="mt-1 text-sm text-zinc-400">
-      This will remove the asset from the active list.
-      You can restore it later.
-    </p>
+      <div>
+        <label for="archive-item-reason" class="mb-1 block text-sm font-medium text-zinc-300">
+          Reason
+        </label>
+
+        <div class="relative">
+          <select id="archive-item-reason" required class="form-select">
+            <option value="Invalid">Invalid</option>
+            <option value="Damaged">Damaged</option>
+            <option value="Disposed">Disposed</option>
+          </select>
+
+          <i class="bi bi-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+            aria-hidden="true"></i>
+        </div>
+      </div>
+
+      <div>
+        <label for="archive-item-notes" class="mb-1 block text-sm font-medium text-zinc-300">
+          Notes <span class="font-normal text-zinc-500">(optional)</span>
+        </label>
+        <textarea id="archive-item-notes" rows="3"
+          class="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-zinc-100 focus:border-zinc-500 focus:outline-none"></textarea>
+      </div>
+
+    </div>
 
     <div id="archive-item-error" class="hidden" aria-live="polite"></div>
 
