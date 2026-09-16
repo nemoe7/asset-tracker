@@ -16,6 +16,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from .logging import configure_logging
 from .routes import register_routes
 from .services.data.db import (
+  apply_pending_migrations,
   get_db,
   init_db,
 )
@@ -146,6 +147,8 @@ def create_app():
   if not _database_initialized():
     app.logger.warning("Database not initialized.")
     init_db(app.logger)
+  else:
+    apply_pending_migrations(logger=app.logger)
 
   register_routes(app)
 

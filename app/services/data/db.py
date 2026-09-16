@@ -6,6 +6,12 @@ from pathlib import Path
 import config
 
 SCHEMA_PATH = Path(__file__).resolve().parents[3] / "database" / "schema.sql"
+MIGRATIONS_DIR = Path(__file__).resolve().parents[3] / "database" / "migrations"
+
+# Encodes schema vX.Y.Z as major*10000 + minor*100 + patch.
+# 0.1.0 -> 100 (baseline), 0.1.3 -> 103 (current).
+_BASELINE_VERSION = 100
+_CURRENT_VERSION = 103
 
 _connection_context = ContextVar(
   "database_connection",
@@ -78,6 +84,94 @@ def db_transaction(db_path=None):
     connection.close()
 
 
+def current_schema_version():
+  return _CURRENT_VERSION
+
+
+def _version_from_filename(path):
+  # vMAJOR.MINOR.PATCH.sql
+  stem = path.stem.removeprefix("v")
+
+  parts = stem.split(".")
+
+  if len(parts) != 3 or not all(part.isdigit() for part in parts):
+    raise ValueError(f"Invalid migration filename: {path.name}")
+
+  major, minor, patch = (int(part) for part in parts)
+
+  return major * 1000 + minor * 100 + patch
+
+
+def _pending_migrations(version):
+  files = sorted(MIGRATIONS_DIR.glob("v*.sql"), key=_version_from_filename)
+
+  return [path for path in files if _version_from_filename(path) > version]
+
+
+def apply_pending_migrations(logger=None, db_path=None):
+  db_path = db_path or config.DB_PATH
+
+  # Open a dedicated connection so migrations never close one owned by an
+  # outer db_connection/db_transaction context.
+  connection = sqlite3.connect(db_path)
+
+  try:
+    connection.execute("PRAGMA foreign_keys = ON")
+
+    version = connection.execute("PRAGMA user_version").fetchone()[0]
+
+    has_tables = (
+      connection.execute(
+        """
+      SELECT 1
+      FROM sqlite_master
+      WHERE type = 'table'
+        AND name NOT LIKE 'sqlite_%'
+      LIMIT 1
+      """
+      ).fetchone()
+      is not None
+    )
+
+    if not has_tables:
+      # Fresh/empty database: init_db() creates the current schema directly.
+      connection.close()
+      init_db(logger=logger, db_path=db_path)
+      return
+
+    if version == 0:
+      # Pre-migration database: schema matches the v0.1.0 baseline.
+      version = _BASELINE_VERSION
+
+    pending = _pending_migrations(version)
+
+    for path in pending:
+      migration_version = _version_from_filename(path)
+
+      if logger:
+        logger.warning(f"Applying migration {path.name} (version {migration_version})")
+
+      try:
+        connection.execute("BEGIN")
+
+        # Table rebuilds need foreign keys disabled while copying rows.
+        connection.execute("PRAGMA foreign_keys = OFF")
+        connection.executescript(path.read_text())
+        connection.execute("PRAGMA foreign_keys = ON")
+
+        connection.execute(f"PRAGMA user_version = {migration_version}")
+
+        connection.commit()
+      except Exception:
+        connection.rollback()
+        raise
+
+    if logger and pending:
+      logger.warning(f"Migrations applied: database at version {_CURRENT_VERSION}")
+  finally:
+    connection.close()
+
+
 def init_db(logger=None, db_path=None):
   if logger:
     logger.warning(f"Initializing database: {db_path}")
@@ -92,6 +186,8 @@ def init_db(logger=None, db_path=None):
   try:
     with SCHEMA_PATH.open() as file:
       connection.executescript(file.read())
+
+    connection.execute(f"PRAGMA user_version = {_CURRENT_VERSION}")
   finally:
     connection.close()
 
