@@ -33,5 +33,9 @@ class CustomFieldIsArchivedError(InvalidInputError):
   default_message = "Custom field is archived"
 
 
+class InvalidCustomFieldCopyableError(InvalidInputError):
+  default_message = "Copyable must be a boolean"
+
+
 class CustomFieldIsNotArchivedError(InvalidInputError):
   default_message = "Custom field is not archived"
