@@ -36,25 +36,26 @@ CREATE TABLE inventory_items (
   SET NULL
 );
 CREATE TABLE custom_fields (
-  id INTEGER PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
-  field_type TEXT NOT NULL CHECK (
-    field_type IN (
-      'text',
-      'integer',
-      'decimal',
-      'boolean',
-      'date',
-      'expiry_date',
-      'enum',
-      'user'
-    )
-  ),
-  description TEXT,
-  required INTEGER NOT NULL DEFAULT 0 CHECK (required IN (0, 1)),
-  enum_values TEXT,
-  archived_at TEXT
-);
+   id INTEGER PRIMARY KEY,
+   name TEXT NOT NULL UNIQUE,
+   field_type TEXT NOT NULL CHECK (
+     field_type IN (
+       'text',
+       'integer',
+       'decimal',
+       'boolean',
+       'date',
+       'expiry_date',
+       'enum',
+       'user'
+     )
+   ),
+   description TEXT,
+   required INTEGER NOT NULL DEFAULT 0 CHECK (required IN (0, 1)),
+   enum_values TEXT,
+   copyable INTEGER NOT NULL DEFAULT 0 CHECK (copyable IN (0, 1)),
+   archived_at TEXT
+ );
 CREATE TABLE user_roles (
   user_id INTEGER NOT NULL,
   role_id INTEGER NOT NULL,
