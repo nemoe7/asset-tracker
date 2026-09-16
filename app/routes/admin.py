@@ -363,6 +363,7 @@ def create_custom_field_route():
       description=description,
       required=required,
       enum_values=enum_values,
+      copyable=request.form.get("copyable") == "true",
     )
   except InvalidInputError as error:
     return _render_settings(
@@ -390,6 +391,7 @@ def update_custom_field_route(field_id):
   field_type = request.form.get("field_type")
   description = request.form.get("description")
   required = request.form.get("required") == "true"
+  copyable = request.form.get("copyable") == "true"
   enum_values = _parse_enum_values(request.form.get("enum_values"))
 
   kwargs = {
@@ -403,6 +405,7 @@ def update_custom_field_route(field_id):
     kwargs["description"] = description.strip() or None
 
   kwargs["required"] = required
+  kwargs["copyable"] = copyable
   kwargs["enum_values"] = enum_values
 
   try:

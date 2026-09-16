@@ -56,6 +56,7 @@
 - Do not weaken, remove, or bypass tests.
 - Run relevant tests after changes and investigate failures.
 - Run the full `pytest -q` suite when Testmon coverage is uncertain or changes affect shared fixtures, test infrastructure, configuration, or broadly used code.
+- If Playwright MCP is installed, use it for browser-based testing and UI interaction verification.
 
 ## Requirements
 
