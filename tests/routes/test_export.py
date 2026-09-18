@@ -239,6 +239,71 @@ def test_export_unknown_field_is_rejected(gen_test_admin_client):
   assert response.json["error"]
 
 
+def test_export_field_keys_resolve_case_insensitively(
+  gen_test_admin_client,
+  gen_test_item,
+):
+  gen_test_item(name="Alpha Asset")
+
+  response = gen_test_admin_client.get(
+    "/inventory/export",
+    query_string={"fields": ["Name", "LOCATION"]},
+  )
+
+  assert response.status_code == 200
+  rows = list(
+    csv.reader(
+      io.StringIO(response.get_data(as_text=True)),
+    )
+  )
+  # Resolved to canonical builtin keys in the CSV header.
+  assert rows[0] == ["name", "location"]
+  assert rows[1][0] == "Alpha Asset"
+
+
+def test_export_case_duplicate_fields_are_rejected(gen_test_admin_client):
+  response = gen_test_admin_client.get(
+    "/inventory/export",
+    query_string={"fields": ["name", "Name"]},
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
+def test_export_custom_field_keys_resolve_case_insensitively(
+  gen_test_admin_client,
+  gen_test_item,
+  gen_test_admin,
+):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.custom_field_values import set_custom_field_value
+  from app.services.data.custom_fields import create_custom_field
+
+  token = set_current_user(gen_test_admin)
+
+  try:
+    serial_id = create_custom_field("Serial Number", "text")
+    item_id = gen_test_item(name="Alpha Asset")
+    set_custom_field_value(item_id, serial_id, "SN-001")
+  finally:
+    reset_current_user(token)
+
+  response = gen_test_admin_client.get(
+    "/inventory/export",
+    query_string={"fields": "serial number"},
+  )
+
+  assert response.status_code == 200
+  rows = list(
+    csv.reader(
+      io.StringIO(response.get_data(as_text=True)),
+    )
+  )
+  assert rows[0] == ["Serial Number"]
+  assert rows[1] == ["SN-001"]
+
+
 def test_export_includes_custom_fields(
   gen_test_admin_client,
   gen_test_item,
