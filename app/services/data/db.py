@@ -108,6 +108,53 @@ def _pending_migrations(version):
   return [path for path in files if _version_from_filename(path) > version]
 
 
+def _migration_statements(script):
+  statement = ""
+
+  for character in script:
+    statement += character
+
+    if sqlite3.complete_statement(statement):
+      if statement.strip().strip(";").strip():
+        yield statement
+
+      statement = ""
+
+  if statement.strip():
+    raise sqlite3.OperationalError("incomplete migration statement")
+
+
+def _custom_field_name_allocator(connection):
+  rows = connection.execute(
+    "SELECT id, name FROM custom_fields ORDER BY id"
+  ).fetchall()
+  used_names = set()
+  names = {}
+
+  for row in rows:
+    old_name = row[1]
+    new_name = old_name
+    suffix = 2
+
+    while new_name.casefold() in used_names:
+      new_name = f"{old_name} ({suffix})"
+      suffix += 1
+
+    used_names.add(new_name.casefold())
+    names[row[0]] = new_name
+
+  return lambda field_id, _name: names[field_id]
+
+
+def _prepare_migration(connection, migration_version):
+  if migration_version == 103:
+    connection.create_function(
+      "migration_custom_field_name",
+      2,
+      _custom_field_name_allocator(connection),
+    )
+
+
 def apply_pending_migrations(logger=None, db_path=None):
   db_path = db_path or config.DB_PATH
 
@@ -152,19 +199,23 @@ def apply_pending_migrations(logger=None, db_path=None):
         logger.warning(f"Applying migration {path.name} (version {migration_version})")
 
       try:
-        connection.execute("BEGIN")
-
-        # Table rebuilds need foreign keys disabled while copying rows.
+        # PRAGMA foreign_keys cannot change inside a transaction. Disable it
+        # first, then execute each statement without executescript(), which
+        # would commit the active transaction before running the script.
         connection.execute("PRAGMA foreign_keys = OFF")
-        connection.executescript(path.read_text())
-        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute("BEGIN")
+        _prepare_migration(connection, migration_version)
+
+        for statement in _migration_statements(path.read_text()):
+          connection.execute(statement)
 
         connection.execute(f"PRAGMA user_version = {migration_version}")
-
         connection.commit()
       except Exception:
         connection.rollback()
         raise
+      finally:
+        connection.execute("PRAGMA foreign_keys = ON")
 
     if logger and pending:
       logger.warning(f"Migrations applied: database at version {_CURRENT_VERSION}")
