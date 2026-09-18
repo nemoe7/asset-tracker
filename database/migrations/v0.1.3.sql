@@ -1,8 +1,8 @@
 -- v0.1.3: add expiry_date field type and copyable column to custom_fields,
 -- and make field names case-insensitive (UNIQUE COLLATE NOCASE).
 -- SQLite cannot alter a CHECK constraint, so the table is rebuilt.
-PRAGMA foreign_keys = OFF;
-
+-- Name allocation is provided by the migration runner so legacy case
+-- collisions can be repaired without losing field identity or values.
 CREATE TABLE custom_fields_new (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL UNIQUE COLLATE NOCASE,
@@ -25,6 +25,17 @@ CREATE TABLE custom_fields_new (
   archived_at TEXT
 );
 
+CREATE TEMP TABLE custom_field_migration_names (
+  id INTEGER PRIMARY KEY,
+  old_name TEXT NOT NULL,
+  new_name TEXT NOT NULL
+);
+
+INSERT INTO custom_field_migration_names (id, old_name, new_name)
+SELECT id, name, migration_custom_field_name(id, name)
+FROM custom_fields
+ORDER BY id;
+
 INSERT INTO custom_fields_new (
   id,
   name,
@@ -35,14 +46,34 @@ INSERT INTO custom_fields_new (
   archived_at
 )
 SELECT
-  id,
-  name,
-  field_type,
-  description,
-  required,
-  enum_values,
-  archived_at
-FROM custom_fields;
+  fields.id,
+  names.new_name,
+  fields.field_type,
+  fields.description,
+  fields.required,
+  fields.enum_values,
+  fields.archived_at
+FROM custom_fields AS fields
+INNER JOIN custom_field_migration_names AS names ON names.id = fields.id;
+
+INSERT INTO audit_log (
+  user_id,
+  action,
+  entity_type,
+  entity_id,
+  details,
+  timestamp
+)
+SELECT
+  (SELECT id FROM users ORDER BY id LIMIT 1),
+  'renamed',
+  'custom_field',
+  CAST(id AS TEXT),
+  json_object('old_name', old_name, 'new_name', new_name),
+  datetime('now')
+FROM custom_field_migration_names
+WHERE old_name != new_name
+  AND EXISTS (SELECT 1 FROM users);
 
 DROP TABLE custom_fields;
 ALTER TABLE custom_fields_new RENAME TO custom_fields;
@@ -53,4 +84,4 @@ ALTER TABLE inventory_items ADD COLUMN archival_reason TEXT CHECK (
 );
 ALTER TABLE inventory_items ADD COLUMN archival_notes TEXT;
 
-PRAGMA foreign_keys = ON;
+DROP TABLE custom_field_migration_names;
