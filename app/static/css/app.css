@@ -636,6 +636,9 @@
   .border-emerald-900 {
     border-color: var(--color-emerald-900);
   }
+  .border-red-500 {
+    border-color: var(--color-red-500);
+  }
   .border-red-800 {
     border-color: var(--color-red-800);
   }
@@ -1106,6 +1109,9 @@
   @media (hover: hover) {
     .disabled\:hover\:border-zinc-700:disabled:hover {
       border-color: var(--color-zinc-700);
+    }
+    .disabled\:hover\:bg-zinc-100:disabled:hover {
+      background-color: var(--color-zinc-100);
     }
     .disabled\:hover\:text-zinc-300:disabled:hover {
       color: var(--color-zinc-300);
