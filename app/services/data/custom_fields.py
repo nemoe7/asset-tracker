@@ -386,7 +386,7 @@ def update_custom_field(
     connection.execute(
       f"""
       UPDATE custom_fields
-      SET {', '.join(updates)}
+      SET {", ".join(updates)}
       WHERE id = ?
       """,
       values,
