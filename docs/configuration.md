@@ -13,7 +13,7 @@ Edit the file before starting Astra.
 ## Environment Variables
 
 | Variable | Required | Default | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `TZ` | Yes | `Asia/Manila` | Timezone used by Astra |
 | `FLASK_SKIP_DOTENV` | Yes | `1` | Prevents Flask from loading `.env` independently |
 | `DATABASE_PATH` | Yes | `data/assets.db` | Path to the SQLite database |
