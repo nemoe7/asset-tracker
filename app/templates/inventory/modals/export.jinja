@@ -13,17 +13,21 @@
       </legend>
 
       <div class="flex gap-2">
-        <label for="export-template-select" class="sr-only">
-          Saved template
-        </label>
+        <div class="relative min-w-0 flex-1">
+          <label for="export-template-select" class="sr-only">
+            Saved template
+          </label>
 
-        <select id="export-template-select"
-          class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
-          <option value="">No template selected</option>
-        </select>
+          <select id="export-template-select" class="form-select">
+            <option value="">No template selected</option>
+          </select>
+
+          <i class="bi bi-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+            aria-hidden="true"></i>
+        </div>
 
         <button type="button" id="export-template-apply-button" disabled
-          class="flex shrink-0 items-center justify-center gap-1 rounded-lg border border-zinc-700 px-3 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-zinc-700 disabled:hover:text-zinc-300">
+          class="flex w-24 shrink-0 items-center justify-center gap-1 rounded-lg border border-zinc-700 px-3 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-zinc-700 disabled:hover:text-zinc-300">
           <i class="bi bi-play-fill" aria-hidden="true"></i>
           Apply
         </button>
@@ -39,7 +43,7 @@
           class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
 
         <button type="button" id="export-template-save-button"
-          class="flex shrink-0 items-center justify-center gap-1 rounded-lg border border-zinc-700 px-3 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100">
+          class="flex w-24 shrink-0 items-center justify-center gap-1 rounded-lg border border-zinc-700 px-3 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100">
           <i class="bi bi-plus-lg" aria-hidden="true"></i>
           Save
         </button>
