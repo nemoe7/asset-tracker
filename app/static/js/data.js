@@ -115,6 +115,7 @@ const exportColumnsReset = document.getElementById('export-columns-reset');
 const addExportColumnButton = document.getElementById(
   'add-export-column-button'
 );
+const exportSubmitButton = document.getElementById('export-submit-button');
 
 async function loadCustomFields() {
   try {
@@ -158,6 +159,7 @@ function buildExportColumnRow(name) {
   removeButton.addEventListener('click', () => {
     row.remove();
     refreshExportColumnOptions();
+    validateExportColumns();
   });
 
   row.append(label, removeButton);
@@ -171,6 +173,7 @@ function setExportColumns(names) {
   );
 
   refreshExportColumnOptions();
+  validateExportColumns();
 }
 
 function resetExportColumns() {
@@ -181,6 +184,34 @@ function resetExportColumns() {
   }
 
   addExportColumnError?.classList.add('hidden');
+}
+
+// A chip is valid when its text matches an available column name
+// case-insensitively. Invalid chips turn red and disable Export.
+function validateExportColumns() {
+  if (!exportColumnRows || !exportSubmitButton) {
+    return;
+  }
+
+  const available = new Set(
+    exportColumnChoices.map((choice) => choice.toLowerCase())
+  );
+
+  let anyInvalid = false;
+
+  for (const row of exportColumnRows.querySelectorAll('.export-column-row')) {
+    const label = row.querySelector('.export-column-name');
+    const invalid = Boolean(label) && !available.has(label.textContent.toLowerCase());
+
+    row.classList.toggle('border-zinc-700', !invalid);
+    row.classList.toggle('border-red-500', invalid);
+    row.classList.toggle('bg-red-950/40', invalid);
+    label?.classList.toggle('text-red-300', invalid);
+
+    anyInvalid = anyInvalid || invalid;
+  }
+
+  exportSubmitButton.disabled = anyInvalid;
 }
 
 function populateExportColumnOptions(fields) {
@@ -223,29 +254,22 @@ function addExportColumnByName(rawName) {
     return;
   }
 
-  const available = new Set(
-    exportColumnChoices.map((choice) => choice.toLowerCase())
-  );
-
   const existing = new Set(
     [...exportColumnRows.querySelectorAll('.export-column-name')].map(
       (label) => label.textContent.toLowerCase()
     )
   );
 
-  const valid = available.has(name.toLowerCase()) && !existing.has(name.toLowerCase());
+  // Any non-empty text is added as a chip; validateExportColumns marks
+  // unknown names red and disables Export until they are removed.
+  if (!existing.has(name.toLowerCase())) {
+    exportColumnRows?.append(buildExportColumnRow(name));
 
-  addExportColumnError?.classList.toggle('hidden', valid);
+    refreshExportColumnOptions();
+    validateExportColumns();
 
-  if (!valid) {
-    return;
+    addExportColumn.value = '';
   }
-
-  exportColumnRows?.append(buildExportColumnRow(name));
-
-  refreshExportColumnOptions();
-
-  addExportColumn.value = '';
 }
 
 // Open Export modal.
@@ -259,6 +283,7 @@ document
     await loadExportTemplates();
 
     openModal(exportItemModal);
+    validateExportColumns();
   });
 
 // ==================== Export Templates ====================

@@ -83,12 +83,20 @@ def test_export_modal_adds_and_removes_columns(
 
   expect(rows).to_have_count(2)
 
-  # Unknown names are rejected with an inline error.
+  # Unknown names become chips: marked red with Export disabled.
   column_input.fill("Bogus")
   column_button.click()
 
-  expect(page.locator("#add-export-column-error")).to_be_visible()
-  expect(rows).to_have_count(2)
+  expect(rows).to_have_count(3)
+  bogus_row = rows.nth(2)
+
+  assert "border-red-500" in bogus_row.get_attribute("class")
+  expect(page.locator("#export-submit-button")).to_be_disabled()
+
+  # Removing the invalid chip re-enables Export.
+  bogus_row.locator(".export-column-remove").click()
+
+  expect(page.locator("#export-submit-button")).to_be_enabled()
 
   rows.nth(1).locator(".export-column-remove").click()
 
