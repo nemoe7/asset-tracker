@@ -41,17 +41,27 @@ def _selected_columns(field_keys, visible_field_ids=None):
   if not keys:
     raise InvalidInputError("No fields selected")
 
-  if len(keys) != len(set(keys)):
-    raise InvalidInputError("Duplicate fields selected")
+  # Builtin-wins on case-insensitive collision: a custom field literally
+  # named "Name" can coexist with the builtin "name" under BINARY unique.
+  get_value_by_lower = {key.lower(): get_value for key, get_value in custom_columns}
+  get_value_by_lower.update(
+    {key.lower(): get_value for key, get_value in _BUILTIN_COLUMNS}
+  )
+  key_by_lower = {key.lower(): key for key, _ in custom_columns}
+  key_by_lower.update({key.lower(): key for key, _ in _BUILTIN_COLUMNS})
 
-  available = {key: get_value for key, get_value in _BUILTIN_COLUMNS + custom_columns}
-
-  unknown = [key for key in keys if key not in available]
+  unknown = [key for key in keys if key.lower() not in key_by_lower]
 
   if unknown:
     raise InvalidInputError(f"Unknown fields: {', '.join(unknown)}")
 
-  return [(key, available[key]) for key in keys]
+  # Resolve to canonical key so duplicate detection is case-insensitive.
+  canonical = [key_by_lower[key.lower()] for key in keys]
+
+  if len(canonical) != len(set(canonical)):
+    raise InvalidInputError("Duplicate fields selected")
+
+  return [(key, get_value_by_lower[key.lower()]) for key in canonical]
 
 
 _FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
