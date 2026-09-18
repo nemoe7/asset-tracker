@@ -219,6 +219,21 @@ def test_create_custom_field_rejects_duplicate_name(gen_test_data_admin):
     )
 
 
+def test_create_custom_field_rejects_case_insensitive_duplicate_name(
+  gen_test_data_admin,
+):
+  create_custom_field(
+    name="Serial Number",
+    field_type="text",
+  )
+
+  with pytest.raises(CustomFieldAlreadyExistsError):
+    create_custom_field(
+      name="serial number",
+      field_type="text",
+    )
+
+
 def test_create_custom_field_rejects_name_reserved_by_archived_field(
   gen_test_data_admin,
 ):

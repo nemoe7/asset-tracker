@@ -41,7 +41,7 @@ CREATE TABLE inventory_items (
 );
 CREATE TABLE custom_fields (
    id INTEGER PRIMARY KEY,
-   name TEXT NOT NULL UNIQUE,
+   name TEXT NOT NULL UNIQUE COLLATE NOCASE,
    field_type TEXT NOT NULL CHECK (
      field_type IN (
        'text',
