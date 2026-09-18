@@ -5,6 +5,59 @@
 <form id="export-form">
   <div class="space-y-5">
 
+    {# ==================== Templates ==================== #}
+    <fieldset>
+
+      <legend class="mb-2 text-sm font-medium text-zinc-300">
+        Templates
+      </legend>
+
+      <div class="flex gap-2">
+        <label for="export-template-select" class="sr-only">
+          Saved template
+        </label>
+
+        <select id="export-template-select"
+          class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+          <option value="">No template selected</option>
+        </select>
+
+        <button type="button" id="export-template-apply-button" disabled
+          class="flex shrink-0 items-center justify-center gap-1 rounded-lg border border-zinc-700 px-3 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-zinc-700 disabled:hover:text-zinc-300">
+          <i class="bi bi-play-fill" aria-hidden="true"></i>
+          Apply
+        </button>
+      </div>
+
+      <div class="mt-3 flex gap-2">
+        <label for="export-template-name" class="sr-only">
+          Template name
+        </label>
+
+        <input id="export-template-name" type="text" autocomplete="off"
+          placeholder="Save current columns as template..."
+          class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
+
+        <button type="button" id="export-template-save-button"
+          class="flex shrink-0 items-center justify-center gap-1 rounded-lg border border-zinc-700 px-3 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100">
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>
+          Save
+        </button>
+      </div>
+
+      {% if is_current_user_admin() %}
+      <label class="mt-2 flex items-center gap-2 text-xs text-zinc-400">
+        <input id="export-template-shared" type="checkbox"
+          class="size-4 rounded border-zinc-700 bg-zinc-900 text-zinc-100 focus:ring-zinc-500">
+        Save as shared template (visible to all users)
+      </label>
+      {% endif %}
+
+      <p id="export-template-error" class="mt-2 hidden text-xs text-red-400"></p>
+
+    </fieldset>
+    {# ==================== End Templates ==================== #}
+
     {# ==================== Columns ==================== #}
     <fieldset>
 

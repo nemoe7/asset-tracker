@@ -256,8 +256,130 @@ document
     populateExportColumnOptions(await loadCustomFields());
     resetExportColumns();
 
+    await loadExportTemplates();
+
     openModal(exportItemModal);
   });
+
+// ==================== Export Templates ====================
+
+const exportTemplateSelect = document.getElementById(
+  'export-template-select'
+);
+const exportTemplateApplyButton = document.getElementById(
+  'export-template-apply-button'
+);
+const exportTemplateName = document.getElementById('export-template-name');
+const exportTemplateSaveButton = document.getElementById(
+  'export-template-save-button'
+);
+const exportTemplateShared = document.getElementById(
+  'export-template-shared'
+);
+const exportTemplateError = document.getElementById('export-template-error');
+
+function selectedExportColumns() {
+  return [
+    ...exportColumnRows.querySelectorAll('.export-column-name')
+  ].map((label) => label.textContent);
+}
+
+async function loadExportTemplates() {
+  if (!exportTemplateSelect) {
+    return;
+  }
+
+  let templates = [];
+
+  try {
+    const response = await fetch('/export-templates');
+
+    templates = response.ok ? await response.json() : [];
+  } catch (error) {
+    console.error('Failed to load export templates:', error);
+  }
+
+  const options = [new Option('No template selected', '')];
+
+  for (const template of templates) {
+    const label = template.shared ? `${template.name} (shared)` : template.name;
+
+    options.push(new Option(label, template.id));
+  }
+
+  exportTemplateSelect.replaceChildren(...options);
+  exportTemplateApplyButton.disabled = true;
+}
+
+function showExportTemplateError(message) {
+  if (!exportTemplateError) {
+    return;
+  }
+
+  exportTemplateError.textContent = message;
+  exportTemplateError.classList.remove('hidden');
+}
+
+exportTemplateSelect?.addEventListener('change', () => {
+  exportTemplateApplyButton.disabled = !exportTemplateSelect.value;
+});
+
+exportTemplateApplyButton?.addEventListener('click', () => {
+  if (!exportTemplateSelect.value) {
+    return;
+  }
+
+  window.location.assign(
+    `/export-templates/${exportTemplateSelect.value}/apply`
+  );
+});
+
+exportTemplateSaveButton?.addEventListener('click', async () => {
+  if (!exportTemplateName) {
+    return;
+  }
+
+  const name = exportTemplateName.value.trim();
+
+  if (!name) {
+    showExportTemplateError('Enter a template name.');
+    return;
+  }
+
+  exportTemplateError?.classList.add('hidden');
+
+  try {
+    const response = await fetch('/export-templates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        configuration: { columns: selectedExportColumns() },
+        shared: exportTemplateShared?.checked ?? false
+      })
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+
+      showExportTemplateError(body.error || 'Failed to save template.');
+      return;
+    }
+
+    exportTemplateName.value = '';
+
+    if (exportTemplateShared) {
+      exportTemplateShared.checked = false;
+    }
+
+    await loadExportTemplates();
+  } catch (error) {
+    console.error('Failed to save export template:', error);
+    showExportTemplateError('Failed to save template.');
+  }
+});
+
+// ==================== End Export Templates ====================
 
 function submitExportColumn() {
   addExportColumnByName(addExportColumn.value);
