@@ -51,7 +51,21 @@ Configure `.env`, then start Astra:
 docker compose up -d
 ```
 
-The included Compose configuration uses zrok as the default public-access proxy.
+The included Compose configuration uses Tailscale for secure access.
+
+To expose Astra to your network, run the Tailscale funnel:
+
+```bash
+docker exec ${ASTRA_ID}-tailscale tailscale funnel --bg http://app:5000
+```
+
+Check the funnel status:
+
+```bash
+docker exec ${ASTRA_ID}-tailscale tailscale funnel status
+```
+
+See [Tailscale funnel](https://tailscale.com/kb/1103/enabling-tailscale-funnel) for details on allowing external access to your node.
 
 See [Configuration](docs/configuration.md) for environment variables and deployment options.
 
@@ -77,7 +91,7 @@ See [`docs/configuration.md`](docs/configuration.md) for the complete configurat
 - Timezone
 - Flask settings
 - Session security
-- zrok
+- Tailscale
 - Reverse proxy configuration
 - Deployment options
 
@@ -166,9 +180,9 @@ cp .env.example .env
 docker compose up -d
 ```
 
-The included `compose.yml` starts Astra together with zrok.
+The included `compose.yml` starts Astra together with Tailscale.
 
-zrok is the default public-access proxy, but the Compose configuration can be modified if you prefer to use another reverse proxy or tunneling service.
+Tailscale is the default network access service included with Astra's Compose configuration, but the Compose configuration can be modified if you prefer to use another reverse proxy or tunneling service.
 
 See [`docs/configuration.md`](docs/configuration.md) for configuration details.
 

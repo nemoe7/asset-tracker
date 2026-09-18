@@ -17,15 +17,15 @@ Edit the file before starting Astra.
 | `TZ` | Yes | `Asia/Manila` | Timezone used by Astra |
 | `FLASK_SKIP_DOTENV` | Yes | `1` | Prevents Flask from loading `.env` independently |
 | `DATABASE_PATH` | Yes | `data/assets.db` | Path to the SQLite database |
-| `ZROK2_ENABLE_TOKEN` | Yes* | — | zrok enable token |
-| `ZROK2_SHARE_NAME` | Yes* | — | Name used for the zrok share and application container |
+| `TS_AUTHKEY` | Yes* | — | Tailscale authentication key |
+| `ASTRA_ID` | Yes* | — | Identifier used for the Tailscale node and application container |
 | `TRUST_PROXY` | No | `0` | Trust forwarded client IP information from a reverse proxy |
 | `DEBUG` | No | `0` | Enables Flask debug mode |
 | `SECRET_KEY` | No | — | Flask session/security key |
 
-`*` These variables are required by the included `compose.yml`, which uses zrok as its default public-access proxy.
+`*` These variables are required by the included `compose.yml`, which uses Tailscale for secure network access.
 
-They are not requirements of Astra itself when running the application without the included zrok service.
+They are not requirements of Astra itself when running the application without the included Tailscale service.
 
 ## Timezone
 
@@ -97,30 +97,30 @@ Leave it disabled when Astra is accessed directly.
 
 Only enable this when the proxy in front of Astra is trusted to provide the forwarded client IP information.
 
-## zrok
+## Tailscale
 
-The included `compose.yml` uses zrok as the default public-access proxy.
+The included `compose.yml` uses Tailscale for secure network access.
 
-Create a zrok account and obtain an enable token through the [zrok](https://zrok.io/) setup process.
+To configure Tailscale, you need to:
 
-Then configure:
+1. Create a Tailscale account at [login.tailscale.com/start](https://login.tailscale.com/start)
+2. Generate an auth key in the [Tailscale admin console](https://console.tailscale.com/admin/settings/keys)
+3. Set the auth key and Astra ID in your `.env` file
 
 ```env
-ZROK2_ENABLE_TOKEN=your-enable-token
-ZROK2_SHARE_NAME=astra
+TS_AUTHKEY=your-tailscale-auth-key
+ASTRA_ID=your-unique-identifier
 ```
 
-`ZROK2_SHARE_NAME` determines the name used for the zrok share and Docker container.
-
-See the [zrok documentation](https://zrok.io/) for the current account and token setup process.
+`ASTRA_ID` determines the hostname used for the Tailscale node and Docker container.
 
 ### Using Another Proxy
 
-zrok is the default proxy included with Astra's Compose configuration.
+Tailscale is the default network access service included with Astra's Compose configuration.
 
-If you prefer another reverse proxy or tunneling service, modify the Compose configuration to use that service instead. The Astra application itself does not require zrok.
+If you prefer another reverse proxy or tunneling service, modify the Compose configuration to use that service instead. The Astra application itself does not require Tailscale.
 
-When replacing zrok, review the `TRUST_PROXY` setting if the replacement proxy forwards the original client IP.
+When replacing Tailscale, review the `TRUST_PROXY` setting if the replacement proxy forwards the original client IP.
 
 ## Docker Deployment
 
@@ -137,6 +137,20 @@ docker compose up -d
 ```
 
 The application listens on port `5000` inside the container.
+
+To expose Astra to your network via Tailscale funnel, run:
+
+```bash
+docker exec ${ASTRA_ID}-tailscale tailscale funnel --bg http://app:5000
+```
+
+Check the funnel status:
+
+```bash
+docker exec ${ASTRA_ID}-tailscale tailscale funnel status
+```
+
+See [Tailscale funnel](https://tailscale.com/kb/1103/enabling-tailscale-funnel) for more details.
 
 View logs with:
 
@@ -162,15 +176,15 @@ This keeps the development configuration separate from the production-oriented `
 
 ## Configuration Example
 
-A basic configuration using the included zrok deployment might look like:
+A basic configuration using the included Tailscale deployment might look like:
 
 ```env
 TZ=Asia/Manila
 FLASK_SKIP_DOTENV=1
 DATABASE_PATH=data/assets.db
 
-ZROK2_ENABLE_TOKEN=your-enable-token
-ZROK2_SHARE_NAME=astra
+TS_AUTHKEY=your-tailscale-auth-key
+ASTRA_ID=your-unique-identifier
 
 TRUST_PROXY=0
 DEBUG=0
