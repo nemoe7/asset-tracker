@@ -15,13 +15,13 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .logging import configure_logging
 from .routes import register_routes
+from .services.auth.authorization import check_permission
 from .services.data.db import (
   apply_pending_migrations,
   get_db,
   init_db,
 )
 from .services.data.user_roles import is_admin_role, is_role_assigned
-from .services.auth.authorization import check_permission
 from .services.exceptions.auth.authorization import PermissionDeniedError
 from .templatetags import format_custom_field_value, format_datetime
 
