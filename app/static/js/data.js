@@ -348,13 +348,17 @@ exportTemplateSaveButton?.addEventListener('click', async () => {
 
   exportTemplateError?.classList.add('hidden');
 
+  const columns = selectedExportColumns();
+
+  const configuration = columns.length ? { columns } : {};
+
   try {
     const response = await fetch('/export-templates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name,
-        configuration: { columns: selectedExportColumns() },
+        configuration,
         shared: exportTemplateShared?.checked ?? false
       })
     });

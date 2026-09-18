@@ -75,7 +75,9 @@ def create():
   return jsonify({"id": template_id, "shared": shared}), 201
 
 
-@export_templates.route("/<int:template_id>/apply", methods=["POST"])
+# GET (browser navigation from the export modal) and POST both work;
+# apply is read-only and just redirects to /inventory/export.
+@export_templates.route("/<int:template_id>/apply", methods=["GET", "POST"])
 @login_required
 def apply(template_id):
   try:
