@@ -605,6 +605,7 @@ def test_archived_item_included_when_requested(gen_test_data_admin):
   assert items[0]["name"] == "Laptop"
   assert items[0]["archived_at"] is not None
 
+
 def test_restore_item(gen_test_data_admin):
   item_id = create_item("Laptop")
 

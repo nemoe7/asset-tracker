@@ -71,7 +71,9 @@ def create_location(page, live_server):
 
 @pytest.fixture
 def create_custom_field(page, live_server):
-  def _create(name, field_type, required=False, enum_values=None, description=None, copyable=False):
+  def _create(
+    name, field_type, required=False, enum_values=None, description=None, copyable=False
+  ):
     data = {
       "name": name,
       # Enum fields cannot be created without values; create as text and
