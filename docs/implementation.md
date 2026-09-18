@@ -141,10 +141,10 @@
 | FLD-010 | P4 | Admins can deactivate custom fields. | 🟢 | FLD-002 | FLD-011, FLD-015 | |
 | FLD-014 | P4 | Custom fields available for search/filter/export. | 🟢 | FLD-002, FLD-004 | SRH-007, EXP-003 | User-type fields excluded (FLD-007 pending) |
 | FLD-016 | P4 | Admins can mark a custom field copyable; interface provides a copy button. | 🟢 | FLD-002, FLD-013 | Copy button renders only in the view asset modal; `copyable` flag stored on `custom_fields` | |
-| EXP-005 | P4 | Authorized users can create saved export templates. | 🔴 | EXP-001 | EXP-006, EXP-007 | |
-| EXP-006 | P4 | Export templates contain filters and field selections. | 🔴 | EXP-005 | EXP-007 | |
-| EXP-007 | P4 | Users can apply saved export templates. | 🔴 | EXP-005, EXP-006 | — | |
-| EXP-008 | P4 | Export templates support custom fields. | 🔴 | EXP-005, FLD-014 | — | |
+| EXP-005 | P4 | Authorized users can create saved export templates. | 🟢 | EXP-001 | EXP-006, EXP-007 | Config JSON: `{"filters": [[field_id, op, value]...], "columns": [...]}`; shared templates admin-gated |
+| EXP-006 | P4 | Export templates contain filters and field selections. | 🟢 | EXP-005 | EXP-007 | Filter rows only persisted via template config; no filter UI in export modal (rows come from URL/inventory filters) |
+| EXP-007 | P4 | Users can apply saved export templates. | 🟢 | EXP-005, EXP-006 | — | Apply redirects to `/inventory/export` with query params; column validity re-checked at export (stale columns → 400) |
+| EXP-008 | P4 | Export templates support custom fields. | 🟢 | EXP-005, FLD-014 | — | Field visibility enforced at export via `visible_field_ids` |
 | IMP-005 | P4 | Validate imported values against field types/requirements. | 🔴 | IMP-001, FLD-005, FLD-008, FLD-012 | REL-001 | |
 | IMP-006 | P4 | Report rejected records without corrupting asset data. | 🔴 | IMP-001, REL-001 | — | |
 | IMP-007 | P4 | Record imports in the audit log. | 🟢 | IMP-001 | AUD-006 | |
