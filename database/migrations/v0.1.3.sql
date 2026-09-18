@@ -1,10 +1,11 @@
--- v0.1.3: add expiry_date field type and copyable column to custom_fields.
+-- v0.1.3: add expiry_date field type and copyable column to custom_fields,
+-- and make field names case-insensitive (UNIQUE COLLATE NOCASE).
 -- SQLite cannot alter a CHECK constraint, so the table is rebuilt.
 PRAGMA foreign_keys = OFF;
 
 CREATE TABLE custom_fields_new (
   id INTEGER PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL UNIQUE COLLATE NOCASE,
   field_type TEXT NOT NULL CHECK (
     field_type IN (
       'text',
