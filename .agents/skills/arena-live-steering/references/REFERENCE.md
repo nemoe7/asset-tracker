@@ -17,6 +17,8 @@ The agent reads everything after `## Current Notes:`. The file keeps its last 8,
 
 ## Agent integration patterns
 
+Activation is observable rather than inferred, and it leaves two marks: the topic named in the chat reply's first line, and the log the ingest script writes. Since the check line lands on every run, including a run whose body held nothing, a quiet channel still produces `STEERING_LOG.md`, so a session with no log never ran the ingest whatever rule file it read, and the first check line's timestamp says when the skill started.
+
 **Minimal (bash):**
 
 ```bash
@@ -57,15 +59,17 @@ for step in agent_loop:
 
 A topic on `ntfy.sh` is the channel, because the user's side needs nothing: no account, no token, no zone, no page of our own. Publishing is a POST to `https://ntfy.sh/<topic>` from ntfy's web UI, its phone app, or `curl -d "note" ntfy.sh/<topic>` on the user's own machine, and it is instant, where a DNS edit waits on a TTL; sandbox POSTs are TLS-killed. Messages are append-only, so a new note never rewrites the ones before it.
 
-The topic name is the credential. ntfy has no sign-up, so anyone who knows the name can read and write it, which for a steering channel means anyone could inject directives. Generate a random one, give it to the user in chat, and keep it out of the repository: `reports/` is ignored, and a topic committed to a public repository is a public write access to the agent.
+The topic name is the credential. ntfy has no sign-up, so anyone who knows the name can read and write it, which for a steering channel means anyone could inject directives. Generate `<branch>-<secret>`: the current git branch name with every character outside `[A-Za-z0-9_-]` replaced by `-`, then a hyphen, then a random token. Give that URL to the user in chat, and keep it out of the repository: `reports/` is ignored, and a topic committed to a public repository is a public write access to the agent.
 
-Reading is `https://ntfy.sh/<topic>/json?poll=1&since=<lastmessage>` only through the agent's page-fetch tool, where `<lastmessage>` is the newest message id the log already recorded and `since=all` is the form of the first read; `scripts/ntfy_steering.py` takes the returned body verbatim and prints the `Next pull:` URL for the read that follows. Never substitute curl or another in-sandbox HTTP client: the egress proxy answers ntfy GETs with HTTP 200 and an empty body even while the topic holds messages, including with cache-busting parameters and `Cache-Control: no-cache`, so a sandbox poller silently mistakes filtered messages for no messages. Use the poll form: plain `/json` is a stream that never terminates and a page fetch cannot return one, and `/atom` and `/feed.xml` are 404 on `ntfy.sh`. An empty topic returns an empty body, which the page-fetch tool can report as its own HTTP 500; an anchored read with no new messages therefore looks like a 500 rather than an OK empty result, and that artifact is not evidence ntfy is unreachable. The channel is sent to the user in chat before the first read, because a read fails until the user has published something: the agent cannot post to a topic, so that first empty-topic 500 is the expected state of a fresh channel, not a fault to debug. Messages carry an `expires` field: 12.0 hours after `time`, measured on 2026-09-16, so the notes file is the archive and the topic is not.
+Reading is `https://ntfy.sh/<topic>/json?poll=1&since=<lastmessage>` only through the agent's page-fetch tool, where `<lastmessage>` is the newest message id the log already recorded and `since=all` is the form of the first read; `scripts/ntfy_steering.py` takes the returned body verbatim and prints the `Next pull:` URL for the read that follows. Never substitute curl or another in-sandbox HTTP client: the egress proxy answers ntfy GETs with HTTP 200 and an empty body even while the topic holds messages, including with cache-busting parameters and `Cache-Control: no-cache`, so a sandbox poller silently mistakes filtered messages for no messages. Use the poll form: plain `/json` is a stream that never terminates and a page fetch cannot return one, and `/atom` and `/feed.xml` are 404 on `ntfy.sh`. An empty topic returns an empty body, which the page-fetch tool can report as its own HTTP 500; an anchored read with no new messages therefore looks like a 500 rather than an OK empty result, and that artifact is not evidence ntfy is unreachable. A JSON fetch may return only the first NDJSON line even when the topic holds more, so walk `since=<id>` until that empty 500. The page-fetch renderer also strips HTML tags from JSON, so `<repo>` in a note vanishes and the line looks truncated; that is a malformed pull, and the agent tells the user so in chat in one line, then falls back to the HTML page instead of ingesting the truncated JSON. The HTML topic page `https://ntfy.sh/<topic>` lists every message and keeps the tags. Pull it when checking the whole channel or when a note looks truncated. Senders escape `\<` `\>` so the JSON path keeps the span; this file documents that escape. The channel is sent in the first chat reply; reading ARENA.md and this skill may come first. The topic fetch still follows the link, because a fetch fails until the user has published something: the agent cannot post to a topic, so that first empty-topic 500 is the expected state of a fresh channel, not a fault to debug. Messages carry an `expires` field: 12.0 hours after `time`, measured on 2026-09-16, so the notes file is the archive and the topic is not.
 
 Anchoring is what ntfy's own docs tell a repeated poller to do: a poll without `since=` re-reads the topic's whole cache every time, a replay returns only the newest messages that fit 10 MB per topic and flags a capped response with `X-Messages-Truncated: 1`, and replayed bytes count against the visitor's daily bandwidth budget (https://docs.ntfy.sh/subscribe/api/, read 2026-09-18). An anchor that has aged out of the cache is not a hole: the server's since-ID query is `id > COALESCE((SELECT id FROM messages WHERE mid = ?), 0) AND published = 1`, so an id it no longer holds resolves to `0` and the whole cache comes back, which the message-id dedup then absorbs (`binwiederhier/ntfy` `message/cache_sqlite.go` on `main`, read 2026-09-18). Two consequences. A message recorded without an ntfy id is stamped `digest-...` and is never used as an anchor, because the server cannot resolve it, so such a body leaves the anchor where it was. And the log, not a state file, is the anchor store: losing it costs one full read, never a note.
 
 Check at the start of every turn, after every reasoning block, before and after every tool call, and before the turn ends or anything expensive or hard to undo such as a push, rewrite, delete, or long build. Every check is a pull of the topic link: reading `STEERING.md` alone is not a check, because the notes file only holds what some earlier read delivered, and no check is skipped because the last read came back empty or because the next call looked short. After a blocking tool call such as a question, read right after it returns rather than before it, because nothing new can arrive while it blocks; a read spent just before a blocking call is wasted. The pull is anchored on the newest message id the log recorded, which returns only what is new, and that is what makes a read at every boundary affordable: the cadence is unconditional precisely because the read stopped costing the whole cache, and message-id dedup keeps an overlapping read safe. There is no background capture, so the turn-boundary check is what keeps a note from being read a turn late; the closing check is the one that makes the acknowledgment clause work, because a note sent while the agent was busy is otherwise acked later still, which from the user's side looks like the channel dropped it.
 
-An acknowledgement is chat text. The clause is satisfied only by a line in the reply the user reads: a reasoning block that weighs the note, a tool call that ingests it, a note written into `STEERING.md`, and a summary that arrives a turn late are all silent to the person who sent it, and this channel carries no receipt of its own. That is why the clause names the medium and not only the wording: the failure it prevents is an agent that read the note, acted on it, and said nothing, which from the sending side is indistinguishable from the channel dropping the message. Only a delivered note earns the line; an empty pull has nothing to confirm, so it goes unmentioned rather than reported.
+An acknowledgement is chat text. The clause is satisfied only by a line in the reply the user reads, opening with `10-4:` and then the agent's own interpretation of the note, not a restatement of the raw text: a reasoning block that weighs the note, a tool call that ingests it, a note written into `STEERING.md`, and a summary that arrives a turn late are all silent to the person who sent it, and this channel carries no receipt of its own. That is why the clause names the medium and not only the wording: the failure it prevents is an agent that read the note, acted on it, and said nothing, which from the sending side is indistinguishable from the channel dropping the message. Only a delivered note earns the line; an empty pull has nothing to confirm, so it goes unmentioned rather than reported.
+
+Production stays free of this skill. Never name the skill, its directory, `SKILL.md`, or its scripts in the docs, code, or comments of the work the user asked for. The channel is operational: a README, a changelog, or a code comment that mentions it is a meta leak into the product. The skill's own files, the chat topic link, and `10-4:` acknowledgements are the exceptions, because those are the channel, not the product.
 
 Verified live on 2026-09-16 in `nemoe7/daedalus`: the agent's page-fetch path returned all 6 real messages from a populated topic on its first attempt, and `scripts/ntfy_steering.py` ingested 6/6 from that body verbatim and deduplicated them by ntfy message id. In the same minute, every in-sandbox curl GET of `/json?poll=1&since=all` returned HTTP 200 with zero bytes, including cache-busting parameters and no-cache headers.
 
@@ -77,6 +81,7 @@ The `since=<lastmessage>` anchor is documented by ntfy and read from its server 
 - `LOG_FILE` - default `STEERING_LOG.md`, append-only, keeps what the notes cap discards, the message ids a restart recovers, and the `since=` anchor the next read is built from
 - `STEERING_NTFY_TOPIC` - the topic name notes are attributed to; it never leaves the machine
 - `STEERING_NTFY_BASELINE` - `empty` (default) delivers everything unseen; `current` holds what the topic already holds, recording those ids in the log so a later run does not deliver them either
+- `STEERING_NTFY_ERROR` - the error text of a mangled read, which the run stamps into its check line in the log; unset means the body was simply empty
 
 ### Behaviour
 
@@ -84,7 +89,7 @@ The `since=<lastmessage>` anchor is documented by ntfy and read from its server 
 - Messages are deduplicated by ntfy's message id, which cannot collide; a message without one falls back to a digest of its text, so it is still deduplicated rather than replayed
 - Every run prints `Next pull: <url>`, anchored on the newest real id the log holds and `since=all` while it holds none, so reads chain without an id being remembered between them and a digest stamp is never offered to the server as an anchor
 - `open` and `keepalive` events are skipped, and a message's title is kept above its text
-- An empty body is reported as an empty topic rather than as a failure, because the fetch tool renders an empty 200 as its own HTTP 500
+- An empty body is reported as an empty topic rather than as a failure, because the fetch tool renders an empty 200 as its own HTTP 500; it still stamps one check line into the log, `--- <utc> [ntfy <topic> checked, 0 delivered] ---`, so a quiet or mangled channel leaves proof the check happened, and that stamp carries no `id=`, so it never becomes an anchor
 - Notes are attributed `<!-- from ntfy {topic}, read {utc} -->`, and `STOP:`, `PRIORITY:`, and `CONTEXT:` are echoed as directives
 - A failed fetch is not an empty topic: the two are indistinguishable in-sandbox, which is why only the page-fetch path is trusted for reads
 
@@ -126,11 +131,24 @@ Follows https://agentskills.io/specification.md:
 
 ## Troubleshooting
 
+**A note looks truncated, or `<>` is missing:**
+
+- The page-fetch renderer strips HTML tags from JSON, so `<repo>` vanishes. That is a malformed pull: tell the user in chat, in one line. Fetch `https://ntfy.sh/<topic>` (the HTML page) and walk `since=<id>` until an empty 500
+- Senders escape `\<` `\>` so the JSON path keeps the span; document that escape in this skill so a later session does not rediscover it
+
 **No note arrives:**
 
 - Confirm the user published to the topic the agent posted, and read the same topic name
 - An empty page-fetch body renders as the tool's HTTP 500, so retry once and check the topic through the agent's page-fetch path before concluding anything
 - Because an in-sandbox GET returns a fake empty 200, never test the channel with curl inside the sandbox
+
+**The pull itself comes back mangled:**
+
+- An empty topic renders as the tool's HTTP 500, which is the quiet case and not a fault, so it is reported as no new messages
+- The fetch tool can report `"status": "success"` while the body it returns is an error from its own upstream storage, such as an object-store `SignatureDoesNotMatch` naming a key id and a string to sign, so read the body it returned rather than the status field it reports: the field can say success while the content is a failure
+- An in-sandbox TLS kill says nothing about the topic, since that path is closed to ntfy by design and is never evidence about its contents
+- A mangled channel is told to the user in the chat reply, in one line naming the error, because steering is the user's only way in while the agent works and silence reads as a working channel; a quiet one is not
+- Pass the error text in as `STEERING_NTFY_ERROR` and the ingester's check line records it in the log, which is where a count of consecutive failures comes from
 
 **The same note arrives twice:**
 
