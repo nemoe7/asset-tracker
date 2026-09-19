@@ -145,8 +145,8 @@
 | EXP-006 | P4 | Export templates contain filters and field selections. | 🟢 | EXP-005 | EXP-007 | Filter rows only persisted via template config; no filter UI in export modal (rows come from URL/inventory filters) |
 | EXP-007 | P4 | Users can apply saved export templates. | 🟢 | EXP-005, EXP-006 | — | Apply redirects to `/inventory/export` with query params; column validity re-checked at export (stale columns → 400) |
 | EXP-008 | P4 | Export templates support custom fields. | 🟢 | EXP-005, FLD-014 | — | Field visibility enforced at export via `visible_field_ids` |
-| IMP-005 | P4 | Validate imported values against field types/requirements. | 🔴 | IMP-001, FLD-005, FLD-008, FLD-012 | REL-001 | |
-| IMP-006 | P4 | Report rejected records without corrupting asset data. | 🔴 | IMP-001, REL-001 | — | |
+| IMP-005 | P4 | Validate imported values against field types/requirements. | 🟢 | IMP-001, FLD-005, FLD-008, FLD-012 | REL-001 | |
+| IMP-006 | P4 | Report rejected records without corrupting asset data. | 🟢 | IMP-001, REL-001 | — | |
 | IMP-007 | P4 | Record imports in the audit log. | 🟢 | IMP-001 | AUD-006 | |
 | REL-001 | P4 | Invalid input does not corrupt asset data. | 🟢 | AST-007 | IMP-006, REL-003 | |
 
