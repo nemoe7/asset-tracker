@@ -113,7 +113,7 @@
 | SEC-007 | P3 | Backup files are protected from unauthorized access. | 🟢 | BKP-011 | SEC-006 | Manual backups only; no files persist server-side. Scheduled backups (BKP-016+) must add at-rest protection |
 | SEC-008 | P3 | Custom fields cannot bypass integrity/security controls. | 🟢 | FLD-012, FLD-013 | — | Field view/edit access control enforced on all read/write/export paths |
 | QRC-007 | P3 | QR code contains the Asset ID and does not need to contain the asset's complete information. | 🟢 | QRC-001 | QRC-002, QRC-006 | |
-| SRH-007 | P3 | Custom fields can be used for search/filtering. | 🟢 | FLD-014 | SRH-002 | User-type fields excluded (FLD-007 pending) |
+| SRH-007 | P3 | Custom fields can be used for search/filtering. | 🟢 | FLD-014 | SRH-002 | |
 | USE-001 | P3 | Application usable through a standard web browser. | 🟢 | — | CMP-001, CMP-002 | |
 | USE-004 | P3 | Common asset operations require minimal navigation. | 🟢 | AST-001–004, QRC-005 | PER-003 | Import/export intentionally on the data tab; scope is AST-001–004 and QRC-005 |
 | REL-003 | P3 | Maintain data integrity when creating/modifying records. | 🟢 | AST-007 | REL-001 | |
@@ -139,7 +139,7 @@
 | FLD-005 | P4 | Support Text, Integer, Decimal, Boolean, Date, Enum, User. | 🟢 | FLD-004 | FLD-006, FLD-007, FLD-012 | |
 | FLD-009 | P4 | Admins can modify custom-field configuration. | 🟢 | FLD-002 | FLD-015 | |
 | FLD-010 | P4 | Admins can deactivate custom fields. | 🟢 | FLD-002 | FLD-011, FLD-015 | |
-| FLD-014 | P4 | Custom fields available for search/filter/export. | 🟢 | FLD-002, FLD-004 | SRH-007, EXP-003 | User-type fields excluded (FLD-007 pending) |
+| FLD-014 | P4 | Custom fields available for search/filter/export. | 🟢 | FLD-002, FLD-004 | SRH-007, EXP-003 | |
 | FLD-016 | P4 | Admins can mark a custom field copyable; interface provides a copy button. | 🟢 | FLD-002, FLD-013 | Copy button renders only in the view asset modal; `copyable` flag stored on `custom_fields` | |
 | EXP-005 | P4 | Authorized users can create saved export templates. | 🟢 | EXP-001 | EXP-006, EXP-007 | Config JSON: `{"filters": [[field_id, op, value]...], "columns": [...]}`; shared templates admin-gated |
 | EXP-006 | P4 | Export templates contain filters and field selections. | 🟢 | EXP-005 | EXP-007 | Filter rows only persisted via template config; no filter UI in export modal (rows come from URL/inventory filters) |
@@ -198,4 +198,4 @@
 | USR-009 | — | Configure which asset fields Checkers can view. | 🟢 | FLD-002, FLD-013 | USR-010 | |
 | USR-010 | — | Configure which asset fields Checkers can edit. | 🟢 | FLD-002, FLD-013 | USR-009 | |
 | USR-011 | — | Checkers cannot modify their own permissions. | 🟢 | USR-007 | — | |
-| FLD-007 | — | User custom fields reference system users. | 🟡 | FLD-005 | USR-001 | UI pending |
+| FLD-007 | — | User custom fields reference system users. | 🟢 | FLD-005 | USR-001 | Viewing/editing a user field additionally requires `users.read`; a required user field is waived for actors without `users.read` (route-level) |
