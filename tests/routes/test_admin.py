@@ -609,6 +609,66 @@ def test_admin_can_remove_user_permission(
   assert get_user_permissions(user_id) == []
 
 
+def test_admin_cannot_grant_permission_to_self(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  response = gen_test_admin_client.post(
+    f"/admin/users/{gen_test_admin}/permissions",
+    data={
+      "permission_name": "locations.update",
+      "allowed": "true",
+    },
+  )
+
+  assert response.status_code == 200
+  assert "Cannot modify your own permissions" in response.data.decode()
+  assert get_user_permissions(gen_test_admin) == []
+
+
+def test_admin_cannot_remove_own_permission(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  token = set_current_user(gen_test_admin)
+  permission_id = create_permission(name="locations.update")
+  set_user_permission(gen_test_admin, permission_id, True)
+  reset_current_user(token)
+
+  response = gen_test_admin_client.post(
+    f"/admin/users/{gen_test_admin}/permissions/{permission_id}/delete",
+  )
+
+  assert response.status_code == 200
+  assert "Cannot modify your own permissions" in response.data.decode()
+
+  permissions = get_user_permissions(gen_test_admin)
+
+  assert len(permissions) == 1
+  assert permissions[0]["permission_id"] == permission_id
+
+
+def test_user_with_users_update_cannot_grant_permission_to_self(
+  gen_test_client,
+  gen_test_admin,
+  gen_user_with_permission,
+):
+  gen_user_with_permission("users.update")
+  user_id = get_user_by_username("perm_user")["id"]
+
+  response = gen_test_client.post(
+    f"/admin/users/{user_id}/permissions",
+    data={
+      "permission_name": "*",
+      "allowed": "true",
+    },
+  )
+
+  assert response.status_code == 200
+  assert "Cannot modify your own permissions" in response.data.decode()
+  assert get_user_permissions(1) == []
+
+
 def test_admin_user_permission_routes_require_permission(
   gen_test_client,
   gen_test_admin,
