@@ -347,16 +347,64 @@ def test_parse_filters_expiry_date_invalid(fields, expiry_date_field):
     )
 
 
-def test_parse_filters_rejects_user_type_field(gen_test_data_admin):
-  user_field = create_custom_field("Assignee", "user")
+def test_parse_filters_resolves_user_field_by_username(gen_test_data_admin):
+  from app.services.data.users import create_user
+
+  user_id = create_user("assignee", "assignee123", "Assignee")
+  user_field = _create_field("Assignee", "user")
+
+  filters = parse_filters(
+    [str(user_field["id"])],
+    ["="],
+    ["assignee"],
+    [user_field],
+  )
+
+  assert filters == [(user_field["id"], "=", str(user_id))]
+
+
+def test_parse_filters_user_field_unknown_username(gen_test_data_admin):
+  user_field = _create_field("Assignee", "user")
 
   with pytest.raises(InvalidInputError):
     parse_filters(
-      [str(user_field)],
+      [str(user_field["id"])],
       ["="],
-      ["1"],
-      [{"id": user_field, "field_type": "user"}],
+      ["nobody-here"],
+      [user_field],
     )
+
+
+def test_parse_filters_user_field_invalid_operator(gen_test_data_admin):
+  user_field = _create_field("Assignee", "user")
+
+  with pytest.raises(InvalidInputError):
+    parse_filters(
+      [str(user_field["id"])],
+      ["<"],
+      ["1"],
+      [user_field],
+    )
+
+
+def test_parse_filters_user_field_substring_match(gen_test_data_admin):
+  from app.services.data.users import create_user
+
+  first_id = create_user("smith_jane", "smith12345", "Jane Smith")
+  second_id = create_user("smith_john", "smith23456", "John Smith")
+  create_user("other_user", "other12345", "Other User")
+  user_field = _create_field("Assignee", "user")
+
+  filters = parse_filters(
+    [str(user_field["id"])],
+    ["~"],
+    ["smith"],
+    [user_field],
+  )
+
+  assert filters == [
+    (user_field["id"], "~", ",".join(sorted([str(first_id), str(second_id)])))
+  ]
 
 
 # --- get_operators -----------------------------------------------------------
@@ -408,6 +456,14 @@ def test_get_operators_expiry_date_uses_custom_labels():
   ]
 
 
+def test_get_operators_user_uses_is_not_and_matches_labels():
+  assert get_operators("user") == [
+    ("=", "Is"),
+    ("!=", "Is not"),
+    ("~", "Matches"),
+  ]
+
+
 def test_get_operators_rejects_unknown_type():
   with pytest.raises(InvalidInputError):
-    get_operators("user")
+    get_operators("nonexistent")

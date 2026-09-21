@@ -135,6 +135,14 @@ def _filter_row_condition(connection, field_id, op, value):
     inner = f"inventory_item_fields.value {comparison} ?"
     parameters = [field_id, value]
 
+  elif field_type == "user":
+    # Values are user IDs; "=" / "!=" match one ID, "≈" matches any of the
+    # resolved IDs passed through as a comma-joined list.
+    ids = [str(value)] if op in ("=", "!=") else str(value).split(",")
+    placeholders = ", ".join("?" for _ in ids)
+    inner = f"inventory_item_fields.value IN ({placeholders})"
+    parameters = [field_id, *ids]
+
   elif field_type == "boolean":
     inner = "inventory_item_fields.value = ?"
     parameters = [field_id, "1" if value == "true" else "0"]
@@ -153,7 +161,7 @@ def _filter_row_condition(connection, field_id, op, value):
   return f"{exists_base} AND {inner}\n    )", parameters
 
 
-_EQUALITY_OPS = {"=", "contains", "contains_cs", EMPTY_FILTER_VALUE, "is"}
+_EQUALITY_OPS = {"=", "contains", "contains_cs", EMPTY_FILTER_VALUE, "is", "~"}
 _ORDERING_OPS = {"<", "<=", ">", ">=", "before", "expires_in"}
 _NEGATED_OPS = {"!=", "excludes", "excludes_cs"}
 
