@@ -146,10 +146,9 @@ def get_user_by_username(username, include_archived=False):
     ).fetchone()
 
 
-def get_users():
+def get_users(include_archived=False):
   with db_connection() as connection:
-    return connection.execute(
-      """
+    query = """
       SELECT
         id,
         username,
@@ -158,9 +157,18 @@ def get_users():
         updated_at,
         archived_at
       FROM users
-      WHERE archived_at IS NULL
-      ORDER BY username
-      """
+    """
+
+    parameters = []
+
+    if not include_archived:
+      query += " WHERE archived_at IS NULL"
+
+    query += " ORDER BY username"
+
+    return connection.execute(
+      query,
+      parameters,
     ).fetchall()
 
 

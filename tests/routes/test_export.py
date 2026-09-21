@@ -534,3 +534,138 @@ def test_export_requires_login(gen_test_client):
   response = gen_test_client.get("/inventory/export")
 
   assert response.status_code == 302
+
+
+def test_export_resolves_user_field_to_name(
+  gen_test_admin_client,
+  gen_test_admin,
+  gen_test_item,
+):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.custom_field_values import set_custom_field_value
+  from app.services.data.custom_fields import create_custom_field
+  from app.services.data.users import create_user
+
+  token = set_current_user(gen_test_admin)
+  try:
+    user_id = create_user("assignee", "assignee123", "Jane Smith")
+    field_id = create_custom_field("Assigned To", "user")
+    item_id = gen_test_item(name="Alpha Asset")
+    set_custom_field_value(item_id, field_id, user_id)
+  finally:
+    reset_current_user(token)
+
+  response = gen_test_admin_client.get("/inventory/export")
+
+  rows = list(
+    csv.reader(
+      io.StringIO(response.get_data(as_text=True)),
+    )
+  )
+
+  column_index = rows[0].index("Assigned To")
+  assert rows[1][column_index] == "Jane Smith"
+
+
+def test_export_resolves_user_field_without_name_to_username(
+  gen_test_admin_client,
+  gen_test_admin,
+  gen_test_item,
+):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.custom_field_values import set_custom_field_value
+  from app.services.data.custom_fields import create_custom_field
+  from app.services.data.users import create_user
+
+  token = set_current_user(gen_test_admin)
+  try:
+    user_id = create_user("nameless", "nameless123", None)
+    field_id = create_custom_field("Assigned To", "user")
+    item_id = gen_test_item(name="Alpha Asset")
+    set_custom_field_value(item_id, field_id, user_id)
+  finally:
+    reset_current_user(token)
+
+  response = gen_test_admin_client.get("/inventory/export")
+
+  rows = list(
+    csv.reader(
+      io.StringIO(response.get_data(as_text=True)),
+    )
+  )
+
+  column_index = rows[0].index("Assigned To")
+  assert rows[1][column_index] == "nameless"
+
+
+def test_export_resolves_archived_user_field(
+  gen_test_admin_client,
+  gen_test_admin,
+  gen_test_item,
+):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.custom_field_values import set_custom_field_value
+  from app.services.data.custom_fields import create_custom_field
+  from app.services.data.users import archive_user, create_user
+
+  token = set_current_user(gen_test_admin)
+  try:
+    user_id = create_user("gone_user", "gone12345", "Gone User")
+    archive_user(user_id)
+    field_id = create_custom_field("Assigned To", "user")
+    item_id = gen_test_item(name="Alpha Asset")
+    set_custom_field_value(item_id, field_id, user_id)
+  finally:
+    reset_current_user(token)
+
+  response = gen_test_admin_client.get("/inventory/export")
+
+  rows = list(
+    csv.reader(
+      io.StringIO(response.get_data(as_text=True)),
+    )
+  )
+
+  column_index = rows[0].index("Assigned To")
+  assert rows[1][column_index] == "Gone User"
+
+
+def test_export_missing_user_field_value_exports_raw(
+  gen_test_admin_client,
+  gen_test_admin,
+  gen_test_item,
+  gen_init_db,
+):
+  import sqlite3
+
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.custom_fields import create_custom_field
+
+  token = set_current_user(gen_test_admin)
+  try:
+    field_id = create_custom_field("Assigned To", "user")
+    item_id = gen_test_item(name="Alpha Asset")
+  finally:
+    reset_current_user(token)
+
+  connection = sqlite3.connect(gen_init_db)
+  connection.execute(
+    """
+    INSERT INTO inventory_item_fields (item_id, field_id, value)
+    VALUES (?, ?, ?)
+    """,
+    (item_id, field_id, "9999"),
+  )
+  connection.commit()
+  connection.close()
+
+  response = gen_test_admin_client.get("/inventory/export")
+
+  rows = list(
+    csv.reader(
+      io.StringIO(response.get_data(as_text=True)),
+    )
+  )
+
+  column_index = rows[0].index("Assigned To")
+  assert rows[1][column_index] == "9999"
