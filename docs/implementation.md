@@ -182,7 +182,7 @@
 | FLD-013 | P5 | Custom fields respect viewing/editing permissions. | 🟢 | FLD-002, AUT-004 | USR-009, USR-010 | |
 | REL-002 | P5 | Failed operations provide appropriate errors. | 🟢 | — | — | |
 | REL-007 | P5 | Missed scheduled backup recoverable at startup. | 🔴 | BKP-007 | BKP-006 | |
-| SEC-006 | P5 | Restrict backup/restore to authorized users. | 🔴 | BKP-011, BKP-012, AUT-003 | SEC-001 | |
+| SEC-006 | P5 | Restrict backup/restore to authorized users. | 🟢 | BKP-011, BKP-012, AUT-003 | SEC-001 | Manual backups only; no files persist server-side. Scheduled backups (BKP-016+) must add at-rest protection |
 | USE-005 | P5 | Archive/restore require confirmation. | 🟢 | AST-004, AST-012 | BKP-013 | |
 | USE-006 | P5 | Backup UI shows enabled state and next scheduled backup. | 🔴 | BKP-015 | BKP-004 | |
 | AST-014 | P5 | Archiving an asset requires a reason from the defined values. | 🟢 | AST-004 | AST-015, USE-005 | |
