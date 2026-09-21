@@ -2,6 +2,7 @@ import importlib
 import time
 
 from app.services.data.custom_fields import (
+  create_custom_field,
   get_custom_field,
   get_custom_fields,
 )
@@ -1182,3 +1183,292 @@ def test_create_ignores_non_editable_custom_field(
     reset_current_user(token)
 
   assert item["custom_fields"] == {"Editable": "kept"}
+
+
+def _login_checker_with_field_and_user_grants(
+  gen_test_client,
+  admin_id,
+  update_ids=(),
+  read_ids=(),
+  users_read=False,
+):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.permissions import (
+    create_permission,
+    get_permission_by_name,
+  )
+  from app.services.data.role_permissions import set_role_permission
+  from app.services.data.roles import create_role
+  from app.services.data.user_roles import set_user_role
+  from app.services.data.users import create_user
+
+  token = set_current_user(admin_id)
+
+  try:
+    user_id = create_user("checker", "checker123", "Checker")
+    role_id = create_role("Checker", "Inspects assets")
+
+    for field_id in update_ids:
+      name = f"field.{field_id}.update"
+      permission = get_permission_by_name(name)
+      permission_id = (
+        permission["id"] if permission is not None else create_permission(name)
+      )
+      set_role_permission(role_id, permission_id, True)
+
+    for field_id in read_ids:
+      name = f"field.{field_id}.read"
+      permission = get_permission_by_name(name)
+      permission_id = (
+        permission["id"] if permission is not None else create_permission(name)
+      )
+      set_role_permission(role_id, permission_id, True)
+
+    if users_read:
+      permission = get_permission_by_name("users.read")
+      permission_id = (
+        permission["id"] if permission is not None else create_permission("users.read")
+      )
+      set_role_permission(role_id, permission_id, True)
+
+    set_user_role(user_id, role_id)
+  finally:
+    reset_current_user(token)
+
+  gen_test_client.post(
+    "/auth/login",
+    data={
+      "username": "checker",
+      "password": "checker123",
+    },
+  )
+
+
+def test_admin_can_create_asset_with_user_custom_field(
+  gen_test_admin_client,
+  gen_test_admin,
+):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.users import create_user
+
+  token = set_current_user(gen_test_admin)
+  try:
+    assignee_id = create_user("assignee", "assignee123", "Assignee")
+  finally:
+    reset_current_user(token)
+
+  _create_field(gen_test_admin_client, "Assigned To", "user")
+
+  response = gen_test_admin_client.post(
+    "/inventory",
+    data={
+      "name": "Test Asset",
+      "f_Assigned To": "assignee",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 200
+
+  item_id = response.json["id"]
+
+  response = gen_test_admin_client.get(f"/inventory/{item_id}")
+
+  assert response.json["custom_fields"]["Assigned To"] == str(assignee_id)
+
+
+def test_admin_cannot_create_asset_with_unknown_user_custom_field(
+  gen_test_admin_client,
+):
+  _create_field(gen_test_admin_client, "Assigned To", "user")
+
+  response = gen_test_admin_client.post(
+    "/inventory",
+    data={
+      "name": "Test Asset",
+      "f_Assigned To": "nobody-here",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
+def test_required_user_custom_field_waived_without_users_read(
+  gen_test_admin,
+  gen_test_admin_client,
+  gen_test_client,
+):
+  _create_field(gen_test_admin_client, "Assigned To", "user", required=True)
+
+  _login_checker_with_field_and_user_grants(
+    gen_test_client,
+    gen_test_admin,
+    update_ids={field["id"] for field in get_custom_fields()},
+  )
+
+  response = gen_test_client.post(
+    "/inventory",
+    data={
+      "name": "Test Asset",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 200
+  assert response.json["id"]
+
+
+def test_required_user_custom_field_enforced_with_users_read(
+  gen_test_admin,
+  gen_test_admin_client,
+  gen_test_client,
+):
+  _create_field(gen_test_admin_client, "Assigned To", "user", required=True)
+
+  _login_checker_with_field_and_user_grants(
+    gen_test_client,
+    gen_test_admin,
+    update_ids={field["id"] for field in get_custom_fields()},
+    users_read=True,
+  )
+
+  response = gen_test_client.post(
+    "/inventory",
+    data={
+      "name": "Test Asset",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 400
+  assert "Assigned To" in response.json["error"]
+
+
+def test_update_clears_user_custom_field(
+  gen_test_admin_client,
+  gen_test_admin,
+  gen_test_item,
+):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.users import create_user
+
+  token = set_current_user(gen_test_admin)
+  try:
+    create_user("assignee", "assignee123", "Assignee")
+  finally:
+    reset_current_user(token)
+
+  _create_field(gen_test_admin_client, "Assigned To", "user")
+
+  item_id = gen_test_item(name="Test Asset")
+
+  gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "f_Assigned To": "assignee",
+    },
+  )
+
+  response = gen_test_admin_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "f_Assigned To": "",
+    },
+  )
+
+  assert response.status_code == 302
+
+  response = gen_test_admin_client.get(f"/inventory/{item_id}")
+
+  assert response.json["custom_fields"] == {}
+
+
+def test_update_ignores_user_custom_field_without_field_update(
+  gen_test_admin,
+  gen_test_admin_client,
+  gen_test_client,
+  gen_test_item,
+):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.custom_field_values import set_custom_field_value
+  from app.services.data.users import create_user
+
+  token = set_current_user(gen_test_admin)
+  try:
+    assignee_id = create_user("assignee", "assignee123", "Assignee")
+    field_id = create_custom_field("Assigned To", "user")
+  finally:
+    reset_current_user(token)
+
+  item_id = gen_test_item(name="Test Asset")
+
+  token = set_current_user(gen_test_admin)
+  try:
+    set_custom_field_value(item_id, field_id, assignee_id)
+  finally:
+    reset_current_user(token)
+
+  _login_checker_with_field_and_user_grants(
+    gen_test_client,
+    gen_test_admin,
+    users_read=True,
+  )
+
+  response = gen_test_client.post(
+    f"/inventory/{item_id}",
+    data={
+      "f_Assigned To": "assignee",
+    },
+  )
+
+  assert response.status_code == 302
+
+  from app.services.data.inventory import get_item
+
+  token = set_current_user(gen_test_admin)
+  try:
+    item = get_item(
+      item_id,
+      visible_field_ids={field_id},
+    )
+  finally:
+    reset_current_user(token)
+
+  assert item["custom_fields"]["Assigned To"] == str(assignee_id)
+
+
+def test_required_text_custom_field_still_enforced_without_users_read(
+  gen_test_admin,
+  gen_test_admin_client,
+  gen_test_client,
+):
+  _create_field(gen_test_admin_client, "Serial Number", "text", required=True)
+
+  _login_checker_with_field_and_user_grants(
+    gen_test_client,
+    gen_test_admin,
+    update_ids={field["id"] for field in get_custom_fields()},
+  )
+
+  response = gen_test_client.post(
+    "/inventory",
+    data={
+      "name": "Test Asset",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 400
+  assert "Serial Number" in response.json["error"]
