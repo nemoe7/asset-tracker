@@ -54,7 +54,7 @@ def test_user_type_without_name_resolves_to_username(gen_test_data_admin):
   assert format_custom_field_value("2", "user") == "nameless_user"
 
 
-def test_user_type_unknown_id_passes_through():
+def test_user_type_unknown_id_passes_through(gen_test_data_db):
   assert format_custom_field_value("424242", "user") == "424242"
 
 
