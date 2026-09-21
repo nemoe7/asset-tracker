@@ -125,9 +125,7 @@ def _migration_statements(script):
 
 
 def _custom_field_name_allocator(connection):
-  rows = connection.execute(
-    "SELECT id, name FROM custom_fields ORDER BY id"
-  ).fetchall()
+  rows = connection.execute("SELECT id, name FROM custom_fields ORDER BY id").fetchall()
   used_names = set()
   names = {}
 

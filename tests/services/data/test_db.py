@@ -228,12 +228,8 @@ def test_apply_pending_migrations_rolls_back_failed_migration(tmp_path, monkeypa
 
   try:
     version = connection.execute("PRAGMA user_version").fetchone()[0]
-    field = connection.execute(
-      "SELECT id, name FROM custom_fields"
-    ).fetchone()
-    value = connection.execute(
-      "SELECT value FROM inventory_item_fields"
-    ).fetchone()
+    field = connection.execute("SELECT id, name FROM custom_fields").fetchone()
+    value = connection.execute("SELECT value FROM inventory_item_fields").fetchone()
     rebuilt_table = connection.execute(
       """
       SELECT 1
