@@ -39,6 +39,72 @@ def test_parse_csv_returns_rows():
   ]
 
 
+def test_parse_csv_titlecase_builtin_headers():
+  upload = make_upload(
+    "items.csv",
+    "Name,Description,Location,Serial\nAlpha,,Office,SN-1\n",
+  )
+
+  rows = parse_import_file(upload)
+
+  assert rows == [
+    {
+      "name": "Alpha",
+      "description": None,
+      "location": "Office",
+      "custom_fields": {"Serial": "SN-1"},
+    },
+  ]
+
+
+def test_parse_csv_uppercase_builtin_headers():
+  upload = make_upload("items.csv", "NAME,DESCRIPTION,LOCATION\nAlpha,Desc,Office\n")
+
+  rows = parse_import_file(upload)
+
+  assert rows == [
+    {
+      "name": "Alpha",
+      "description": "Desc",
+      "location": "Office",
+      "custom_fields": {},
+    },
+  ]
+
+
+def test_parse_csv_mixed_case_ignored_columns():
+  upload = make_upload(
+    "items.csv",
+    "ID,NAME,Created_At,Updated_At\n123,Alpha,2026-01-01,2026-01-02\n",
+  )
+
+  rows = parse_import_file(upload)
+
+  assert rows == [
+    {
+      "name": "Alpha",
+      "description": None,
+      "location": None,
+      "custom_fields": {},
+    },
+  ]
+
+
+def test_parse_csv_duplicate_builtin_after_normalization_last_wins():
+  upload = make_upload("items.csv", "name,Name,Serial\nAlpha,Beta,SN-1\n")
+
+  rows = parse_import_file(upload)
+
+  assert rows == [
+    {
+      "name": "Beta",
+      "description": None,
+      "location": None,
+      "custom_fields": {"Serial": "SN-1"},
+    },
+  ]
+
+
 def test_parse_csv_missing_name_column_raises():
   upload = make_upload("items.csv", "description,location\n,Office\n")
 
@@ -131,6 +197,46 @@ def test_parse_xlsx_returns_rows():
       "description": "With desc",
       "location": None,
       "custom_fields": {},
+    },
+  ]
+
+
+def test_parse_xlsx_titlecase_builtin_headers():
+  upload = make_xlsx_upload(
+    [
+      ["Name", "Description", "Location", "Serial"],
+      ["Alpha", None, "Office", "SN-1"],
+    ],
+  )
+
+  rows = parse_import_file(upload)
+
+  assert rows == [
+    {
+      "name": "Alpha",
+      "description": None,
+      "location": "Office",
+      "custom_fields": {"Serial": "SN-1"},
+    },
+  ]
+
+
+def test_parse_xlsx_uppercase_builtin_headers():
+  upload = make_xlsx_upload(
+    [
+      ["NAME", "DESCRIPTION", "LOCATION", "Serial"],
+      ["Alpha", "Desc", None, "SN-1"],
+    ],
+  )
+
+  rows = parse_import_file(upload)
+
+  assert rows == [
+    {
+      "name": "Alpha",
+      "description": "Desc",
+      "location": None,
+      "custom_fields": {"Serial": "SN-1"},
     },
   ]
 

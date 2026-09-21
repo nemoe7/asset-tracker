@@ -9,6 +9,15 @@ _IGNORED_COLUMNS = {"id", "created_at", "updated_at"}
 _MAX_IMPORT_ROWS = 5000
 
 
+def _canonical_header(header):
+  lowered = header.lower()
+
+  if lowered in _BUILTIN_COLUMNS or lowered in _IGNORED_COLUMNS:
+    return lowered
+
+  return header
+
+
 def _cell(row, column):
   value = row.get(column)
 
@@ -51,7 +60,14 @@ def _parse_csv(file_storage):
 
     fieldnames = reader.fieldnames
 
-    if not fieldnames or "name" not in fieldnames:
+    if not fieldnames:
+      raise InvalidInputError("Import requires a name column")
+
+    fieldnames = [_canonical_header(name) if name else name for name in fieldnames]
+
+    reader.fieldnames = fieldnames
+
+    if "name" not in fieldnames:
       raise InvalidInputError("Import requires a name column")
 
     columns = [
@@ -83,7 +99,9 @@ def _parse_xlsx(file_storage):
     except StopIteration:
       raise InvalidInputError("Import requires a name column") from None
 
-    header = [str(value) if value is not None else "" for value in header]
+    header = [
+      _canonical_header(str(value)) if value is not None else "" for value in header
+    ]
 
     if "name" not in header:
       raise InvalidInputError("Import requires a name column")
