@@ -39,6 +39,11 @@ _FIELD_OPERATORS = {
     ("=", "Is"),
     ("!=", "Is not"),
   ],
+  "user": [
+    ("=", "Is"),
+    ("!=", "Is not"),
+    ("~", "Matches"),
+  ],
   "boolean": [],
   "text": [
     ("contains", "Contains"),
@@ -83,6 +88,29 @@ def _validate_operator(field, op):
     raise InvalidInputError("Invalid operator for field type")
 
   return op
+
+
+def _resolve_user_value(value):
+  from .users import get_user_by_username, get_users
+
+  user = get_user_by_username(value)
+
+  if user is not None:
+    return str(user["id"])
+
+  # "≈" substring match: all active users whose username or name contains
+  # the input; empty result is an unknown-user error.
+  matches = [
+    user
+    for user in get_users()
+    if value.lower() in user["username"].lower()
+    or (user["name"] and value.lower() in user["name"].lower())
+  ]
+
+  if not matches:
+    raise InvalidInputError(f"User '{value}' does not exist")
+
+  return ",".join(str(user["id"]) for user in matches)
 
 
 def _validate_value(field, raw_value, op=None):
@@ -138,6 +166,9 @@ def _validate_value(field, raw_value, op=None):
 
     return value
 
+  if field_type == "user":
+    return _resolve_user_value(value)
+
   return value
 
 
@@ -155,9 +186,6 @@ def parse_filters(f_fields, f_ops, f_values, fields):
 
     if field is None:
       raise InvalidInputError("Unknown custom field in filter")
-
-    if field["field_type"] == "user":
-      raise InvalidInputError("Cannot filter on user-type fields")
 
     validated_op = _validate_operator(field, op)
 

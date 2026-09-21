@@ -1023,6 +1023,58 @@ def test_fragment_rejects_invalid_filter_operator(
   assert response.json["error"]
 
 
+def test_fragment_filters_by_user_custom_field(
+  gen_test_admin_client,
+  gen_test_admin,
+  gen_test_item,
+):
+  from app.services.auth.context import reset_current_user, set_current_user
+  from app.services.data.users import create_user
+
+  token = set_current_user(gen_test_admin)
+  try:
+    create_user("smith_jane", "smith12345", "Jane Smith")
+    create_user("other_user", "other12345", "Other User")
+  finally:
+    reset_current_user(token)
+
+  field = _create_field(gen_test_admin_client, "Assigned To", "user")
+
+  match_id = gen_test_item(name="Match")
+  gen_test_item(name="Other")
+
+  gen_test_admin_client.post(
+    f"/inventory/{match_id}",
+    data={
+      f"f_{field['name']}": "smith_jane",
+    },
+  )
+
+  response = gen_test_admin_client.get(
+    f"/inventory/fragment?f_field={field['id']}&f_op=%3D&f_value=smith_jane"
+  )
+
+  assert response.status_code == 200
+  assert b"Match" in response.data
+  assert b"Other" not in response.data
+
+  response = gen_test_admin_client.get(
+    f"/inventory/fragment?f_field={field['id']}&f_op=%7E&f_value=smith"
+  )
+
+  assert response.status_code == 200
+  assert b"Match" in response.data
+  assert b"Other" not in response.data
+
+  response = gen_test_admin_client.get(
+    f"/inventory/fragment?f_field={field['id']}&f_op=%21%3D&f_value=smith_jane"
+  )
+
+  assert response.status_code == 200
+  assert b"Match" not in response.data
+  assert b"Other" in response.data
+
+
 def test_export_applies_custom_field_filters(
   gen_test_admin_client,
   gen_test_item,
