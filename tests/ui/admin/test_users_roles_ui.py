@@ -469,7 +469,12 @@ def test_admin_page_edit_role_rejects_duplicate_permission(
   page.goto(f"{live_server}/admin?tab=roles")
 
   row = page.locator("#tab-roles tbody tr").filter(has_text="Viewer")
-  row.locator(".edit-role").click()
+
+  # The edit modal fetches permissions asynchronously; wait for the response
+  # before interacting, or the resolved fetch can wipe a staged chip.
+  with page.expect_response(lambda r: "/permissions" in r.url and r.status == 200):
+    row.locator(".edit-role").click()
+
   dialog = page.locator("#edit-role-dialog")
   expect(dialog).to_be_visible()
 
