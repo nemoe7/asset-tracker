@@ -382,6 +382,59 @@ async function loadCustomFields() {
   return customFieldsCache;
 }
 
+let usersCache = null;
+
+async function loadUsers() {
+  if (usersCache) {
+    return usersCache;
+  }
+
+  try {
+    const response = await fetch('/users');
+
+    usersCache = response.ok ? await response.json() : [];
+  } catch (error) {
+    console.error('Failed to load users:', error);
+    usersCache = [];
+  }
+
+  return usersCache;
+}
+
+// Build one shared <datalist> of usernames, referenced by every user-type
+// input in Add/Edit/Filter controls.
+async function attachUserDatalist(input) {
+  const users = await loadUsers();
+
+  let datalist = document.getElementById('user-field-datalist');
+
+  if (!datalist) {
+    datalist = document.createElement('datalist');
+    datalist.id = 'user-field-datalist';
+
+    for (const user of users) {
+      datalist.append(new Option(user.name || user.username, user.username));
+    }
+
+    document.body.append(datalist);
+  }
+
+  input.setAttribute('list', 'user-field-datalist');
+}
+
+// Resolve a stored user ID to a display label: name, then username, then
+// the raw ID for archived/missing references.
+async function formatUserFieldValue(value) {
+  const users = await loadUsers();
+  const user = users.find((candidate) => String(candidate.id) === String(value));
+
+  if (!user) {
+    return `#${value}`;
+  }
+
+  return user.name || user.username;
+}
+
 function formatCustomFieldValue(value, fieldType) {
   if (value === null || value === undefined || value === '') {
     return '—';
@@ -418,7 +471,8 @@ const CUSTOM_FIELD_TYPE_LABELS = {
   boolean: 'Boolean',
   date: 'Date',
   expiry_date: 'Expiry Date',
-  enum: 'Enum'
+  enum: 'Enum',
+  user: 'User'
 };
 
 function wrapSelectWithChevron(select) {
@@ -527,10 +581,6 @@ function attachDecimalValidation(input) {
 }
 
 function buildCustomFieldInput(field) {
-  if (field.field_type === 'user') {
-    return null;
-  }
-
   const name = `f_${field.name}`;
   let input;
 
@@ -566,8 +616,14 @@ function buildCustomFieldInput(field) {
       input.pattern = '[+-]?[0-9]+(\\.[0-9]+)?';
       input.title = 'Enter a number';
       attachDecimalValidation(input);
-    } else if (field.field_type === 'date' || field.field_type === 'expiry_date') {
+    } else     if (field.field_type === 'date' || field.field_type === 'expiry_date') {
       input.type = 'date';
+    } else if (field.field_type === 'user') {
+      // User picker: free text with datalist suggestions; submits username
+      // and the backend resolves it to a user ID.
+      input.type = 'text';
+      input.placeholder = 'Enter username';
+      attachUserDatalist(input);
     } else {
       input = document.createElement('textarea');
       input.className =
@@ -642,7 +698,7 @@ function renderAddItemCustomFields(fields) {
   }
 }
 
-function renderEditItemCustomFields(fields, valuesByName) {
+async function renderEditItemCustomFields(fields, valuesByName) {
   if (!editItemCustomFields) {
     return;
   }
@@ -660,7 +716,24 @@ function renderEditItemCustomFields(fields, valuesByName) {
       input.disabled = true;
     }
 
-    setCustomFieldValue(input, valuesByName[field.name]);
+    if (field.field_type === 'user') {
+      // Prefill with the username; archived/missing references cannot be
+      // re-submitted by username, so the input stays empty.
+      const stored = valuesByName[field.name];
+
+      if (stored !== null && stored !== undefined && stored !== '') {
+        const users = await loadUsers();
+        const user = users.find(
+          (candidate) => String(candidate.id) === String(stored)
+        );
+
+        if (user) {
+          input.value = user.username;
+        }
+      }
+    } else {
+      setCustomFieldValue(input, valuesByName[field.name]);
+    }
 
     const label = document.createElement('th');
 
@@ -712,7 +785,14 @@ function renderViewItemCustomFields(fields, valuesByName) {
     const cell = document.createElement('td');
 
     cell.className = 'px-4 py-3 text-zinc-100';
-    cell.textContent = formatCustomFieldValue(valuesByName[field.name], field.field_type);
+
+    if (field.field_type === 'user' && valuesByName[field.name] !== null && valuesByName[field.name] !== undefined && valuesByName[field.name] !== '') {
+      formatUserFieldValue(valuesByName[field.name]).then((label) => {
+        cell.textContent = label;
+      });
+    } else {
+      cell.textContent = formatCustomFieldValue(valuesByName[field.name], field.field_type);
+    }
 
     if (field.copyable) {
       const copyButton = document.createElement('button');
@@ -809,6 +889,11 @@ const FILTER_OPERATORS = {
     ['=', 'Is'],
     ['!=', 'Is not']
   ],
+  user: [
+    ['=', 'Is'],
+    ['!=', 'Is not'],
+    ['~', 'Matches']
+  ],
   boolean: [],
   text: [
     ['contains', 'Contains'],
@@ -869,6 +954,19 @@ function buildFilterValueControl(field, op) {
     for (const value of field.enum_values ?? []) {
       control.append(new Option(value, value));
     }
+
+    return control;
+  }
+
+  if (field.field_type === 'user') {
+    // User filter: free text with datalist suggestions; submits username
+    // and the backend resolves it (substring match for "~").
+    control = document.createElement('input');
+    control.className = 'form-input min-w-0 flex-1';
+    control.name = 'f_value';
+    control.type = 'text';
+    control.placeholder = 'Enter username';
+    attachUserDatalist(control);
 
     return control;
   }
@@ -1025,11 +1123,19 @@ function updateFilterRowControls(row, field) {
 
     const valueControl = buildFilterValueControl(field);
 
-    const valueWrap = wrapSelectWithChevron(valueControl);
+    // Only selects get the chevron overlay; text inputs keep the plain
+    // form-input look.
+    if (valueControl.tagName === 'SELECT') {
+      const valueWrap = wrapSelectWithChevron(valueControl);
 
-    valueWrap.classList.add('cf-filter-value-wrap', 'min-w-0', 'flex-1');
+      valueWrap.classList.add('cf-filter-value-wrap', 'min-w-0', 'flex-1');
 
-    selectsLine.append(valueWrap);
+      selectsLine.append(valueWrap);
+    } else {
+      valueControl.classList.add('cf-filter-value', 'min-w-0', 'flex-1');
+
+      selectsLine.append(valueControl);
+    }
   }
 }
 
@@ -1048,9 +1154,7 @@ function buildFilterRow(fields) {
   fieldSelect.append(new Option('—', ''));
 
   for (const field of fields) {
-    if (field.field_type !== 'user') {
-      fieldSelect.append(new Option(field.name, field.id));
-    }
+    fieldSelect.append(new Option(field.name, field.id));
   }
 
   const removeButton = document.createElement('button');

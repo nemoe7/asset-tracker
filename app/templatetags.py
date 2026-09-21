@@ -25,6 +25,16 @@ def format_custom_field_value(value, field_type, today=None):
   if value is None or value == "":
     return value
 
+  if field_type == "user":
+    from .services.data.users import get_user
+
+    user = get_user(value)
+
+    if user is None:
+      return value
+
+    return user["name"] or user["username"]
+
   if field_type == "expiry_date" and value:
     try:
       expiry = date.fromisoformat(value)

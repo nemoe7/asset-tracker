@@ -37,3 +37,27 @@ def test_non_expiry_type_passes_through():
   assert format_custom_field_value("hello", "text") == "hello"
   assert format_custom_field_value("2026-08-20", "date") == "2026-08-20"
   assert format_custom_field_value(5, "integer") == 5
+
+
+def test_user_type_resolves_to_display_name(gen_test_data_admin):
+  from app.services.data.users import create_user
+
+  user_id = create_user("display_user", "display123", "Display User")
+  assert format_custom_field_value(str(user_id), "user") == "Display User"
+
+
+def test_user_type_without_name_resolves_to_username(gen_test_data_admin):
+  from app.services.data.users import create_user
+
+  create_user("nameless_user", "nameless123", None)
+
+  assert format_custom_field_value("2", "user") == "nameless_user"
+
+
+def test_user_type_unknown_id_passes_through():
+  assert format_custom_field_value("424242", "user") == "424242"
+
+
+def test_user_type_none_passes_through():
+  assert format_custom_field_value(None, "user") is None
+  assert format_custom_field_value("", "user") == ""
