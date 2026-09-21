@@ -91,7 +91,7 @@ def test_add_item_modal_marks_required_custom_fields(
 
 
 @pytest.mark.e2e
-def test_add_item_modal_does_not_render_user_type_fields(
+def test_add_item_modal_renders_user_type_field_with_datalist(
   page,
   live_server,
   create_custom_field,
@@ -102,9 +102,37 @@ def test_add_item_modal_does_not_render_user_type_fields(
   page.locator("#add-item-button").click()
 
   modal = page.get_by_role("dialog")
+  user_input = modal.locator('input[name="f_Assignee"]')
 
-  expect(modal.locator('input[name="f_Assignee"]')).to_have_count(0)
-  expect(modal.locator('select[name="f_Assignee"]')).to_have_count(0)
+  expect(user_input).to_be_visible()
+  expect(user_input).to_have_attribute("type", "text")
+  expect(user_input).to_have_attribute("list", "user-field-datalist")
+
+  datalist_options = page.locator("#user-field-datalist option")
+
+  expect(datalist_options).to_have_count(1)
+  expect(datalist_options.nth(0)).to_have_attribute("value", "test_admin")
+
+
+@pytest.mark.e2e
+def test_add_item_modal_user_field_required_badge(
+  page,
+  live_server,
+  create_custom_field,
+):
+  create_custom_field("Assignee", "user", required=True)
+
+  page.goto(f"{live_server}/")
+  page.locator("#add-item-button").click()
+
+  modal = page.get_by_role("dialog")
+
+  expect(modal.locator('input[name="f_Assignee"]')).to_be_visible()
+  expect(modal.locator('input[name="f_Assignee"]')).to_have_attribute(
+    "required",
+    "",
+  )
+  expect(modal.get_by_text("User", exact=True)).to_be_visible()
 
 
 @pytest.mark.e2e
@@ -274,6 +302,93 @@ def test_edit_modal_prefills_and_updates_custom_fields(
 
   expect(view_modal.get_by_text("SN-301")).to_be_visible()
   expect(view_modal.get_by_text("False")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_view_modal_shows_user_field_display_name(
+  page,
+  live_server,
+  create_custom_field,
+  create_item,
+  set_item_custom_field,
+):
+  user_field = create_custom_field("Assigned To", "user")
+
+  item = create_item("Assigned Asset")
+
+  set_item_custom_field(item["id"], user_field["name"], "test_admin")
+
+  page.goto(f"{live_server}/")
+  page.get_by_role("row").filter(has_text="Assigned Asset").click()
+
+  view_modal = page.get_by_role("dialog")
+
+  expect(view_modal.get_by_text("Test Admin")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_edit_modal_prefills_user_field_and_updates_via_username(
+  page,
+  live_server,
+  create_custom_field,
+  create_item,
+  set_item_custom_field,
+):
+  user_field = create_custom_field("Assigned To", "user")
+
+  item = create_item("User Edited Asset")
+
+  set_item_custom_field(item["id"], user_field["name"], "test_admin")
+
+  page.goto(f"{live_server}/")
+
+  row = page.get_by_role("row").filter(has_text="User Edited Asset")
+
+  row.locator(".edit-item").click()
+
+  edit_modal = page.get_by_role("dialog")
+
+  expect(edit_modal.locator('[name="f_Assigned To"]')).to_have_value("test_admin")
+
+  edit_modal.locator('[name="f_Assigned To"]').fill("")
+
+  edit_modal.get_by_role("button", name="Save changes").click()
+
+  row.click()
+
+  view_modal = page.get_by_role("dialog")
+
+  assigned_row = view_modal.locator("tr").filter(has_text="Assigned To")
+
+  expect(assigned_row.locator("td")).to_have_text("—", use_inner_text=True)
+
+
+@pytest.mark.e2e
+def test_filter_modal_shows_user_field_with_operators(
+  page,
+  live_server,
+  create_custom_field,
+):
+  create_custom_field("Assigned To", "user")
+
+  page.goto(f"{live_server}/")
+  page.locator("#filter-item-button").click()
+
+  modal = page.get_by_role("dialog")
+
+  modal.locator("#add-field-filter-button").click()
+
+  field_select = modal.locator(".cf-filter-field").first
+
+  field_select.select_option(label="Assigned To")
+
+  op_select = modal.locator(".cf-filter-op").first
+
+  expect(op_select).to_be_visible()
+
+  for label in ("Is", "Is not", "Matches"):
+    expect(op_select.locator(f'option[data-label="{label}"]')).to_have_count(0)
+    expect(op_select).to_contain_text(label)
 
 
 @pytest.mark.e2e
