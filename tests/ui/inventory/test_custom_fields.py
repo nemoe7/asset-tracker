@@ -152,6 +152,10 @@ def test_add_item_required_custom_field_blocks_submit(
 
   modal = page.get_by_role("dialog")
 
+  # Custom fields render asynchronously after the modal opens; submit
+  # only once the required input exists.
+  expect(modal.locator('[name="f_Serial Number"]')).to_be_visible()
+
   modal.locator("#item-name").fill("Blocked Asset")
   modal.get_by_role("button", name="Add asset").click()
 
