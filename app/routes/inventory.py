@@ -32,6 +32,7 @@ from ..services.data.inventory import (
   restore_item,
   update_item,
 )
+from ..services.data.users import get_user_by_username
 from ..services.exceptions.data.common import InvalidInputError
 from ..services.exceptions.data.custom_field_values import (
   RequiredCustomFieldError,
@@ -104,18 +105,24 @@ def _parse_custom_field_filters(readable_fields=None):
 
 
 def _visible_field_ids(user_id):
+  can_read_users = check_permission(user_id, "users.read")
+
   return {
     field["id"]
     for field in get_custom_fields()
     if check_permission(user_id, f"field.{field['id']}.read")
+    and (field["field_type"] != "user" or can_read_users)
   }
 
 
 def _editable_field_ids(user_id):
+  can_read_users = check_permission(user_id, "users.read")
+
   return {
     field["id"]
     for field in get_custom_fields()
     if check_permission(user_id, f"field.{field['id']}.update")
+    and (field["field_type"] != "user" or can_read_users)
   }
 
 
@@ -185,6 +192,14 @@ def _coerce_form_value(field, raw_value):
   if field_type == "boolean":
     return raw_value == "true"
 
+  if field_type == "user":
+    user = get_user_by_username(raw_value)
+
+    if user is None:
+      raise InvalidInputError(f"User '{raw_value}' does not exist")
+
+    return user["id"]
+
   return raw_value
 
 
@@ -222,16 +237,22 @@ def create():
   location_id = request.form.get("location_id")
 
   editable_field_ids = _editable_field_ids(session.get("user_id"))
+  can_read_users = check_permission(session.get("user_id"), "users.read")
   custom_fields = [
-    field
-    for field in get_custom_fields()
-    if field["field_type"] != "user" and field["id"] in editable_field_ids
+    field for field in get_custom_fields() if field["id"] in editable_field_ids
   ]
   values = _collect_custom_field_values()
 
   try:
     for field in custom_fields:
-      if field["required"] and not values.get(field["name"], "").strip():
+      if not field["required"]:
+        continue
+
+      # User fields are enforced only when the actor can actually see users.
+      if field["field_type"] == "user" and not can_read_users:
+        continue
+
+      if not values.get(field["name"], "").strip():
         _required_custom_field_error(field)
 
     if location_id:
@@ -354,16 +375,22 @@ def update(item_id):
     description = None
 
   editable_field_ids = _editable_field_ids(session.get("user_id"))
+  can_read_users = check_permission(session.get("user_id"), "users.read")
   custom_fields = [
-    field
-    for field in get_custom_fields()
-    if field["field_type"] != "user" and field["id"] in editable_field_ids
+    field for field in get_custom_fields() if field["id"] in editable_field_ids
   ]
   values = _collect_custom_field_values()
 
   try:
     for field in custom_fields:
-      if field["required"] and values.get(field["name"], "") == "":
+      if not field["required"]:
+        continue
+
+      # User fields are enforced only when the actor can actually see users.
+      if field["field_type"] == "user" and not can_read_users:
+        continue
+
+      if values.get(field["name"], "") == "":
         _required_custom_field_error(field)
 
     if location_id:
