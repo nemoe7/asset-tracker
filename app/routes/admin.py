@@ -665,6 +665,12 @@ def grant_user_permission_route(user_id):
   if get_user(user_id) is None:
     abort(404)
 
+  if user_id == session.get("user_id"):
+    return _render_settings(
+      _USERS_TAB,
+      error="Cannot modify your own permissions",
+    )
+
   permission_name = request.form.get("permission_name", "").strip()
   allowed = request.form.get("allowed") in ("1", "true", "on")
 
@@ -715,6 +721,12 @@ def grant_user_permission_route(user_id):
 def remove_user_permission_route(user_id, permission_id):
   if get_user(user_id) is None:
     abort(404)
+
+  if user_id == session.get("user_id"):
+    return _render_settings(
+      _USERS_TAB,
+      error="Cannot modify your own permissions",
+    )
 
   try:
     delete_user_permission(user_id, permission_id)

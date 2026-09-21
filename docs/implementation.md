@@ -197,5 +197,5 @@
 | USR-008 | — | Per-user permissions override inherited role permissions. | 🟢 | USR-007 | AUT-013 | |
 | USR-009 | — | Configure which asset fields Checkers can view. | 🟢 | FLD-002, FLD-013 | USR-010 | |
 | USR-010 | — | Configure which asset fields Checkers can edit. | 🟢 | FLD-002, FLD-013 | USR-009 | |
-| USR-011 | — | Checkers cannot modify their own permissions. | 🔴 | USR-007 | — | |
+| USR-011 | — | Checkers cannot modify their own permissions. | 🟢 | USR-007 | — | |
 | FLD-007 | — | User custom fields reference system users. | 🟡 | FLD-005 | USR-001 | UI pending |
