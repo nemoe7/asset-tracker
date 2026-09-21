@@ -5,6 +5,7 @@ import re
 from .data.audit import create_audit_log
 from .data.custom_fields import get_custom_fields
 from .data.inventory import get_items
+from .data.users import get_users
 from .exceptions.data.common import InvalidInputError
 
 _BUILTIN_COLUMNS = [
@@ -19,16 +20,24 @@ _BUILTIN_COLUMNS = [
 ]
 
 
-def _custom_column(field):
+def _custom_column(field, users_by_id=None):
   def get_value(item):
-    return item["custom_fields"].get(field["name"])
+    value = item["custom_fields"].get(field["name"])
+
+    if field["field_type"] == "user" and value is not None and users_by_id is not None:
+      user = users_by_id.get(str(value))
+
+      if user is not None:
+        return user["name"] or user["username"]
+
+    return value
 
   return (field["name"], get_value)
 
 
-def _selected_columns(field_keys, visible_field_ids=None):
+def _selected_columns(field_keys, visible_field_ids=None, users_by_id=None):
   custom_columns = [
-    _custom_column(field)
+    _custom_column(field, users_by_id)
     for field in get_custom_fields()
     if visible_field_ids is None or field["id"] in visible_field_ids
   ]
@@ -95,7 +104,11 @@ def build_export(
   field_keys=None,
   visible_field_ids=None,
 ):
-  columns = _selected_columns(field_keys, visible_field_ids)
+  # User-type columns resolve IDs to display names; archived users included
+  # so existing references still export meaningfully. Missing users export raw.
+  users_by_id = {str(user["id"]): user for user in get_users(include_archived=True)}
+
+  columns = _selected_columns(field_keys, visible_field_ids, users_by_id)
 
   items = get_items(
     search=search,
