@@ -513,6 +513,36 @@ def test_custom_field_get_requires_read_permission(
   assert response.status_code == 404
 
 
+def test_custom_field_update_requires_update_permission(
+  gen_test_admin,
+  gen_test_client,
+):
+  token = set_current_user(gen_test_admin)
+
+  try:
+    field_id = create_custom_field("Serial", "text")
+  finally:
+    reset_current_user(token)
+
+  _login_checker_with_field_grants(
+    gen_test_client,
+    gen_test_admin,
+    read_ids={field_id},
+  )
+
+  response = gen_test_client.post(
+    f"/custom-fields/{field_id}",
+    data={
+      "name": "Renamed",
+    },
+    headers={
+      "Accept": "application/json",
+    },
+  )
+
+  assert response.status_code == 403
+
+
 def test_admin_can_list_archived_custom_fields(
   gen_test_admin_client,
 ):

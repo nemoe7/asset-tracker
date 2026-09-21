@@ -180,7 +180,7 @@
 | EXP-009 | P5 | Export only information available to generating user. | 🟢 | EXP-001, AUT-004 | SEC-003 | |
 | FLD-012 | P5 | Validate custom-field values against configured type. | 🟢 | FLD-005 | SEC-008, IMP-005 | |
 | FLD-013 | P5 | Custom fields respect viewing/editing permissions. | 🟢 | FLD-002, AUT-004 | USR-009, USR-010 | |
-| REL-002 | P5 | Failed operations provide appropriate errors. | 🟡 | — | — | Complete coverage is not established |
+| REL-002 | P5 | Failed operations provide appropriate errors. | 🟢 | — | — | |
 | REL-007 | P5 | Missed scheduled backup recoverable at startup. | 🔴 | BKP-007 | BKP-006 | |
 | SEC-006 | P5 | Restrict backup/restore to authorized users. | 🔴 | BKP-011, BKP-012, AUT-003 | SEC-001 | |
 | USE-005 | P5 | Archive/restore require confirmation. | 🟢 | AST-004, AST-012 | BKP-013 | |

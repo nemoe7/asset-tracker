@@ -68,6 +68,50 @@ def test_admin_page_requires_login(
   assert response.status_code == 302
 
 
+def test_admin_users_tab_requires_user_permission(
+  gen_test_client,
+  gen_test_admin,
+):
+  _login_restricted_user(gen_test_client)
+
+  response = gen_test_client.get("/admin?tab=users")
+
+  assert response.status_code == 403
+
+
+def test_admin_roles_tab_requires_role_permission(
+  gen_test_client,
+  gen_test_admin,
+):
+  _login_restricted_user(gen_test_client)
+
+  response = gen_test_client.get("/admin?tab=roles")
+
+  assert response.status_code == 403
+
+
+def test_admin_locations_tab_requires_location_permission(
+  gen_test_client,
+  gen_test_admin,
+):
+  _login_restricted_user(gen_test_client)
+
+  response = gen_test_client.get("/admin?tab=locations")
+
+  assert response.status_code == 403
+
+
+def test_admin_custom_fields_tab_requires_field_permission(
+  gen_test_client,
+  gen_test_admin,
+):
+  _login_restricted_user(gen_test_client)
+
+  response = gen_test_client.get("/admin?tab=custom-fields")
+
+  assert response.status_code == 403
+
+
 # ==================== Users Tab ====================
 
 

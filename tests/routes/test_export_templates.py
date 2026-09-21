@@ -304,6 +304,60 @@ def test_delete_requires_login(gen_test_client):
   assert response.status_code == 302
 
 
+def test_update_nonexistent_template_is_404(gen_test_admin_client):
+  response = gen_test_admin_client.put(
+    "/export-templates/9999",
+    json={"name": "Renamed"},
+  )
+
+  assert response.status_code == 404
+  assert response.json["error"]
+
+
+def test_delete_nonexistent_template_is_404(gen_test_admin_client):
+  response = gen_test_admin_client.delete("/export-templates/9999")
+
+  assert response.status_code == 404
+  assert response.json["error"]
+
+
+def test_apply_nonexistent_template_is_404_for_non_admin(
+  gen_test_client,
+  other_user_id,
+  gen_password,
+):
+  gen_test_client.post(
+    "/auth/login",
+    data={"username": "bob", "password": gen_password("bob")},
+  )
+
+  response = gen_test_client.post("/export-templates/9999/apply")
+
+  assert response.status_code == 404
+
+
+def test_update_template_invalid_name(gen_test_admin_client, admin_template_id):
+  response = gen_test_admin_client.put(
+    f"/export-templates/{admin_template_id}",
+    json={"name": ""},
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
+def test_update_template_invalid_configuration(
+  gen_test_admin_client, admin_template_id
+):
+  response = gen_test_admin_client.put(
+    f"/export-templates/{admin_template_id}",
+    json={"configuration": {"unknown": 1}},
+  )
+
+  assert response.status_code == 400
+  assert response.json["error"]
+
+
 def test_apply_template_unreadable_field_exports_only_readable(
   gen_test_admin,
   gen_test_admin_client,
