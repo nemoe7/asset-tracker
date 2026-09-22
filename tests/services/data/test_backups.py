@@ -281,3 +281,75 @@ def test_restore_truncated_backup_raises_invalid_input(gen_test_data_admin):
 
   with pytest.raises(InvalidInputError):
     restore_backup(make_upload(data))
+
+
+# --- backup config (scheduled backups) ---
+
+from app.services.data.backups import get_backup_config, update_backup_config
+from app.services.exceptions.data.common import InvalidInputError
+
+DEFAULT_SCHEDULE = {"type": "weekly", "day": 6, "time": "03:00"}
+
+
+def test_get_backup_config_returns_defaults(gen_test_data_admin):
+  config = get_backup_config()
+  assert config["enabled"] is False
+  assert config["schedule"] == DEFAULT_SCHEDULE
+  assert "updated_at" in config
+
+
+def test_update_backup_config_persists_enabled_and_schedule(
+  gen_test_data_admin,
+):
+  update_backup_config(
+    enabled=True,
+    schedule={"type": "monthly", "day": 15, "time": "03:00"},
+  )
+  config = get_backup_config()
+  assert config["enabled"] is True
+  assert config["schedule"] == {"type": "monthly", "day": 15, "time": "03:00"}
+
+
+def test_update_backup_config_rejects_invalid_recurrence_type(
+  gen_test_data_admin,
+):
+  with pytest.raises(InvalidInputError):
+    update_backup_config(enabled=True, schedule={"type": "hourly"})
+
+
+def test_update_backup_config_rejects_daily_with_day(gen_test_data_admin):
+  with pytest.raises(InvalidInputError):
+    update_backup_config(enabled=True, schedule={"type": "daily", "day": 3})
+
+
+def test_update_backup_config_rejects_bad_time(gen_test_data_admin):
+  with pytest.raises(InvalidInputError):
+    update_backup_config(enabled=True, schedule={"type": "daily", "time": "9am"})
+
+
+def test_update_backup_config_rejects_monthly_day_out_of_range(
+  gen_test_data_admin,
+):
+  with pytest.raises(InvalidInputError):
+    update_backup_config(
+      enabled=True,
+      schedule={"type": "monthly", "day": 32, "time": "03:00"},
+    )
+
+
+def test_update_backup_config_updates_updated_at(gen_test_data_admin):
+  before = get_backup_config()["updated_at"]
+  update_backup_config(enabled=True)
+  after = get_backup_config()["updated_at"]
+  assert after >= before
+
+
+def test_get_backup_config_repairs_cron_schedule(gen_test_data_admin):
+  import app.services.data.db as db_module
+
+  with db_module.db_transaction() as conn:
+    conn.execute(
+      "UPDATE backup_config SET schedule = '0 3 * * 0' WHERE id = 1"
+    )
+  config = get_backup_config()
+  assert config["schedule"] == DEFAULT_SCHEDULE
