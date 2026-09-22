@@ -92,7 +92,7 @@
 | AUD-010 | P3 | Record affected field and previous/new values. | 🟢 | AUD-002 | CHK-008 | |
 | AUD-011 | P3 | Authorized users can view audit/activity logs on desktop/mobile. | 🟢 | AUT-003 | USR-012, AUD-012 | |
 | AUD-013 | P3 | Audit logs cannot be edited normally. | 🟢 | — | SEC-005 | |
-| BKP-007 | P3 | Perform missed scheduled backup on next startup. | 🔴 | BKP-006 | REL-007 | |
+| BKP-007 | P3 | Perform missed scheduled backup on next startup. | 🟢 | BKP-006 | REL-007 | |
 | BKP-010 | P3 | System backup includes all required application data. | 🟢 | — | REL-004 | Full SQLite DB snapshot incl. all tables and system config |
 | BKP-014 | P3 | Record backup/restoration events. | 🟢 | BKP-011, BKP-012 | AUD-007 | |
 | CMP-001 | P3 | Support current common desktop browsers. | 🟢 | USE-001 | — | Playwright-emulated engines only; no physical-device matrix |
@@ -164,27 +164,27 @@
 | AUT-016 | P5 | Permission changes apply on subsequent checks without re-login. | 🟢 | AUT-003 | — | |
 | AUT-017 | P5 | Authorization checks use `namespace.operation`. | 🟢 | AUT-007 | — | |
 | AUD-012 | P5 | Restrict audit-log visibility by permission. | 🟢 | USR-012, AUT-003 | AUD-011 | |
-| BKP-001 | P5 | Automatic backups disabled by default. | 🔴 | — | BKP-003 | |
-| BKP-002 | P5 | Prompt Admin to configure backups on first initialization. | 🔴 | BKP-001 | — | |
-| BKP-003 | P5 | Admins can enable/disable automatic backups. | 🔴 | BKP-001 | BKP-004 | |
-| BKP-004 | P5 | Admins can configure backup schedule. | 🔴 | BKP-003 | BKP-005 | |
-| BKP-005 | P5 | Default schedule is Sunday 03:00 weekly. | 🔴 | BKP-004 | — | |
-| BKP-006 | P5 | Detect missed scheduled backups. | 🔴 | BKP-004 | BKP-007, BKP-008 | |
-| BKP-008 | P5 | Avoid duplicate backups for a scheduled period. | 🔴 | BKP-006 | — | |
-| BKP-009 | P5 | Record scheduled and actual backup times. | 🔴 | BKP-006 | AUD-007, REL-006 | |
-| BKP-015 | P5 | Provide backup status/confirmation. | 🔴 | BKP-011 | REL-005, REL-006 | |
-| BKP-016 | P5 | Configurable backup storage location. | 🔴 | — | BKP-017, BKP-018 | |
-| BKP-017 | P5 | Default backup location is mounted deployment directory. | 🔴 | BKP-016 | — | |
-| BKP-018 | P5 | Backup location configurable independently of runtime. | 🔴 | BKP-016 | BKP-019 | |
-| BKP-019 | P5 | Support external backup locations such as NAS where practical. | 🔴 | BKP-018 | — | |
+| BKP-001 | P5 | Automatic backups disabled by default. | 🟢 | — | BKP-003 | |
+| BKP-002 | P5 | Prompt Admin to configure backups on first initialization. | 🟡 | BKP-001 | — | Data tab shows configure prompt when automatic backups disabled; no dedicated first-run wizard |
+| BKP-003 | P5 | Admins can enable/disable automatic backups. | 🟢 | BKP-001 | BKP-004 | |
+| BKP-004 | P5 | Admins can configure backup schedule. | 🟢 | BKP-003 | BKP-005 | |
+| BKP-005 | P5 | Default schedule is Sunday 03:00 weekly. | 🟢 | BKP-004 | — | |
+| BKP-006 | P5 | Detect missed scheduled backups. | 🟢 | BKP-004 | BKP-007, BKP-008 | |
+| BKP-008 | P5 | Avoid duplicate backups for a scheduled period. | 🟢 | BKP-006 | — | |
+| BKP-009 | P5 | Record scheduled and actual backup times. | 🟢 | BKP-006 | AUD-007, REL-006 | |
+| BKP-015 | P5 | Provide backup status/confirmation. | 🟢 | BKP-011 | REL-005, REL-006 | |
+| BKP-016 | P5 | Configurable backup storage location. | 🟢 | — | BKP-017, BKP-018 | |
+| BKP-017 | P5 | Default backup location is mounted deployment directory. | 🟢 | BKP-016 | — | |
+| BKP-018 | P5 | Backup location configurable independently of runtime. | 🟢 | BKP-016 | BKP-019 | |
+| BKP-019 | P5 | Support external backup locations such as NAS where practical. | 🟢 | BKP-018 | — | |
 | EXP-009 | P5 | Export only information available to generating user. | 🟢 | EXP-001, AUT-004 | SEC-003 | |
 | FLD-012 | P5 | Validate custom-field values against configured type. | 🟢 | FLD-005 | SEC-008, IMP-005 | |
 | FLD-013 | P5 | Custom fields respect viewing/editing permissions. | 🟢 | FLD-002, AUT-004 | USR-009, USR-010 | |
 | REL-002 | P5 | Failed operations provide appropriate errors. | 🟢 | — | — | |
-| REL-007 | P5 | Missed scheduled backup recoverable at startup. | 🔴 | BKP-007 | BKP-006 | |
+| REL-007 | P5 | Missed scheduled backup recoverable at startup. | 🟢 | BKP-007 | BKP-006 | |
 | SEC-006 | P5 | Restrict backup/restore to authorized users. | 🟢 | BKP-011, BKP-012, AUT-003 | SEC-001 | Manual backups only; no files persist server-side. Scheduled backups (BKP-016+) must add at-rest protection |
 | USE-005 | P5 | Archive/restore require confirmation. | 🟢 | AST-004, AST-012 | BKP-013 | |
-| USE-006 | P5 | Backup UI shows enabled state and next scheduled backup. | 🔴 | BKP-015 | BKP-004 | |
+| USE-006 | P5 | Backup UI shows enabled state and next scheduled backup. | 🟢 | BKP-015 | BKP-004 | |
 | AST-014 | P5 | Archiving an asset requires a reason from the defined values. | 🟢 | AST-004 | AST-015, USE-005 | |
 | AST-015 | P5 | Archiving an asset can include free-format notes. | 🟢 | AST-004 | AST-014 | |
 | AST-016 | P5 | Archived assets retain archival reason/notes; archival audit event includes them. | 🟢 | AST-014, AUD-003 | AST-017 | Viewing an archived asset displays the archival reason and notes |
