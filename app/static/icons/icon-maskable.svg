@@ -4,8 +4,8 @@
 <radialGradient id="purple" cx="1" cy="1" r=".85"><stop stop-color="#A444F0" stop-opacity=".65"/><stop offset="1" stop-color="#A444F0" stop-opacity="0"/></radialGradient>
 <linearGradient id="porcelain" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#FFFFFF"/><stop offset=".5" stop-color="#F6F6F8"/><stop offset="1" stop-color="#DEDEE3"/></linearGradient>
 <linearGradient id="edge" x1="0" y1="0" x2=".65" y2="1"><stop stop-color="#FFFFFF" stop-opacity=".15"/><stop offset=".5" stop-color="#FFFFFF" stop-opacity=".06"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".06"/></linearGradient>
-<clipPath id="tile"><rect width="512" height="512" rx="104"/></clipPath>
+<clipPath id="tile"><rect width="512" height="512" rx="0"/></clipPath>
 <filter id="shadow" x="-40%" y="-40%" width="180%" height="200%"><feDropShadow dx="0" dy="14" stdDeviation="13" flood-color="#000000" flood-opacity=".38"/></filter>
-</defs><g clip-path="url(#tile)"><rect width="512" height="512" fill="#18181B"/><rect x="1.5" y="1.5" width="509" height="509" rx="102.5" fill="none" stroke="url(#edge)" stroke-width="3"/></g><g filter="url(#shadow)"><g fill="#ACACB5" transform="translate(0 3)"><rect x="112" y="126" width="288" height="50" rx="14"/>
+</defs><g clip-path="url(#tile)"><rect width="512" height="512" fill="#18181B"/></g><g filter="url(#shadow)"><g fill="#ACACB5" transform="translate(0 3)"><rect x="112" y="126" width="288" height="50" rx="14"/>
 <path fill-rule="evenodd" d="M128 200H384V342C384 366.301 364.301 386 340 386H172C147.699 386 128 366.301 128 342V200ZM214 236C208.477 236 204 240.477 204 246C204 251.523 208.477 256 214 256H298C303.523 256 308 251.523 308 246C308 240.477 303.523 236 298 236H214Z"/></g><g fill="url(#porcelain)"><rect x="112" y="126" width="288" height="50" rx="14"/>
 <path fill-rule="evenodd" d="M128 200H384V342C384 366.301 364.301 386 340 386H172C147.699 386 128 366.301 128 342V200ZM214 236C208.477 236 204 240.477 204 246C204 251.523 208.477 256 214 256H298C303.523 256 308 251.523 308 246C308 240.477 303.523 236 298 236H214Z"/></g></g></svg>
