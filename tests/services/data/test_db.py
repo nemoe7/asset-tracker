@@ -281,3 +281,20 @@ def test_db_connection_sets_busy_timeout(gen_test_data_admin):
     timeout = connection.execute("PRAGMA busy_timeout").fetchone()[0]
 
     assert timeout == 5000
+
+
+def test_migration_statements_split():
+  """Regression test: _migration_statements should split on semicolons."""
+  from app.services.data.db import _migration_statements
+
+  script = """
+  CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT);
+  INSERT INTO users VALUES (1, 'Alice');
+  CREATE INDEX idx_users_name ON users(name);
+  """
+
+  statements = list(_migration_statements(script))
+  assert len(statements) == 3
+  assert statements[0].strip() == "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"
+  assert statements[1].strip() == "INSERT INTO users VALUES (1, 'Alice')"
+  assert statements[2].strip() == "CREATE INDEX idx_users_name ON users(name)"
