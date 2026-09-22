@@ -191,14 +191,20 @@ def test_filter_applies_custom_field_filters(
 def test_filter_clear_removes_field_filter_rows(page, live_server, sort_fields):
   open_filter_modal(page, live_server)
 
+  rows = page.locator("#custom-field-filter-rows .cf-filter-row")
+
   page.locator("#add-field-filter-button").click()
   page.locator("#add-field-filter-button").click()
+
+  # Row appends await the custom-fields fetch; adding rows is only
+  # done once both are visible, or a late append would land after Clear.
+  expect(rows).to_have_count(2)
 
   page.get_by_role("button", name="Clear").click()
 
   page.locator("#filter-item-button").click()
 
-  expect(page.locator("#custom-field-filter-rows .cf-filter-row")).to_have_count(0)
+  expect(rows).to_have_count(0)
 
 
 @pytest.mark.e2e
