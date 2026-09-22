@@ -101,3 +101,76 @@ def test_backup_button_downloads_backup_file(page, live_server, setup_admin):
   assert header.startswith(b"SQLite format 3\x00")
 
   expect(page.locator("#backup-status")).to_contain_text("downloaded successfully")
+
+
+@pytest.mark.e2e
+def test_automatic_backup_section_shows_disabled_default(
+  page, live_server, setup_admin
+):
+  page.goto(f"{live_server}/admin?tab=data")
+  expect(page.get_by_role("heading", name="Automatic backup")).to_be_visible()
+  expect(page.locator("#backup-schedule-summary")).to_contain_text("Disabled")
+  expect(page.locator("#backup-config-edit-button")).to_be_visible()
+
+
+@pytest.mark.e2e
+def test_backup_config_modal_updates_day_selector_visibility(
+  page, live_server, setup_admin
+):
+  page.goto(f"{live_server}/admin?tab=data")
+
+  dialog = page.locator("#backup-config-dialog")
+  expect(dialog).to_be_hidden()
+
+  page.locator("#backup-config-edit-button").click()
+
+  expect(dialog).to_be_visible()
+  expect(page.locator("#modal-manager")).to_be_visible()
+
+  recurrence = page.locator("#backup-recurrence")
+  expect(page.locator("#backup-day-weekly-wrap")).to_be_visible()
+  expect(page.locator("#backup-day-monthly-wrap")).to_be_hidden()
+
+  recurrence.select_option("daily")
+  expect(page.locator("#backup-day-weekly-wrap")).to_be_hidden()
+  expect(page.locator("#backup-day-monthly-wrap")).to_be_hidden()
+
+  recurrence.select_option("monthly")
+  expect(page.locator("#backup-day-weekly-wrap")).to_be_hidden()
+  expect(page.locator("#backup-day-monthly-wrap")).to_be_visible()
+
+  page.locator("#backup-config-cancel").click()
+  expect(dialog).to_be_hidden()
+
+
+@pytest.mark.e2e
+def test_backup_config_save_persists_and_updates_summary(
+  page, live_server, setup_admin
+):
+  page.goto(f"{live_server}/admin?tab=data")
+  page.locator("#backup-config-edit-button").click()
+
+  page.locator("#backup-enabled").check()
+  page.locator("#backup-recurrence").select_option("monthly")
+  page.locator("#backup-day-monthly").select_option("15")
+  page.locator("#backup-time").fill("04:30")
+  page.locator("#backup-config-save").click()
+
+  expect(page.locator("#backup-config-status")).to_contain_text("saved")
+  expect(page.locator("#backup-schedule-summary")).to_contain_text("Enabled")
+  expect(page.locator("#backup-schedule-summary")).to_contain_text("day 15")
+
+  page.reload()
+  expect(page.locator("#backup-schedule-summary")).to_contain_text("day 15")
+
+
+@pytest.mark.e2e
+def test_backup_config_save_invalid_time_shows_error(
+  page, live_server, setup_admin
+):
+  page.goto(f"{live_server}/admin?tab=data")
+  page.locator("#backup-config-edit-button").click()
+  page.locator("#backup-recurrence").select_option("daily")
+  page.locator("#backup-time").fill("")
+  page.locator("#backup-config-save").click()
+  expect(page.locator("#backup-config-error")).to_be_visible()

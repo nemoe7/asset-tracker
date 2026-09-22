@@ -1283,3 +1283,246 @@ resetDatabaseForm?.addEventListener('submit', async (event) => {
 });
 
 // ==================== End Reset Database ====================
+
+
+// ==================== Automatic Backup Configuration ====================
+
+const backupConfigEditButton = document.getElementById('backup-config-edit-button');
+const backupConfigDialog = document.getElementById('backup-config-dialog');
+const backupConfigForm = document.getElementById('backup-config-form');
+const backupEnabledInput = document.getElementById('backup-enabled');
+const backupRecurrenceSelect = document.getElementById('backup-recurrence');
+const backupTimeInput = document.getElementById('backup-time');
+const backupDayWeeklyWrap = document.getElementById('backup-day-weekly-wrap');
+const backupDayWeeklySelect = document.getElementById('backup-day-weekly');
+const backupDayMonthlyWrap = document.getElementById('backup-day-monthly-wrap');
+const backupDayMonthlySelect = document.getElementById('backup-day-monthly');
+const backupScheduleSummary = document.getElementById('backup-schedule-summary');
+const backupNextRun = document.getElementById('backup-next-run');
+const backupConfigError = document.getElementById('backup-config-error');
+const backupConfigStatus = document.getElementById('backup-config-status');
+const backupConfigCancelButton = document.getElementById('backup-config-cancel');
+const backupConfigSaveButton = document.getElementById('backup-config-save');
+
+const BACKUP_DEFAULT_SCHEDULE = { type: 'weekly', day: 6, time: '03:00' };
+const BACKUP_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+let backupConfig = { enabled: false, schedule: BACKUP_DEFAULT_SCHEDULE };
+
+function describeBackupSchedule(schedule) {
+  const time = schedule.time || '03:00';
+
+  switch (schedule.type) {
+    case 'daily':
+      return `Daily at ${time}`;
+    case 'weekly':
+      return `Weekly on ${BACKUP_DAY_NAMES[schedule.day]} at ${time}`;
+    case 'bi-weekly':
+      return `Every 2 weeks on ${BACKUP_DAY_NAMES[schedule.day]} at ${time}`;
+    case 'monthly':
+      return `Monthly on day ${schedule.day} at ${time}`;
+    default:
+      return 'Not configured';
+  }
+}
+
+function renderBackupScheduleSummary() {
+  if (!backupScheduleSummary) {
+    return;
+  }
+
+  const description = describeBackupSchedule(backupConfig.schedule || BACKUP_DEFAULT_SCHEDULE);
+
+  backupScheduleSummary.textContent = backupConfig.enabled
+    ? `Enabled — ${description}`
+    : `Disabled — ${description}`;
+}
+
+function renderBackupNextRun() {
+  if (!backupNextRun) {
+    return;
+  }
+
+  if (!backupConfig.enabled) {
+    backupNextRun.textContent = '— (disabled)';
+    return;
+  }
+
+  backupNextRun.textContent = formatBackupNextRun(backupConfig.schedule || BACKUP_DEFAULT_SCHEDULE, new Date());
+}
+
+function addBackupDays(date, days) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function formatBackupNextRun(schedule, after) {
+  const [hours, minutes] = (schedule.time || '03:00').split(':').map(Number);
+
+  function at(day) {
+    const candidate = new Date(day);
+    candidate.setHours(hours, minutes, 0, 0);
+    return candidate;
+  }
+
+  let candidate = at(after);
+
+  if (candidate <= after) {
+    candidate = at(addBackupDays(after, 1));
+  }
+
+  if (schedule.type === 'daily') {
+    return candidate.toLocaleString();
+  }
+
+  if (schedule.type === 'monthly') {
+    let target = new Date(after.getFullYear(), after.getMonth(), schedule.day, hours, minutes);
+    if (target <= after) {
+      target = new Date(after.getFullYear(), after.getMonth() + 1, schedule.day, hours, minutes);
+    }
+    return target.toLocaleString();
+  }
+
+  while (candidate.getDay() !== schedule.day) {
+    candidate = addBackupDays(candidate, 1);
+  }
+
+  if (schedule.type === 'weekly') {
+    return candidate.toLocaleString();
+  }
+
+  // bi-weekly: align to the configured weekday, then skip to the next
+  // occurrence on an even week parity from the Monday of the current week.
+  const weekStart = new Date(after);
+  weekStart.setHours(0, 0, 0, 0);
+  const monday = addBackupDays(weekStart, -((weekStart.getDay() + 6) % 7));
+  const weekNumber = Math.floor((candidate - monday) / (7 * 24 * 3600 * 1000));
+
+  if (weekNumber % 2 === 0) {
+    return candidate.toLocaleString();
+  }
+
+  return addBackupDays(candidate, 7).toLocaleString();
+}
+
+function syncBackupDayVisibility() {
+  const type = backupRecurrenceSelect.value;
+
+  backupDayWeeklyWrap?.classList.toggle('hidden', type !== 'weekly' && type !== 'bi-weekly');
+  backupDayMonthlyWrap?.classList.toggle('hidden', type !== 'monthly');
+}
+
+function fillBackupConfigForm() {
+  const schedule = backupConfig.schedule || BACKUP_DEFAULT_SCHEDULE;
+
+  backupEnabledInput.checked = Boolean(backupConfig.enabled);
+  backupRecurrenceSelect.value = schedule.type || 'weekly';
+  backupTimeInput.value = schedule.time || '03:00';
+  backupDayWeeklySelect.value = String(schedule.day ?? BACKUP_DEFAULT_SCHEDULE.day);
+  backupDayMonthlySelect.value = String(schedule.day ?? 1);
+  backupConfigError?.classList.add('hidden');
+  syncBackupDayVisibility();
+}
+
+function showBackupConfigError(message) {
+  if (!backupConfigError) {
+    return;
+  }
+
+  backupConfigError.textContent = message;
+  backupConfigError.classList.remove('hidden');
+}
+
+function showBackupConfigStatus(message, isError) {
+  if (!backupConfigStatus) {
+    return;
+  }
+
+  backupConfigStatus.textContent = message;
+  backupConfigStatus.classList.remove('hidden');
+  backupConfigStatus.classList.toggle('text-red-400', Boolean(isError));
+  backupConfigStatus.classList.toggle('text-emerald-400', !isError);
+}
+
+async function loadBackupConfig() {
+  try {
+    const response = await fetch('/backups/config');
+
+    if (!response.ok) {
+      throw new Error('Failed to load backup configuration');
+    }
+
+    backupConfig = await response.json();
+    renderBackupScheduleSummary();
+    renderBackupNextRun();
+  } catch {
+    backupScheduleSummary.textContent = 'Unavailable';
+  }
+}
+
+backupConfigEditButton?.addEventListener('click', () => {
+  fillBackupConfigForm();
+  openModal(backupConfigDialog);
+});
+
+backupConfigCancelButton?.addEventListener('click', () => {
+  closeModal();
+});
+
+backupRecurrenceSelect?.addEventListener('change', syncBackupDayVisibility);
+
+backupConfigForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  backupConfigError?.classList.add('hidden');
+
+  const type = backupRecurrenceSelect.value;
+  const timeValue = backupTimeInput.value;
+
+  if (!timeValue) {
+    showBackupConfigError('Time is required (HH:MM, 24h).');
+    return;
+  }
+
+  const schedule = { type, time: timeValue };
+
+  if (type === 'weekly' || type === 'bi-weekly') {
+    schedule.day = Number(backupDayWeeklySelect.value);
+  }
+
+  if (type === 'monthly') {
+    schedule.day = Number(backupDayMonthlySelect.value);
+  }
+
+  backupConfigSaveButton.setAttribute('disabled', '');
+
+  try {
+    const response = await fetch('/backups/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: backupEnabledInput.checked, schedule }),
+    });
+
+    const body = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      showBackupConfigError(body.error || 'Save failed');
+      return;
+    }
+
+    backupConfig = body;
+    renderBackupScheduleSummary();
+    renderBackupNextRun();
+    showBackupConfigStatus('Backup configuration saved.', false);
+    closeModal();
+  } catch {
+    showBackupConfigError('Save failed');
+  } finally {
+    backupConfigSaveButton.removeAttribute('disabled');
+  }
+});
+
+loadBackupConfig();
+
+// ==================== End Automatic Backup Configuration ====================
