@@ -286,7 +286,13 @@ def test_admin_page_cancel_add_permission_does_not_persist(
   role_id = row.locator(".edit-role").get_attribute("data-role-id")
   expect(row).to_be_visible()
 
-  row.locator(".edit-role").click()
+  with page.expect_response(
+    lambda response: response.url.endswith(
+      f"/admin/roles/{role_id}/permissions"
+    )
+    and response.status == 200,
+  ):
+    row.locator(".edit-role").click()
   dialog = page.locator("#edit-role-dialog")
   expect(dialog).to_be_visible()
 
