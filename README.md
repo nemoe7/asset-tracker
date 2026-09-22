@@ -289,7 +289,7 @@ Backups should be stored separately from the running application where practical
 
 Before restoring a backup, Astra provides a warning because restoration replaces the current database state.
 
-Automated scheduled backups and additional backup/security controls are still under development.
+Scheduled backups are supported and configured through the Data tab.
 
 ## Project Status
 
@@ -304,7 +304,7 @@ Core inventory functionality is implemented, including:
 - Manual backup and restore
 - Desktop and mobile interfaces
 
-Administrative interfaces for managing users, roles, and permissions, along with additional backup and security functionality, remain under development.
+Administrative interfaces for managing users, roles, and permissions remain under development.
 
 See [`docs/implementation.md`](docs/implementation.md) for the current implementation status.
 

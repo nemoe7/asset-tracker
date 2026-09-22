@@ -97,7 +97,6 @@ erDiagram
         integer id PK "Singleton: id must always equal 1"
         integer enabled "NOT NULL DEFAULT 0, CHECK in (0, 1)"
         text schedule "NOT NULL"
-        text backup_location "NOT NULL"
         text updated_at "NOT NULL"
     }
     backup_history {

@@ -669,12 +669,12 @@ The project will be considered complete when:
 - [x] Authorized users can export asset data in an agreed Excel-compatible format.
 - [ ] Export templates can save and apply predefined filters.
 - [x] The system can create manual backups.
-- [ ] Automatic backups are disabled by default.
-- [ ] The system prompts the Admin to configure automatic backups during first-time initialization.
-- [ ] Admins can configure the automatic backup schedule.
-- [ ] The system detects missed scheduled backups.
-- [ ] A missed scheduled backup is performed on the next application startup.
-- [ ] The system avoids duplicate execution of the same scheduled backup.
+- [x] Automatic backups are disabled by default.
+- [x] The system prompts the Admin to configure automatic backups during first-time initialization.
+- [x] Admins can configure the automatic backup schedule.
+- [x] The system detects missed scheduled backups.
+- [x] A missed scheduled backup is performed on the next application startup.
+- [x] The system avoids duplicate execution of the same scheduled backup.
 - [x] Backups contain all required asset, user, permission, custom field, and log data.
 - [ ] Backup files are stored in the configured backup location.
 - [ ] The configured backup location can be accessed outside the application runtime environment.
