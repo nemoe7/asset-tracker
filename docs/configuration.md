@@ -141,7 +141,7 @@ The application listens on port `5000` inside the container.
 To expose Astra to your network via Tailscale funnel, run:
 
 ```bash
-docker exec ${ASTRA_ID}-tailscale tailscale funnel --bg http://app:5000
+docker exec ${ASTRA_ID}-tailscale tailscale funnel --bg http://astra:5000
 ```
 
 Check the funnel status:

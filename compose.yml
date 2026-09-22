@@ -1,5 +1,5 @@
 services:
-  app:
+  astra:
     image: ghcr.io/nemoe7/asset-tracker:latest
     container_name: ${ASTRA_ID}
     restart: unless-stopped
@@ -22,7 +22,7 @@ services:
     networks:
       - astra
 
-  astra-tailscale:
+  tailscale:
     image: tailscale/tailscale:stable
     container_name: ${ASTRA_ID}-tailscale
     hostname: ${ASTRA_ID}
