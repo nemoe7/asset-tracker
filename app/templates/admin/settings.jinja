@@ -482,25 +482,25 @@
 
       {# ==================== Field Permissions ==================== #}
       {% call modal("field-permissions-dialog", "Field permissions") %}
-        <p class="text-sm text-zinc-400">
-          Choose which roles can view and edit this field. The Admin role always has full access.
-        </p>
+      <p class="text-sm text-zinc-400">
+        Choose which roles can view and edit this field. The Admin role always has full access.
+      </p>
 
-        <div id="field-permissions-body" class="mt-4">
-          <p class="text-sm text-zinc-500">Loading…</p>
-        </div>
+      <div id="field-permissions-body" class="mt-4">
+        <p class="text-sm text-zinc-500">Loading…</p>
+      </div>
 
-        <div class="mt-6 flex justify-end gap-3">
-          <button type="button" id="cancel-field-permissions"
-            class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
-            Cancel
-          </button>
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" id="cancel-field-permissions"
+          class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+          Cancel
+        </button>
 
-          <button type="button" id="save-field-permissions"
-            class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
-            Save
-          </button>
-        </div>
+        <button type="button" id="save-field-permissions"
+          class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+          Save
+        </button>
+      </div>
       {% endcall %}
       {# ==================== End Field Permissions ==================== #}
 
@@ -609,8 +609,8 @@
             <div class="flex shrink-0 gap-1">
               <button type="button"
                 class="field-permissions rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
-                data-field-id="{{ field.id }}" data-field-name="{{ field.name }}"
-                title="Configure field permissions" aria-label="Configure field permissions">
+                data-field-id="{{ field.id }}" data-field-name="{{ field.name }}" title="Configure field permissions"
+                aria-label="Configure field permissions">
                 <i class="bi bi-shield-lock" aria-hidden="true"></i>
               </button>
               <button type="button"
@@ -733,8 +733,7 @@
 
         <div class="mt-4">
           <label for="add-user-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
-          <input id="add-user-name" name="name" type="text" value="{{ user_name or '' }}"
-            class="form-input">
+          <input id="add-user-name" name="name" type="text" value="{{ user_name or '' }}" class="form-input">
         </div>
 
         <div class="mt-4">
@@ -761,32 +760,32 @@
 
       {# ==================== Restore Archived User Confirmation ==================== #}
       {% call modal("restore-archived-user-dialog", "Username already in use") %}
-        <form method="post" action="{{ url_for('admin.create_user_route') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="username" value="{{ archived_username_conflict or '' }}">
-          <input type="hidden" name="name" value="{{ user_name or '' }}">
-          <input type="hidden" name="password" value="{{ user_password or '' }}">
-          <input type="hidden" name="restore_archived" value="true">
+      <form method="post" action="{{ url_for('admin.create_user_route') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="username" value="{{ archived_username_conflict or '' }}">
+        <input type="hidden" name="name" value="{{ user_name or '' }}">
+        <input type="hidden" name="password" value="{{ user_password or '' }}">
+        <input type="hidden" name="restore_archived" value="true">
 
-          <p class="text-sm text-zinc-400">
-            The username
-            <span class="font-medium text-zinc-200">{{ archived_username_conflict }}</span>
-            belongs to an archived user. Restore that user to continue?
-          </p>
+        <p class="text-sm text-zinc-400">
+          The username
+          <span class="font-medium text-zinc-200">{{ archived_username_conflict }}</span>
+          belongs to an archived user. Restore that user to continue?
+        </p>
 
-          <div class="mt-6 flex justify-end gap-3">
-            <button type="button" id="cancel-restore-archived-user"
-              class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
-              Cancel
-            </button>
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" id="cancel-restore-archived-user"
+            class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+            Cancel
+          </button>
 
-            <button type="submit"
-              class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
-              <i class="bi bi-arrow-counterclockwise mr-1" aria-hidden="true"></i>
-              Restore &amp; continue
-            </button>
-          </div>
-        </form>
+          <button type="submit"
+            class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+            <i class="bi bi-arrow-counterclockwise mr-1" aria-hidden="true"></i>
+            Restore &amp; continue
+          </button>
+        </div>
+      </form>
       {% endcall %}
       {# ==================== End Restore Archived User Confirmation ==================== #}
 
@@ -849,8 +848,8 @@
 
           <div class="mt-3 flex gap-2">
             <label for="edit-user-permission-name" class="sr-only">Add permission</label>
-            <input id="edit-user-permission-name" type="text" autocomplete="off"
-              list="known-permissions-list" placeholder="Add permission..."
+            <input id="edit-user-permission-name" type="text" autocomplete="off" list="known-permissions-list"
+              placeholder="Add permission..."
               class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
             <button type="button" id="edit-user-permission-add"
               class="flex shrink-0 items-center justify-center gap-1 rounded-lg border border-zinc-700 px-3 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100">
@@ -863,7 +862,8 @@
             Duplicate permission.
           </p>
 
-          <p class="mt-1 text-xs text-zinc-500">Direct overrides win over role permissions. Click a chip to toggle allow/deny.</p>
+          <p class="mt-1 text-xs text-zinc-500">Direct overrides win over role permissions. Click a chip to toggle
+            allow/deny.</p>
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
@@ -947,14 +947,14 @@
                 <td class="px-5 py-4">
                   <div class="flex flex-wrap gap-1">
                     {% if user.roles %}
-                      {% for role in user.roles %}
-                      <span
-                        class="rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">
-                        {{ role.role_name }}
-                      </span>
-                      {% endfor %}
+                    {% for role in user.roles %}
+                    <span
+                      class="rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">
+                      {{ role.role_name }}
+                    </span>
+                    {% endfor %}
                     {% else %}
-                      <span class="text-xs text-zinc-500">—</span>
+                    <span class="text-xs text-zinc-500">—</span>
                     {% endif %}
                   </div>
                 </td>
@@ -963,9 +963,10 @@
                     <button type="button"
                       class="edit-user rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                       data-user-id="{{ user.id }}" data-user-username="{{ user.username }}"
-                      data-user-name="{{ user.name or '' }}" data-user-roles="{{ user.roles | map(attribute='role_id') | join(',') }}"
-                      data-update-url="{{ url_for('admin.update_user_route', user_id=user.id) }}"
-                      title="Edit user" aria-label="Edit user">
+                      data-user-name="{{ user.name or '' }}"
+                      data-user-roles="{{ user.roles | map(attribute='role_id') | join(',') }}"
+                      data-update-url="{{ url_for('admin.update_user_route', user_id=user.id) }}" title="Edit user"
+                      aria-label="Edit user">
                       <i class="bi bi-pencil" aria-hidden="true"></i>
                     </button>
                     {% if user.id != session.user_id %}
@@ -1003,14 +1004,14 @@
               <button type="button"
                 class="edit-user rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                 data-user-id="{{ user.id }}" data-user-username="{{ user.username }}"
-                data-user-name="{{ user.name or '' }}" data-user-roles="{{ user.roles | map(attribute='role_id') | join(',') }}"
-                data-update-url="{{ url_for('admin.update_user_route', user_id=user.id) }}"
-                title="Edit user" aria-label="Edit user">
+                data-user-name="{{ user.name or '' }}"
+                data-user-roles="{{ user.roles | map(attribute='role_id') | join(',') }}"
+                data-update-url="{{ url_for('admin.update_user_route', user_id=user.id) }}" title="Edit user"
+                aria-label="Edit user">
                 <i class="bi bi-pencil" aria-hidden="true"></i>
               </button>
               {% if user.id != session.user_id %}
-              <form method="post" action="{{ url_for('admin.archive_user_route', user_id=user.id) }}"
-                data-archive-user>
+              <form method="post" action="{{ url_for('admin.archive_user_route', user_id=user.id) }}" data-archive-user>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
                   title="Archive user" aria-label="Archive user">
@@ -1061,8 +1062,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mt-4">
           <label for="add-role-name" class="mb-2 block text-sm font-medium text-zinc-300">Name</label>
-          <input id="add-role-name" name="name" type="text" required value="{{ role_name or '' }}"
-            class="form-input">
+          <input id="add-role-name" name="name" type="text" required value="{{ role_name or '' }}" class="form-input">
         </div>
 
         <div class="mt-4">
@@ -1208,14 +1208,14 @@
                 <td class="px-5 py-4">
                   {% set perms = role.permissions %}
                   {% if perms %}
-                    {% for permission in perms %}
-                    <span
-                      class="mr-1 inline-block rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide {{ 'text-emerald-400' if permission.allowed else 'text-red-400' }}">
-                      {{ permission.permission }}
-                    </span>
-                    {% endfor %}
+                  {% for permission in perms %}
+                  <span
+                    class="mr-1 inline-block rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide {{ 'text-emerald-400' if permission.allowed else 'text-red-400' }}">
+                    {{ permission.permission }}
+                  </span>
+                  {% endfor %}
                   {% else %}
-                    <span class="text-xs text-zinc-500">—</span>
+                  <span class="text-xs text-zinc-500">—</span>
                   {% endif %}
                 </td>
                 <td class="px-5 py-4">
@@ -1224,8 +1224,8 @@
                       class="edit-role rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                       data-role-id="{{ role.id }}" data-role-name="{{ role.name }}"
                       data-role-description="{{ role.description or '' }}"
-                      data-update-url="{{ url_for('admin.update_role_route', role_id=role.id) }}"
-                      title="Edit role" aria-label="Edit role">
+                      data-update-url="{{ url_for('admin.update_role_route', role_id=role.id) }}" title="Edit role"
+                      aria-label="Edit role">
                       <i class="bi bi-pencil" aria-hidden="true"></i>
                     </button>
                     {% if not is_role_assigned(role.id) and not is_admin_role(role.id) %}
@@ -1264,13 +1264,12 @@
                 class="edit-role rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                 data-role-id="{{ role.id }}" data-role-name="{{ role.name }}"
                 data-role-description="{{ role.description or '' }}"
-                data-update-url="{{ url_for('admin.update_role_route', role_id=role.id) }}"
-                title="Edit role" aria-label="Edit role">
+                data-update-url="{{ url_for('admin.update_role_route', role_id=role.id) }}" title="Edit role"
+                aria-label="Edit role">
                 <i class="bi bi-pencil" aria-hidden="true"></i>
               </button>
               {% if not is_role_assigned(role.id) and not is_admin_role(role.id) %}
-              <form method="post" action="{{ url_for('admin.delete_role_route', role_id=role.id) }}"
-                data-delete-role>
+              <form method="post" action="{{ url_for('admin.delete_role_route', role_id=role.id) }}" data-delete-role>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="rounded-lg p-2 text-red-400 transition hover:bg-red-950 hover:text-red-300"
                   title="Delete role" aria-label="Delete role">
@@ -1298,7 +1297,7 @@
       {% endif %}
       {# ==================== End Roles List ==================== #}
 
-          </section>
+    </section>
     {% endif %}
     {# ==================== End Roles Panel ==================== #}
 
@@ -1373,7 +1372,7 @@
                 <button type="button" id="backup-button"
                   class="min-w-40 shrink-0 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
                   <i class="bi bi-download mr-1" aria-hidden="true"></i>
-                  Download backup
+                  Download .db
                 </button>
               </td>
             </tr>
@@ -1400,7 +1399,7 @@
                   <button type="button" id="restore-choose-button"
                     class="min-w-40 truncate rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
                     <i class="bi bi-upload mr-1" aria-hidden="true"></i>
-                    <span id="restore-choose-label">Choose backup file…</span>
+                    <span id="restore-choose-label">Upload .db</span>
                   </button>
 
                   <p id="restore-status" aria-live="polite" class="hidden text-sm"></p>
@@ -1418,8 +1417,8 @@
       </div>
       {# ==================== End Backup ==================== #}
 
-      {# ==================== Automatic Backup ==================== #}
-      <h2 class="mt-6 text-lg font-semibold">Automatic backup</h2>
+      {# ==================== Scheduled Backup ==================== #}
+      <h2 class="mt-6 text-lg font-semibold">Scheduled Backup</h2>
       <div class="mt-3 rounded-xl border border-zinc-800 bg-zinc-900/50">
         <table class="w-full text-left">
           <tbody class="divide-y divide-zinc-800">
@@ -1448,14 +1447,14 @@
 
       <div id="backup-config-dialog" class="hidden p-6">
         <h2 class="text-lg font-semibold">
-          Configure automatic backups
+          Configure scheduled backups
         </h2>
 
         <form id="backup-config-form">
           <div class="mt-5 flex items-center gap-3">
             <input type="checkbox" id="backup-enabled" value="true"
               class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500" />
-            <label for="backup-enabled" class="text-sm text-zinc-300">Enable automatic backups</label>
+            <label for="backup-enabled" class="text-sm text-zinc-300">Enable scheduled backups</label>
           </div>
 
           <div class="mt-5 grid grid-cols-2 gap-3">
@@ -1531,7 +1530,7 @@
           </div>
         </form>
       </div>
-      {# ==================== End Automatic Backup Configuration ==================== #}
+      {# ==================== End Scheduled Backup Configuration ==================== #}
       {% endif %}
 
       {% if debug %}
@@ -1743,7 +1742,8 @@
             Confirm password
           </label>
 
-          <input id="reset-confirm-password" name="confirm_password" type="password" required autocomplete="current-password"
+          <input id="reset-confirm-password" name="confirm_password" type="password" required
+            autocomplete="current-password"
             class="block w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-700">
         </div>
 

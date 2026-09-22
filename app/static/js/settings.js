@@ -1105,7 +1105,7 @@ const restoreConfirmStatus = document.getElementById('restore-confirm-status');
 const restoreConfirmButton = document.getElementById('restore-confirm-button');
 const cancelRestoreConfirm = document.getElementById('cancel-restore-confirm');
 
-const restoreChooseDefault = 'Choose backup file…';
+const restoreChooseDefault = 'Upload .db';
 
 // The native file box is visually hidden; this button opens it and shows
 // the chosen file's name in place of the browser's "No file chosen" text.
@@ -1285,7 +1285,7 @@ resetDatabaseForm?.addEventListener('submit', async (event) => {
 // ==================== End Reset Database ====================
 
 
-// ==================== Automatic Backup Configuration ====================
+// ==================== Scheduled Backup Configuration ====================
 
 const backupConfigEditButton = document.getElementById('backup-config-edit-button');
 const backupConfigDialog = document.getElementById('backup-config-dialog');
@@ -1525,4 +1525,4 @@ backupConfigForm?.addEventListener('submit', async (event) => {
 
 loadBackupConfig();
 
-// ==================== End Automatic Backup Configuration ====================
+// ==================== End Scheduled Backup Configuration ====================

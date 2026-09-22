@@ -108,7 +108,7 @@ def test_automatic_backup_section_shows_disabled_default(
   page, live_server, setup_admin
 ):
   page.goto(f"{live_server}/admin?tab=data")
-  expect(page.get_by_role("heading", name="Automatic backup")).to_be_visible()
+  expect(page.get_by_role("heading", name="Scheduled backup")).to_be_visible()
   expect(page.locator("#backup-schedule-summary")).to_contain_text("Disabled")
   expect(page.locator("#backup-config-edit-button")).to_be_visible()
 
