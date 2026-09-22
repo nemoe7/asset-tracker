@@ -1,3 +1,4 @@
+import atexit
 import os
 import secrets
 import sqlite3
@@ -156,5 +157,22 @@ def create_app():
     apply_pending_migrations(logger=app.logger)
 
   register_routes(app)
+
+  if not app.config.get("TESTING"):
+    from .services.scheduler import (
+      check_and_run_missed_backups,
+      init_backup_scheduler,
+      start_scheduler,
+      stop_scheduler,
+    )
+
+    scheduler = init_backup_scheduler()
+    start_scheduler(scheduler)
+    atexit.register(lambda: stop_scheduler(scheduler))
+    try:
+      with app.app_context():
+        check_and_run_missed_backups()
+    except Exception:
+      app.logger.exception("startup missed-backup catch-up failed")
 
   return app

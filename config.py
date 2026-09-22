@@ -12,6 +12,9 @@ SESSION_COOKIE_SECURE = os.environ.get("TRUST_PROXY", "0").strip().lower() in {
   "yes",
 }
 
+BACKUP_DIR = os.environ.get("BACKUP_DIR", "/backups")
+BACKUP_MAX_BACKUPS = int(os.environ.get("BACKUP_MAX_BACKUPS", "10"))
+
 DEBUG = os.environ.get("DEBUG", "0").strip().lower() in {"1", "true", "yes"}
 
 
