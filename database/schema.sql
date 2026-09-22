@@ -115,7 +115,6 @@ CREATE TABLE backup_config (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   enabled INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
   schedule TEXT NOT NULL,
-  backup_location TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 CREATE TABLE backup_history (
@@ -147,13 +146,11 @@ INSERT
     id,
     enabled,
     schedule,
-    backup_location,
     updated_at
   )
 VALUES (
     1,
     0,
-    '0 3 * * 0',
-    '/backups',
+    '{"type":"weekly","day":6,"time":"03:00"}',
     CURRENT_TIMESTAMP
   );

@@ -9,9 +9,9 @@ SCHEMA_PATH = Path(__file__).resolve().parents[3] / "database" / "schema.sql"
 MIGRATIONS_DIR = Path(__file__).resolve().parents[3] / "database" / "migrations"
 
 # Encodes schema vX.Y.Z as major*10000 + minor*100 + patch.
-# 0.1.0 -> 100 (baseline), 0.1.3 -> 103 (current).
+# 0.1.0 -> 100 (baseline), 0.2.0 -> 200 (current)..
 _BASELINE_VERSION = 100
-_CURRENT_VERSION = 103
+_CURRENT_VERSION = 200
 
 _connection_context = ContextVar(
   "database_connection",
