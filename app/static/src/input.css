@@ -3,6 +3,12 @@
 @source "../../templates";
 @source "../../js";
 
+/* Page-background scrollbars: transparent track, muted zinc thumb. */
+* {
+  scrollbar-color: #3f3f46 transparent;
+  scrollbar-width: thin;
+}
+
 @layer components {
   .form-input {
     @apply block w-full rounded-lg border border-zinc-700 bg-zinc-800

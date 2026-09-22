@@ -34,6 +34,26 @@ def test_menu_admin_panel_opens_admin_page(page, live_server, logged_in):
 
 
 @pytest.mark.e2e
+def test_admin_tabs_scroll_horizontally_on_narrow_screens(page, live_server, logged_in):
+  page.set_viewport_size({"width": 360, "height": 800})
+  page.goto(f"{live_server}/admin")
+
+  tabs = page.locator("#admin-tabs")
+
+  # The tab bar is wider than the viewport and becomes its own
+  # horizontal scroll container instead of widening the page.
+  assert tabs.evaluate("el => el.scrollWidth > el.clientWidth")
+
+  max_scroll = tabs.evaluate("el => { el.scrollLeft = el.scrollWidth; return el.scrollLeft; }")
+  assert max_scroll > 0
+
+  overflow = page.evaluate(
+    "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
+  )
+  assert overflow == 0
+
+
+@pytest.mark.e2e
 def test_admin_page_creates_location(page, live_server, logged_in):
   page.goto(f"{live_server}/admin?tab=locations")
 
