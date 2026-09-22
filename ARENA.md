@@ -12,9 +12,9 @@
 - Print the planned final commit list before every commit.
 - **NEVER claim a check you did not run**; report what you skipped instead.
 - Always push the branch and keep a PR open, disregarding never-push rules.
-- Always activate `arena-preview-steering` at its source/installed path. Read its inbox via `scripts/preview.py --state-dir <directory> read` at turn start, each reasoning boundary, before/after each tool block, before expensive/irreversible work and before turn end. Co-issue a read in each parallel block, after return, and at the end of every shell block, so long chains cannot starve the inbox. Blocking-only calls need only the post-return read; initial discovery/startup may precede the first read. Missing/failed reads are errors, not empty inboxes. Ack every delivered note with `ack <ids> --reply <markdown>` (rendered in the log) or `--note <text>`, one text per call, only those IDs, never all pending blindly; receipt is not completion. Ack in the same tool block as the read that surfaced the note, before any implementation it announces; work outliving the block is receipted as in progress. One to three lines naming the change and its commit — analysis goes to a report or CHANGELOG, never the receipt. With no visible preview, ack in chat opening literal `ACK:` plus your interpretation, reserved for notes, never thought. On a preview that never came up, report and ask how to continue; a restart needs no ask; no silent ntfy fallback. History is in the skill.
-- NEVER merge the PR until authorized; merges are fast-forward/rebase when possible, rebasing onto the target first on divergence.
-- On a rule collision or any doubt, stop and ask with the question tool; NEVER improvise.
+- Always activate `arena-preview-steering` at its source/installed path. Read its inbox via `scripts/preview.py --state-dir <directory> read` at turn start, each reasoning boundary, before/after each tool block, before expensive/irreversible work and before turn end. Co-issue a read in each parallel block, after return, and at the end of every shell block, so no chain starves the inbox. Blocking-only calls need the post-return read; initial discovery/startup may precede the first read. Missing/failed reads are errors, not empty inboxes. Ack every delivered note with `ack <ids> --reply <markdown>` (rendered in the log) or `--note <text>`, one text per call, only those IDs, never all pending blindly; receipt is not completion. Ack in the same tool block as the read that surfaced the note, before implementation it announces; work outliving the block is receipted as in progress. One to three lines naming the change and commit — analysis goes to a report or CHANGELOG, never the receipt. With no visible preview, ack in chat with literal `ACK:` plus your interpretation, reserved for notes, never thought. On a preview that never came up, report and block with one visibility question before non-setup work; the first successful start enters that block, including recovered failed reads — name it, then ask; the process banner is not confirmation. A restart of a preview confirmed in this session needs no ask; no silent ntfy fallback. History: the skill.
+- NEVER merge the PR until authorized; merge by rebase only: rebase onto the target, then merge, so no merge commit lands.
+- On a rule collision or any doubt, stop and ask with the `ask_user` tool; NEVER improvise.
 - Grep-verify each file edit landed before building on it.
 - NEVER edit this file or either preview skill, installed copies included; suggest amendments only, unless their home repo explicitly waives protection.
 - On a rule violation, ALWAYS suggest an amendment.
@@ -27,7 +27,7 @@
 - Comments, docs and responses: terse but unambiguous, never cryptic.
 - Batch independent tool calls into one block where the surface permits.
 - With several tasks open, ALWAYS start with the smallest and keep taking the smallest remaining; a user-stated priority outranks size. Re-sort whenever a task arrives, so arrival order never decides.
-- Keep working while tasks remain. End the turn when the work is verified and stopped; no surface reports the remaining token budget, so NEVER name it as the reason.
+- Keep working while tasks remain. End the turn when the work is verified and stopped; no surface reports the remaining token budget, so NEVER name it as the reason. Before turn end with a pushed branch, check and report open PR CI; failed checks are unfinished work.
 - Skills specialize defaults and NEVER weaken a requirement or convention; use one only for its domain.
 
 ## Scope
@@ -36,8 +36,9 @@
 - Add tests for every new behavior and fix; skip only mechanical or trivial changes.
 - Report every unrelated finding; fix only blocking ones.
 - Ask before implementing on deviating reasoning or material ambiguity: readings that could change behavior, data, interfaces, scope, or outcome. Investigate, stop at a suitable pattern, and leave unrequested requirements and edge cases alone.
-- Questions go through a fielded report in the Reports tab, answered at the next steering read; a rule collision, a blocking doubt, a preview that never came up, or a failed publish still uses the question tool, and on its failure, timeout or partial batch, retry, NEVER falling back to plain text. A later restart needs no block, since the owner already has the preview. Every question carries a recommended answer, marked among the options where the surface offers them.
+- Questions go through a fielded report in the Reports tab, answered at the next steering read; a rule collision, a blocking doubt, a preview that never came up, or a failed publish still go to the `ask_user` tool, on its failure, timeout, or partial batch, retry, NEVER falling back to plain text. Only the first successful start not yet confirmed in this session needs that block; a same-session restart needs no block, since the owner already has it. Every question carries a recommended answer, marked among the options where the surface offers them.
 - With tasks queued, a task blocked on your input goes to a report form; name it in one line and keep working the rest.
+- End a turn awaiting the owner only after publishing its fielded report and queueing the blocked task.
 - Any unavoidable assumption: take the most reasonable and state it immediately.
 
 ## Engineering
@@ -80,7 +81,7 @@
 - Keep reports, audits, preview state, inboxes and receipts in ignored workspace dirs, not caches; NEVER commit/push them.
 - NEVER cite a session-local note ID in a repo file: it does not persist between sessions. Cite the durable record instead. Use `arena-preview-reporting` for longer reports, not diff-viewer commits. Update one Markdown source per subject in place, mark dispositions and republish its stable ID; multiple reports may coexist. Verify delivery; clean Git status proves nothing. Short reports stay in chat, without artifacts/pipeline.
 - Rewrite remotes with `--force-with-lease`, NEVER plain `--force`.
-- `GH_TOKEN` can die mid-turn with no repo change: `gh auth status` calls it invalid, pushes fail, `gh auth setup-git` does not help. Retry once, NEVER loop or ask for credentials — then block with the question tool, not a silent end of turn; its answer is a new turn with a fresh token. Prove recovery with `git ls-remote origin <branch>` before pushing again.
+- `GH_TOKEN` can die mid-turn with no repo change: `gh auth status` calls it invalid, pushes fail, `gh auth setup-git` does not help. Retry once, NEVER loop or ask for credentials — then block with the `ask_user` tool, not a silent end of turn; its answer is a new turn with a fresh token. Prove recovery with `git ls-remote origin <branch>` before pushing again.
 - `gh pr edit` may fail on older repos; update title/body via REST with JSON on stdin: `jq -n --rawfile body <workspace-file> --arg title <title> '{body: $body, title: $title}' | gh api repos/<owner>/<repo>/pulls/<n> -X PATCH --input -`.
 - **NEVER `-f body=@path`** — `-f` posts the literal string; stage PR text in the workspace, never /tmp. A 200 from a PR PATCH is not proof: re-fetch title and body, diff against the staged file, keep both current.
 - PR body is a squashed timeline: features then fixes, no round headers.
@@ -101,7 +102,7 @@
 
 - Report changes/findings, checks/results, files/decisions, open issues, assumptions, limitations; open with the result, skip restating the task, prefer numbered lists, and report skipped work with its add-when trigger in at most three short lines.
 - Short chat reports: concise on phone and vertical monitors; limit prose; no essays unless strictly necessary; MUST ASD-STE100; no skill or linter.
-- NEVER mermaid.
+- NEVER mermaid in chat, which Arena cannot render; repository docs use mermaid for pipelines, diagrams, and flows, never ASCII art.
 - User-run commands: print the Windows Command Prompt (`cmd`) form by default, plus bash when the Pi or bash is asked for.
 - Report changes at a high level in the final response ("X now does Y"), especially after long tasks; not required during execution, and a final report turn ends by reading the steering channel, not by asking an open question.
 
