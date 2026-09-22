@@ -1,5 +1,5 @@
 services:
-  app:
+  astra:
     build:
       context: .
     container_name: ${ZROK2_SHARE_NAME}-dev
@@ -26,89 +26,21 @@ services:
     working_dir: /home/appuser
     command: python run.py
 
-  zrok:
-    image: docker.io/openziti/zrok2
-    container_name: ${ZROK2_SHARE_NAME}-zrok
-    restart: unless-stopped
-    stop_grace_period: 30s
-    user: root
+  tailscale:
+    image: tailscale/tailscale:stable
+    container_name: ${ASTRA_ID}-tailscale
+    hostname: ${ASTRA_ID}
+    depends_on:
+      app:
+        condition: service_healthy
     environment:
-      HOME: /mnt
-      ZROK2_ENABLE_TOKEN: ${ZROK2_ENABLE_TOKEN}
-      ZROK2_SHARE_NAME: ${ZROK2_SHARE_NAME}
-      DL_USE_JSON: false
-    ports:
-      - "8888:8888"
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - |
-          zrok2 list shares --json 2>/dev/null |
-            jq -e --arg name "$${ZROK2_SHARE_NAME}" '
-              .shares |
-              any(.[]; .frontendEndpoints[]? | contains($$name + ".shares.zrok.io"))
-            ' >/dev/null
-      interval: 5s
-      timeout: 5s
-      retries: 12
-      start_period: 5s
-    entrypoint:
-      - /bin/bash
-      - -c
-      - |
-        cleanup() {
-
-          shares="$$(zrok2 list shares --json 2>/dev/null || true)"
-
-          if [ -n "$$shares" ] && [ "$$shares" != "{}" ]; then
-            echo "$$shares" |
-              jq -r '.shares[].shareToken' |
-              while read -r token; do
-                [ -z "$$token" ] || zrok2 delete share "$$token" || true
-              done
-          fi
-        }
-
-        if [ ! -f /mnt/.zrok2/environment.json ]; then
-          zrok2-enable
-          chown -R 2171:2171 /mnt
-          zrok2 delete name "$${ZROK2_SHARE_NAME}" || true
-          zrok2 create name "$${ZROK2_SHARE_NAME}"
-        fi
-
-        chown -R 2171:2171 /mnt
-        rm -f /mnt/.zrok2/agent.socket
-
-        cleanup
-
-        zrok2 agent start \
-          --console-address 0.0.0.0 \
-          --console-start-port 8888 \
-          --console-end-port 8888 &
-        agent_pid=$$!
-
-        trap '
-          cleanup
-          kill -TERM "$$agent_pid" 2>/dev/null || true
-          wait "$$agent_pid" 2>/dev/null || true
-        ' TERM INT
-
-        sleep 2
-
-        if ! zrok2 list shares --json 2>/dev/null |
-          jq -e '.shares | length > 0' >/dev/null 2>&1; then
-          zrok2 share public http://app:5000 \
-            --subordinate \
-            -b proxy \
-            --name-selection "public:$${ZROK2_SHARE_NAME}" &
-        fi
-
-        wait "$$agent_pid"
-
-        cleanup
-
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_AUTHKEY=${TS_AUTHKEY}
     volumes:
-      - zrok_env:/mnt
+      - ./astra-tailscale:/var/lib/tailscale
+    restart: unless-stopped
+    networks:
+      - astra
 
 volumes:
   zrok_env:
