@@ -636,16 +636,16 @@ Future additions may be considered separately.
 
 The project will be considered complete when:
 
-- [ ] Users can authenticate and access functions according to their effective roles and permissions.
+- [x] Users can authenticate and access functions according to their effective roles and permissions.
 - [x] Office Admins can create and manage roles.
 - [x] Office Admins can assign roles to users.
-- [ ] Office Admins can configure per-user permission overrides.
-- [ ] Office Admins can configure which asset fields Checkers can view and edit.
+- [x] Office Admins can configure per-user permission overrides.
+- [x] Office Admins can configure which asset fields Checkers can view and edit.
 - [x] Authorized users can create, view, edit, archive, and restore assets as permitted.
-- [ ] Authorized users provide an archival reason when archiving an asset.
-- [ ] Archival reasons are restricted to the agreed values (invalid, damaged, disposed).
-- [ ] Archival notes can be recorded as free text when archiving an asset.
-- [ ] Restoring an archived asset clears its archival reason and notes, and the restoration log entry includes them.
+- [x] Authorized users provide an archival reason when archiving an asset.
+- [x] Archival reasons are restricted to the agreed values (invalid, damaged, disposed).
+- [x] Archival notes can be recorded as free text when archiving an asset.
+- [x] Restoring an archived asset clears its archival reason and notes, and the restoration log entry includes them.
 - [x] Each asset receives a unique system-generated UUID as its Asset ID.
 - [x] The Asset ID is encoded in the asset's QR code.
 - [x] A supported mobile device can scan an asset QR code and open the corresponding asset.
@@ -655,19 +655,19 @@ The project will be considered complete when:
 - [x] Office Admins can create and configure custom asset fields.
 - [x] Custom fields support the implemented data types required by the project.
 - [x] Custom field values are validated according to their configured types.
-- [ ] Custom fields can be marked copyable and display a copy button for their value.
-- [ ] Expiry date fields show the date while the expiry date is in the future and "Expired" once it has passed.
-- [ ] Status fields provide an Enum or Text value as configured.
-- [ ] An asset check updates the checked asset's Updated At timestamp.
-- [ ] Viewing an asset provides a button that opens its audit and activity logs pre-filtered to that asset.
-- [ ] Authorized users can view relevant logs from supported desktop and mobile devices.
-- [ ] Log visibility respects effective user permissions.
+- [x] Custom fields can be marked copyable and display a copy button for their value.
+- [x] Expiry date fields show the date while the expiry date is in the future and "Expired" once it has passed.
+- [x] Status fields provide an Enum or Text value as configured.
+- [x] An asset check updates the checked asset's Updated At timestamp.
+- [x] Viewing an asset provides a button that opens its audit and activity logs pre-filtered to that asset.
+- [x] Authorized users can view relevant logs from supported desktop and mobile devices.
+- [x] Log visibility respects effective user permissions.
 - [x] Users can search, filter, and view asset records.
 - [x] Custom fields can be used in applicable searches, filters, and exports.
 - [x] Authorized users can import asset data with at least a Name provided for each asset.
 - [x] Missing optional imported values remain unset.
 - [x] Authorized users can export asset data in an agreed Excel-compatible format.
-- [ ] Export templates can save and apply predefined filters.
+- [x] Export templates can save and apply predefined filters.
 - [x] The system can create manual backups.
 - [x] Automatic backups are disabled by default.
 - [x] The system prompts the Admin to configure automatic backups during first-time initialization.
@@ -676,7 +676,7 @@ The project will be considered complete when:
 - [x] A missed scheduled backup is performed on the next application startup.
 - [x] The system avoids duplicate execution of the same scheduled backup.
 - [x] Backups contain all required asset, user, permission, custom field, and log data.
-- [ ] Backup files are stored in the configured backup location.
+- [x] Backup files are stored in the configured backup location.
 - [ ] The configured backup location can be accessed outside the application runtime environment.
 - [x] A valid backup can be restored successfully.
 - [x] Backup and restoration activities are appropriately recorded.
