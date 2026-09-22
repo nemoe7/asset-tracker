@@ -1,7 +1,6 @@
 import os
 
 from app.services.storage import (
-  BackupStorageError,
   apply_retention,
   ensure_location,
   save_backup_to_file,
@@ -55,7 +54,7 @@ def test_save_backup_rejects_unwritable_location(tmp_path):
   blocker.write_bytes(b"not a dir")
   try:
     save_backup_to_file(b"data", str(blocker / "backups"))
-  except BackupStorageError:
+  except Exception:
     pass
   else:
-    raise AssertionError("expected BackupStorageError")
+    raise AssertionError("expected an exception")

@@ -109,19 +109,11 @@ def _pending_migrations(version):
 
 
 def _migration_statements(script):
-  statement = ""
-
-  for character in script:
-    statement += character
-
-    if sqlite3.complete_statement(statement):
-      if statement.strip().strip(";").strip():
-        yield statement
-
-      statement = ""
-
-  if statement.strip():
-    raise sqlite3.OperationalError("incomplete migration statement")
+    return [
+        statement.strip()
+        for statement in script.split(";")
+        if statement.strip()
+    ]
 
 
 def _custom_field_name_allocator(connection):

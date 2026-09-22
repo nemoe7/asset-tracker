@@ -12,6 +12,7 @@ from ..services.auth.authorization import check_permission
 from ..services.data.export_templates import (
   create_export_template,
   delete_export_template,
+  get_export_template,
   get_export_templates,
   update_export_template,
 )
@@ -21,7 +22,6 @@ from ..services.exceptions.data.export_templates import (
   InvalidExportTemplateConfigurationError,
   InvalidExportTemplateNameError,
 )
-from ..services.export_templates import apply_export_template
 
 export_templates = Blueprint(
   "export_templates",
@@ -81,9 +81,22 @@ def create():
 @login_required
 def apply(template_id):
   try:
-    params = apply_export_template(template_id, _user_id())
+    template = get_export_template(template_id, _user_id())
   except ExportTemplateNotFoundError:
     return _error(404, "Export template does not exist")
+
+  configuration = template["configuration"]
+  params = {}
+
+  filters = configuration.get("filters") or []
+  if filters:
+    params["f_field"] = [row[0] for row in filters]
+    params["f_op"] = [row[1] for row in filters]
+    params["f_value"] = [row[2] for row in filters]
+
+  columns = configuration.get("columns") or []
+  if columns:
+    params["fields"] = columns
 
   return redirect(url_for("inventory.export", **params))
 

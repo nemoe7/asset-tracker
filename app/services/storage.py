@@ -3,15 +3,11 @@ import os
 from app.services.exceptions.data.backups import BackupError
 
 
-class BackupStorageError(BackupError):
-  """Raised when a scheduled backup file cannot be persisted."""
-
-
 def ensure_location(backup_location):
   try:
     os.makedirs(backup_location, exist_ok=True)
   except OSError as exc:
-    raise BackupStorageError(f"cannot create backup location: {exc}") from exc
+    raise BackupError(f"cannot create backup location: {exc}") from exc
 
 
 def save_backup_to_file(data, backup_location):
@@ -24,7 +20,7 @@ def save_backup_to_file(data, backup_location):
     with open(path, "wb") as f:
       f.write(data)
   except OSError as exc:
-    raise BackupStorageError(f"cannot write backup file: {exc}") from exc
+    raise BackupError(f"cannot write backup file: {exc}") from exc
   return path
 
 
@@ -36,7 +32,7 @@ def apply_retention(backup_location, max_backups):
       if name.endswith(".db")
     ]
   except OSError as exc:
-    raise BackupStorageError(f"cannot list backup location: {exc}") from exc
+    raise BackupError(f"cannot list backup location: {exc}") from exc
   files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
   removed = 0
   for path in files[max_backups:]:
@@ -44,5 +40,5 @@ def apply_retention(backup_location, max_backups):
       os.remove(path)
       removed += 1
     except OSError as exc:
-      raise BackupStorageError(f"cannot remove old backup: {exc}") from exc
+      raise BackupError(f"cannot remove old backup: {exc}") from exc
   return removed
