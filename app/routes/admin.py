@@ -225,6 +225,7 @@ def _render_settings(
     "can_manage_users": can_manage_users,
     "can_manage_roles": can_manage_roles,
     "debug": config.DEBUG,
+    "backup_location": config.BACKUP_DIR,
     **audit_context,
     **users_context,
     **roles_context,

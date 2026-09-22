@@ -1417,6 +1417,121 @@
         </table>
       </div>
       {# ==================== End Backup ==================== #}
+
+      {# ==================== Automatic Backup ==================== #}
+      <h2 class="mt-6 text-lg font-semibold">Automatic backup</h2>
+      <div class="mt-3 rounded-xl border border-zinc-800 bg-zinc-900/50">
+        <table class="w-full text-left">
+          <tbody class="divide-y divide-zinc-800">
+            <tr>
+              <th scope="row" class="px-6 py-5 align-top font-normal">
+                <span class="block text-sm font-medium text-zinc-100">Schedule</span>
+                <span class="mt-1 block text-sm text-zinc-400" id="backup-schedule-summary">
+                  Loading...
+                </span>
+                <span class="mt-1 block text-sm text-zinc-400">
+                  Storage location: <code id="backup-location">{{ backup_location }}</code>
+                </span>
+                <p id="backup-config-status" aria-live="polite" class="mt-2 hidden text-sm"></p>
+              </th>
+              <td class="px-6 py-5 text-right align-middle">
+                <button type="button" id="backup-config-edit-button"
+                  class="min-w-40 shrink-0 rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950">
+                  <i class="bi bi-gear mr-1" aria-hidden="true"></i>
+                  Configure
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="backup-config-dialog" class="hidden p-6">
+        <h2 class="text-lg font-semibold">
+          Configure automatic backups
+        </h2>
+
+        <form id="backup-config-form">
+          <div class="mt-5 flex items-center gap-3">
+            <input type="checkbox" id="backup-enabled" value="true"
+              class="size-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-zinc-500" />
+            <label for="backup-enabled" class="text-sm text-zinc-300">Enable automatic backups</label>
+          </div>
+
+          <div class="mt-5 grid grid-cols-2 gap-3">
+            <div>
+              <label for="backup-recurrence" class="mb-2 block text-sm font-medium text-zinc-300">Repeats</label>
+              <div class="relative">
+                <select id="backup-recurrence" class="form-select">
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="bi-weekly">Every 2 weeks</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+
+                <i class="bi bi-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                  aria-hidden="true"></i>
+              </div>
+            </div>
+
+            <div>
+              <label for="backup-time" class="mb-2 block text-sm font-medium text-zinc-300">At (24h)</label>
+              <input type="time" id="backup-time" step="60" class="form-input" />
+            </div>
+          </div>
+
+          <div id="backup-day-weekly-wrap" class="mt-5 hidden">
+            <label for="backup-day-weekly" class="mb-2 block text-sm font-medium text-zinc-300">On day</label>
+            <div class="relative">
+              <select id="backup-day-weekly" class="form-select">
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
+
+              <i class="bi bi-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                aria-hidden="true"></i>
+            </div>
+          </div>
+
+          <div id="backup-day-monthly-wrap" class="mt-5 hidden">
+            <label for="backup-day-monthly" class="mb-2 block text-sm font-medium text-zinc-300">On day of month</label>
+            <div class="relative">
+              <select id="backup-day-monthly" class="form-select">
+                {% for d in range(1, 32) %}
+                <option value="{{ d }}">{{ d }}</option>
+                {% endfor %}
+              </select>
+
+              <i class="bi bi-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                aria-hidden="true"></i>
+            </div>
+          </div>
+
+          <p id="backup-config-error" class="mt-4 hidden text-sm text-red-400"></p>
+
+          <p class="mt-4 text-sm text-zinc-400">
+            Next scheduled backup: <span id="backup-next-run">—</span>
+          </p>
+
+          <div class="mt-6 flex justify-end gap-3">
+            <button type="button" id="backup-config-cancel"
+              class="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-100">
+              Cancel
+            </button>
+
+            <button type="submit" id="backup-config-save"
+              class="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300">
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
+      {# ==================== End Automatic Backup Configuration ==================== #}
       {% endif %}
 
       {% if debug %}
