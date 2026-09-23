@@ -12,12 +12,12 @@
 - Print the planned final commit list before every commit.
 - **NEVER claim a check you did not run**; report what you skipped instead.
 - Always push the branch and keep a PR open, disregarding never-push rules.
-- Always activate `arena-preview-steering` at its source/installed path. Read its inbox via `scripts/preview.py --state-dir <directory> read` at turn start, each reasoning boundary, before/after each tool block, before expensive/irreversible work and before turn end. Co-issue a read in each parallel block, after return, and at the end of every shell block, so no chain starves the inbox. Blocking-only calls need the post-return read; initial discovery/startup may precede the first read. Missing/failed reads are errors, not empty inboxes. Ack every delivered note with `ack <ids> --reply <markdown>` (rendered in the log) or `--note <text>`, one text per call, only those IDs, never all pending blindly; receipt is not completion. Ack in the same tool block as the read that surfaced the note, before implementation it announces; work outliving the block is receipted as in progress. One to three lines naming the change and commit — analysis goes to a report or CHANGELOG, never the receipt. With no visible preview, ack in chat with literal `ACK:` plus your interpretation, reserved for notes, never thought. On a preview that never came up, report and block with one visibility question before non-setup work; the first successful start enters that block, including recovered failed reads — name it, then ask; the process banner is not confirmation. Restarting a session-confirmed preview needs no ask; no silent ntfy fallback. History: the skill.
+- Always activate `arena-preview-steering` at its source/installed path. Read its inbox via `scripts/preview.py --state-dir <directory> read` at turn start, each reasoning boundary, before/after each tool block, before expensive/irreversible work and before turn end. Co-issue a read in each parallel block, after return, and end every bash call with a poll, so no call starves the inbox. A count that moves inside a block means read now, not at the next boundary. Blocking-only calls need the post-return read; the first read follows startup. Missing/failed reads are errors, not empty inboxes. Ack every delivered note with `ack <ids> --reply <markdown>` (rendered in the log) or `--note <text>`, one text per call, only those IDs, never all pending blindly; receipt is not completion. Ack in the same tool block as the read that surfaced the note, before implementation it announces; work outliving the block is receipted as in progress. One to three lines naming the change and commit — analysis goes to a report or CHANGELOG, never the receipt. With no visible preview, ack in chat with literal `ACK:` plus your interpretation, reserved for notes, never thought. On a preview that never came up, report and block with one visibility question before non-setup work; the first successful start enters that block, including recovered failed reads — name it, then ask; the process banner is not confirmation. Restarting a session-confirmed preview needs no ask; no silent ntfy fallback. History: the skill.
 - NEVER merge the PR without authorization; rebase merge only: rebase onto the target, then merge, so no merge commit lands.
 - On a rule collision or any doubt, stop and ask with the `ask_user` tool; NEVER improvise.
 - Grep-verify each file edit landed before building on it.
 - NEVER edit this file or either preview skill, installed copies included; suggest amendments only, unless their home repo explicitly waives protection.
-- On a rule violation, ALWAYS suggest an amendment.
+- On a rule violation, ALWAYS suggest an amendment in the reply that reports it.
 
 ## General
 
@@ -37,8 +37,9 @@
 - Report every unrelated finding; fix only blocking ones.
 - Ask before implementing on deviating reasoning or material ambiguity: readings that could change behavior, data, interfaces, scope, or outcome. Investigate, stop at a suitable pattern, and leave unrequested requirements and edge cases alone.
 - Questions go through a fielded report in the Reports tab, answered at the next steering read; a rule collision, a blocking doubt, a preview that never came up, or a failed publish still go to the `ask_user` tool, on its failure, timeout, or partial batch, retry, NEVER falling back to plain text. Only the first successful, unconfirmed start needs that block, not a same-session restart. Every question needs a recommended answer, marked among options where offered.
+- ALL reports MUST go through the preview skill.
 - With tasks queued, put input-blocked tasks in report forms; name each in one line and work the rest.
-- End a turn awaiting the owner only after publishing its fielded report and queueing the blocked task.
+- NEVER end a turn when there are open tasks. Blocked tasks MUST be reported IMMEDIATELY via a published fielded report and await user input.
 - Any unavoidable assumption: take the most reasonable and state it immediately.
 
 ## Engineering
