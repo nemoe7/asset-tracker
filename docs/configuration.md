@@ -124,45 +124,15 @@ When replacing Tailscale, review the `TRUST_PROXY` setting if the replacement pr
 
 ## Docker Deployment
 
-For a standard deployment:
+The included `compose.yml` listens on port `5000` inside the application container and uses Tailscale for network access.
 
-```bash
-cp .env.example .env
-```
-
-Configure `.env`, then:
-
-```bash
-docker compose up -d
-```
-
-The application listens on port `5000` inside the container.
-
-To expose Astra to your network via Tailscale funnel, run:
+To expose Astra with Tailscale Funnel:
 
 ```bash
 docker exec ${ASTRA_ID}-tailscale tailscale funnel --bg http://astra:5000
 ```
 
-Check the funnel status:
-
-```bash
-docker exec ${ASTRA_ID}-tailscale tailscale funnel status
-```
-
-See [Tailscale funnel](https://tailscale.com/kb/1103/enabling-tailscale-funnel) for more details.
-
-View logs with:
-
-```bash
-docker compose logs -f
-```
-
-Stop the deployment with:
-
-```bash
-docker compose down
-```
+See [Tailscale funnel](https://tailscale.com/kb/1103/enabling-tailscale-funnel) for details.
 
 ## Development
 
@@ -171,8 +141,6 @@ Use `compose.dev.yml` for development and testing:
 ```bash
 docker compose -f compose.dev.yml up -d
 ```
-
-This keeps the development configuration separate from the production-oriented `compose.yml`.
 
 ## Configuration Example
 

@@ -83,25 +83,8 @@ docker compose down
 
 ## Configuration
 
-Astra is configured through environment variables.
+See [`docs/configuration.md`](docs/configuration.md) for the complete configuration reference.
 
-See [`docs/configuration.md`](docs/configuration.md) for the complete configuration reference, including:
-
-- Database configuration
-- Timezone
-- Flask settings
-- Session security
-- Tailscale
-- Reverse proxy configuration
-- Deployment options
-
-For a basic setup:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your deployment settings before starting Astra.
 
 ## Development
 
@@ -137,22 +120,6 @@ pytest
 
 Tests run in parallel automatically through pytest-xdist.
 
-The repository's `pytest.ini` configures the test runner:
-
-```ini
-[pytest]
-markers =
-  e2e: browser end-to-end tests
-addopts =
-  --import-mode=importlib
-  -n auto
-```
-
-Therefore, `pytest` automatically uses:
-
-- `--import-mode=importlib`
-- `-n auto`
-
 The `e2e` marker identifies browser end-to-end tests.
 
 By default these run on Chromium. To verify browser support across all
@@ -164,27 +131,6 @@ pytest tests/ui -m e2e --browser chromium --browser firefox --browser webkit -n 
 
 Four workers keep parallel Firefox instances from starving page loads on
 smaller machines.
-
-## Deployment
-
-Astra can be deployed on another machine using the included Docker Compose configuration.
-
-1. Copy `compose.yml` to the deployment host.
-2. Create a `.env` file based on `.env.example`.
-3. Configure the environment variables.
-4. Start the services.
-
-```bash
-cp .env.example .env
-# Edit .env
-docker compose up -d
-```
-
-The included `compose.yml` starts Astra together with Tailscale.
-
-Tailscale is the default network access service included with Astra's Compose configuration, but the Compose configuration can be modified if you prefer to use another reverse proxy or tunneling service.
-
-See [`docs/configuration.md`](docs/configuration.md) for configuration details.
 
 ## Project Structure
 
@@ -203,7 +149,7 @@ database/
 docs/
 ├── configuration.md
 ├── implementation.md
-└── requirements.md
+└── SRS.md
 
 tests/
 
