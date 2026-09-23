@@ -2,7 +2,7 @@
 
 ## Runtime contract
 
-The shared runtime is `scripts/preview.py`, relative to the steering skill. It uses Python 3.10+ standard-library HTTP, JSON and SQLite support. The report renderer imports `markdown-it-py` only when rendering; `serve` checks it at startup and exits with the install command when missing, since a page that cannot render Markdown is worse than no page. The CLI commands need no renderer. The reporting skill is a separate entry point installed beside steering, not an independent copy of the server.
+The shared runtime is `scripts/preview.py`, relative to the steering skill. It uses Python 3.10+ standard-library HTTP, JSON and SQLite support. The report renderer imports `markdown-it-py` only when rendering; `serve` checks it at startup and exits with the install command when missing, since a page that cannot render Markdown is worse than no page. The CLI commands need no renderer.
 
 The chosen `--state-dir` contains `state.sqlite3`. Normal SQLite transactions handle concurrent browser sends and CLI receipts. Reads never acknowledge; a `read` stamps `seen_at` for exactly the IDs it printed, once its output write succeeds. `seen <ids>` or `ack` marks only those IDs. Count-only notifications, truncated output and failed deliveries stay Sent. Writes are committed before the server returns success.
 
@@ -31,6 +31,10 @@ Use only CLI `read` to poll; a failed delivery stays unseen, and a stamped messa
 
 Acknowledge exactly the delivered IDs, never all pending blindly. Supply exactly one of `--reply` or `--note`; one answer per call, separate calls for different answers. Unknown IDs fail the receipt batch. Repeated acknowledgement keeps its first timestamp and replaces the answer. Receipt is not completion. Use full IDs in CLI arguments; cite their first seven characters in prose, never sequence numbers. Without a visible preview, acknowledge in chat with literal `ACK:` and the interpretation.
 
+## External channel (ntfy)
+
+When the owner selects the external channel, the session falls back to ntfy. The user supplies the topic `<repo>-<branch>-<8-char unguessable secret>` (branch sanitized) and posts notes to its URL. Poll `https://ntfy.sh/<topic>/json?poll=1&since=<marker>` with page-fetch at every steering read: first poll `since=all`, then `since=` the newest seen `event:"message"` ID, persisted in `<state-dir>/ntfy-since.txt`; ignore `open`/`keepalive` events. The fallback ladder is the JSON endpoint, the HTML topic page, and a `since=all` replay. An empty response or a 500 with no message body is the quiet case; a fresh topic's first read is expected to fail until the user posts. Read the body, not the status: on an upstream error body such as object-store `SignatureDoesNotMatch`, retry once; on the same error, generate a fresh topic of the same form, post its link in chat naming the error, and continue with `since=all`, whose first empty failure is expected; if the fresh topic repeats the error, stop polling for the turn and resume after the user's next. A 500 repeating on a topic with delivered notes is reported once as a channel error and retried at the next read. Page-fetch is the path because sandbox HTTP to ntfy returns misleading empty responses.
+
 ## Tasks
 
 Task IDs are 1–64 lowercase letters, digits or hyphens, starting with a letter or digit. Titles allow at most 200 characters; each task at most 40 details of 2000 characters. Existing IDs update; omitted title/details keep stored values. The echo clips details to 200 characters, not stored values. Its `prev` and `next` identify neighbors within the same status group, null at either end.
@@ -50,11 +54,40 @@ Use `--msg-id` on the `task` command to set the message's `task_id`. Task/link w
 
 ## Publish reports
 
-Use the companion [reporting skill](../../arena-preview-reporting/SKILL.md) for field syntax and publishing procedure. Sources must be UTF-8 `.md`, at most 2,000,000 bytes. IDs are 1–80 letters, digits, hyphens or underscores; titles 1–200 characters. Invalid fields fail before storage. Keep one ignored source per report and republish its stable ID to update it. Source edits alone never update published snapshots.
+Publish through the steering entry point's `publish` command. Field syntax and limits follow below. Sources must be UTF-8 `.md`, at most 2,000,000 bytes. IDs are 1–80 letters, digits, hyphens or underscores; titles 1–200 characters. Invalid fields fail before storage. Keep one ignored source per report and republish its stable ID to update it; answered reports refuse a republish, so publish the update under a new ID. Source edits alone never update published snapshots.
 
 Republishing preserves first-publish order, clears the report's read stamp and never deletes delivered answers. `read` delivers submissions headed `REPORT <id> <title>:`, one indented line per field, `(skipped)` for empty answers; resending creates a new answer. Publishing never acknowledges a submission. Verify the rendered report before claiming delivery. Render failures leave sources available for inspection; report failure, never success.
 
 The rendered report endpoint returns its full `revision`; answer requests must echo it. Revision checks and answer writes share one transaction. Missing revisions return HTTP 400, stale ones HTTP 409 without saving. Reload old preview pages before sending. Automatic updates retain unsent/in-flight answers. After rejection, copy entries before explicitly refreshing and reviewing the new report.
+
+## Suggested report structure
+
+```markdown
+# Review title
+
+**Result:** one clear outcome.
+
+## Changes
+
+- What changed and why.
+
+## Checks
+
+| Check | Result |
+| --- | --- |
+| Actual check command | Pass, fail or not run |
+
+## Findings and disposition
+
+- Open: issue and impact.
+- Resolved: issue and verified resolution.
+
+## Limits
+
+- Assumptions, unverified behavior and remaining decisions.
+```
+
+Follow the target repository's style. In Clankers reports, allow lines up to 120 characters. Never invent claims to fill the template. Short answers stay in chat. No Mermaid, remote fonts, CDN scripts or externally loaded images are needed.
 
 ## Fields in a report
 
@@ -86,7 +119,7 @@ Treat the preview URL as private session access. Do not publish secrets. Do not 
 - Preserve the ignored state directory and Markdown sources when restarting. Process IDs, venv packages and URLs are not durable; restore the approved renderer and restart the same state directory as needed.
 - Reload an old browser page after server restart to obtain the new submission token. Keep/copy an unsent draft first if browser storage is unavailable. Browser drafts are origin-local, not a cross-device backup.
 - If a port is occupied, identify its owner or select another port; never kill an unrelated service. A failed read or save must remain visible, not become an empty state.
-- Run `python <skill>/scripts/check_preview.py` with `markdown-it-py` available. It checks missing state, persistence, retry deduplication, receipt transactions, multiple reports, Markdown fields and their submissions, unsafe Markdown, absent-renderer behavior and HTTP route boundaries. Check `assets/app.js` with `node --check` and run `node scripts/check_client.cjs` where Node is available. These checks do not prove actual browser rendering; record manual browser observations separately.
+- In the source repository, run `python skills/refs/arena-preview-steering/scripts/check_preview.py` with `markdown-it-py` available. It checks missing state, persistence, retry deduplication, receipt transactions, multiple reports, Markdown fields and their submissions, unsafe Markdown, absent-renderer behavior and HTTP route boundaries. Check the readable `assets/app.js` with `node --check` and run `node skills/refs/arena-preview-steering/scripts/check_client.cjs` where Node is available. These checks do not prove actual browser rendering; record manual browser observations separately.
 - Import `saved-state.ndjson` soon after the owner presses save state. The file carries the notes, the tasks and the owner's report answers; a report itself rebuilds from the source that produced it.
 - Rebuild the queue from Git when the task backup dies with the state directory: `git log --oneline` is one finished task per shipped change, with the commit as its detail line, and `task-import` reads the JSON that those records form. Recover upcoming work from known requests, not invented completion claims.
 - Import a pasted log with `import-notes`, and never assume an answer: a line keeps the receipt it carries and a line without one stays unacknowledged.
