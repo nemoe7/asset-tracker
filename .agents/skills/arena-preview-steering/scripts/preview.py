@@ -1,4 +1,3 @@
-"Shared preview runtime. Steering uses only Python's standard library."
 import argparse
 import hashlib
 import html
@@ -10,41 +9,51 @@ import sqlite3
 import sys
 import uuid
 from contextlib import closing,contextmanager
-from datetime import datetime,timezone
+from datetime import datetime,timedelta,timezone
+from email import policy
+from email.parser import BytesParser
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs,urlsplit
+from urllib.parse import parse_qs,urlsplit,urlunsplit
 try:import markdown_it;HAS_RENDERER=True
 except ImportError:HAS_RENDERER=False
 ASSETS=Path(__file__).resolve().parents[1]/'assets'
 IDENTIFIER=re.compile('[a-zA-Z0-9_-]{1,80}\\Z')
 MAX_REPORT=2000000
+MAX_NOTE=15000
 MAX_SUBMISSION=150000
-MAX_BODY=32768
+MAX_BODY=96000
 MAX_SUBMISSION_BODY=1000000
-MAX_UPLOAD=1000000
+MAX_UPLOAD=50000000
+MAX_ATTACHMENTS=5
+MAX_FETCH=50000000
+FETCH_LEASE=timedelta(minutes=5)
 UPLOAD_DIR='uploads'
+FETCH_DIR='downloads'
 FENCE=re.compile('^ {0,3}(`{3,}|~{3,})')
 CHOICE=re.compile('^\\s*[-*]\\s+\\(([ xX]?)\\)\\s+(\\S.*?)\\s*$')
 CHECKBOX=re.compile('^\\s*[-*]\\s+\\[([ xX]?)\\]\\s+(\\S.*?)\\s*$')
 BLANK=re.compile('^(?:(.*?)[\\s:])?_{3,}\\s*$')
 ANCHOR=re.compile('\\s*\\{#([a-zA-Z0-9_-]{1,80})\\}\\s*$')
+REMINDERS='Manage the task list.','Take the smallest open task next.','Always push.','Report GH_TOKEN failure; use ask_user only if requested, preview unavailable, or ntfy selected.','Keep docs terse but clear.','Ask questions ASAP through fielded reports; keep other work moving.',"Don't forget to publish your reports.",'Avoid ending turn if there are unblocked tasks.'
+REMINDER_CURSOR='reminder_cursor'
+POLLS_SINCE_MESSAGE='polls_since_message'
 def now():return datetime.now(timezone.utc).isoformat()
-def new_id():'One identifier in the shape the log shows: seven characters, a hyphen, the rest.';hexed=uuid.uuid4().hex;return f"{hexed[:7]}-{hexed[7:]}"
-def clip_stamp(value):'Cut an ISO stamp to seconds; a restore needs no milliseconds or offset.';return value[:19]if value else value
+def meta_number(db,key):row=db.execute('SELECT value FROM meta WHERE key = ?',(key,)).fetchone();value=str(row[0])if row else'';return int(value)if value.isdigit()else 0
+def new_id():hexed=uuid.uuid4().hex;return f"{hexed[:7]}-{hexed[7:]}"
+def clip_stamp(value):return value[:19]if value else value
 def identifier(value):
 	if not isinstance(value,str)or not IDENTIFIER.fullmatch(value):raise ValueError('ID must contain 1–80 letters, digits, underscores or hyphens')
 	return value
 def note_text(text):
-	if not isinstance(text,str)or not text.strip()or len(text)>4000:raise ValueError('Enter a note of 1–4000 characters')
+	if not isinstance(text,str)or not text.strip()or len(text)>MAX_NOTE:raise ValueError(f"Enter a note of 1–{MAX_NOTE} characters")
 	return text
 def when(value):
-	'Return a timestamp a restore carried exactly as it arrived, once it parses.'
 	try:datetime.fromisoformat(str(value))
 	except ValueError as error:raise ValueError(f"Not a timestamp: {value!r}")from error
 	return str(value)
 def restore_receipt(acknowledged_at,ack_kind,ack_text,ack_edited_at=None):
-	'Validate the receipt a restored line carries: all three fields, or none of them.\n\n  A partial receipt is refused rather than filled in, because supplying the missing half\n  is how a note comes back answered when nobody answered it.\n  ';carried=acknowledged_at,ack_kind,ack_text
+	carried=acknowledged_at,ack_kind,ack_text
 	if all(value is None for value in carried):
 		if ack_edited_at is not None:raise ValueError('An edited receipt needs an acknowledgement')
 		return None,None,None,None
@@ -52,7 +61,6 @@ def restore_receipt(acknowledged_at,ack_kind,ack_text,ack_edited_at=None):
 	if ack_kind not in{'note','reply'}:raise ValueError('Every acknowledgement is a note or a reply, with its text')
 	return when(acknowledged_at),ack_kind,note_text(ack_text),when(ack_edited_at)if ack_edited_at is not None else None
 def submission_text(text):
-	'Report answers are not notes, so they carry their own cap and their own wording.'
 	if not isinstance(text,str)or not text.strip():raise ValueError('A report submission carries at least one answer')
 	if len(text)>MAX_SUBMISSION:raise ValueError(f"A report submission must be under {MAX_SUBMISSION:,} characters; answer fewer fields or shorten them")
 	return text
@@ -61,9 +69,8 @@ def slug(text,used):
 	while candidate in used:candidate=f"{base}-{suffix}";suffix+=1
 	used.add(candidate);return candidate
 def prompt_text(line):text=re.sub('^\\s*(?:[-*+]\\s+|#+\\s+|>\\s+|\\d+[.)]\\s+)','',line).strip();return text.strip('*_` ').rstrip(':').strip()
-def custom_label(option):'The label of a free-text option, or None for a plain one.\n\n  `Label: ___` means free text whether it is a whole field or one option in a group, so the\n  same BLANK pattern decides both; a bare `___` option falls back to the label `Other`.\n  ';found=BLANK.match(option);return None if not found else prompt_text(found.group(1)or'')or'Other'
+def custom_label(option):found=BLANK.match(option);return None if not found else prompt_text(found.group(1)or'')or'Other'
 def custom_answer(field,value):
-	"True when `value` is typed text for one of this field's free-text options."
 	if not isinstance(value,str):return False
 	for option in field['options']:
 		label=custom_label(option)
@@ -72,7 +79,7 @@ def custom_answer(field,value):
 		if typed.strip()and len(typed)<=2000:return True
 	return False
 def parse_fields(markdown):
-	'Split Markdown into prose blocks and answer fields written as list markers.';lines=markdown.splitlines();blocks,chunk,questions,used=[],[],[],set();fence,prompt,anchor,index,position=None,'',None,0,0
+	lines=markdown.splitlines();blocks,chunk,questions,used=[],[],[],set();fence,prompt,anchor,index,position=None,'',None,0,0
 	while position<len(lines):
 		line=lines[position]
 		if fence is not None:
@@ -110,9 +117,9 @@ def parse_fields(markdown):
 	if questions:Store.validate_fields(questions)
 	return blocks,questions
 def field_html(question):
-	prompt=html.escape(question['prompt'],quote=True);body=f'<div class="question" data-field="{html.escape(question["id"],quote=True)}"';body+=f' data-type="{question["type"]}">'
-	if question['type']=='text':return f'{body}<input type="text" maxlength="2000" placeholder="Answer" aria-label="{prompt}"></div>'
-	control='radio'if question['type']=='choice'else'checkbox';group=f'<div class="options" role="group" aria-label="{prompt}">';name=html.escape(question['id'],quote=True)
+	prompt=html.escape(question['prompt'],quote=True);name=html.escape(question['id'],quote=True);body=f'<div class="question" data-field="{name}"';body+=f' data-type="{question["type"]}">';body+=f'<small class="question-id">Question ID: <code>{name}</code></small>'
+	if question['type']=='text':return f'{body}<textarea class="answer-text" rows="2" maxlength="2000" placeholder="Answer" aria-label="{prompt}"></textarea></div>'
+	control='radio'if question['type']=='choice'else'checkbox';group=f'<div class="options" role="group" aria-label="{prompt}">'
 	for option in question['options']:
 		value=html.escape(option,quote=True);checked=' checked'if option in question['default']else'';label=custom_label(option)
 		if label is None:group+=f'<label class="option"><input type="{control}" name="{name}" value="{value}"{checked}> {html.escape(option)}</label>';continue
@@ -125,51 +132,81 @@ MAX_TASK_DETAIL=2000
 MAX_TASK_DETAILS=40
 ECHO_DETAIL=200
 TASK_COLUMNS='id, title, details, status, position, updated_at'
+CLI_DESCRIPTION='Notes, reports, tasks and the preview server for Arena steering.'
 SAVED_STATE='saved-state.ndjson'
 NOTE_LINE_KEYS='id','text','at','acknowledged_at','ack_kind','ack_text','ack_edited_at','seen_at','task_id'
 TASK_LINE_KEYS='id','title','details','status','order'
 SUBMISSION_LINE_KEYS='id','report_id','text','at','acknowledged_at','ack_kind','ack_text','ack_edited_at','seen_at','task_id'
-def task_row(row):'Shape one stored task for the state payload, keeping its details a list.';return{'id':row[0],'title':row[1],'details':json.loads(row[2]),'status':row[3],'order':row[4],'updated_at':row[5]}
-def echo_task(record,before=None,after=None):'The confirmation an agent gets back: whole title, details cut, neighbours named.';return{'id':record['id'],'title':record['title'],'status':record['status'],'order':record['order'],'prev':before,'next':after,'details':[detail[:ECHO_DETAIL]+('…'if len(detail)>ECHO_DETAIL else'')for detail in record['details']]}
+def task_row(row):return{'id':row[0],'title':row[1],'details':json.loads(row[2]),'status':row[3],'order':row[4],'updated_at':row[5]}
+def echo_task(record,before=None,after=None):return{'id':record['id'],'title':record['title'],'status':record['status'],'order':record['order'],'prev':before,'next':after,'details':[detail[:ECHO_DETAIL]+('…'if len(detail)>ECHO_DETAIL else'')for detail in record['details']]}
 def saved_note_line(record):
-	'Return the keys a saved note line carries, and nothing else.'
 	if not isinstance(record,dict):raise TypeError('Every saved note is an object')
 	return{key:record.get(key)for key in NOTE_LINE_KEYS}
 def saved_answer_line(record):
-	'Return the keys a saved report answer line carries, so a restore keeps the answer.'
 	if not isinstance(record,dict):raise TypeError('Every saved answer is an object')
 	return{key:record.get(key)for key in SUBMISSION_LINE_KEYS}
 def saved_task_line(record):
-	'Return the keys a saved task line carries; details keep their list shape.'
 	if not isinstance(record,dict):raise TypeError('Every saved task is an object')
 	line={key:record.get(key)for key in TASK_LINE_KEYS};line['details']=[str(item)for item in record.get('details')or[]];return line
 def upload_name(name):
-	"The owner's file name, kept for display and for the download header.";cleaned=Path(str(name or'')).name.strip()
+	cleaned=Path(str(name or'')).name.strip()
 	if not cleaned:raise ValueError('An upload needs a file name')
 	if len(cleaned)>200:raise ValueError('A file name must be 200 characters or fewer')
+	if any(ord(char)<32 or ord(char)==127 for char in cleaned):raise ValueError('A file name must not contain control characters')
 	return cleaned
-def upload_type(content_type):'The content type the browser sent, or a neutral one; it never decides how the bytes are read.';cleaned=str(content_type or'').split(';')[0].strip()[:120];return cleaned or'application/octet-stream'
-def upload_row(row,directory):'A stored upload, plus the two things the row cannot say: where the bytes are and whether they are there.';path=directory/UPLOAD_DIR/row['file'];return dict(row)|{'path':str(path),'present':path.exists()}
+def fetch_url(value):
+	if not isinstance(value,str)or not value.strip()or len(value)>2048:raise ValueError('Enter one HTTPS URL of at most 2048 characters')
+	value=value.strip()
+	if any(ord(char)<33 or ord(char)==127 for char in value):raise ValueError('A download URL must not contain spaces or control characters')
+	try:
+		parsed=urlsplit(value)
+		if parsed.scheme.lower()!='https'or not parsed.hostname or parsed.port==0:raise ValueError('Only HTTPS download URLs are allowed')
+		if parsed.username is not None or parsed.password is not None:raise ValueError('Do not put credentials in a download URL')
+	except ValueError as error:raise ValueError(f"Invalid HTTPS download URL: {error}")from error
+	return urlunsplit(parsed._replace(fragment=''))
+def fetch_row(row,directory):item=dict(row);item.pop('claim',None);item['allow_proxy']=bool(item['allow_proxy']);file=item['file'];path=directory/FETCH_DIR/file if file else None;item['path']=str(path)if path else None;item['present']=bool(path and path.is_file());return item
+def upload_type(content_type):cleaned=str(content_type or'').split(';')[0].strip()[:120];return cleaned or'application/octet-stream'
+def parse_note_attachments(content_type,data):
+	if len(content_type)>200 or any(char in content_type for char in'\r\n'):raise ValueError('Invalid multipart boundary')
+	prefix=b'MIME-Version: 1.0\r\nContent-Type: '+content_type.encode('ascii')+b'\r\n\r\n';message=BytesParser(policy=policy.default).parsebytes(prefix+data)
+	if not message.is_multipart()or message.defects:raise ValueError('Send files with a valid multipart boundary')
+	parts=list(message.iter_parts())
+	if not 3<=len(parts)<=MAX_ATTACHMENTS+2:raise ValueError(f"Send one note ID, text and 1–{MAX_ATTACHMENTS} files")
+	fields,files={},[]
+	for part in parts:
+		name=part.get_param('name',header='content-disposition')
+		if part.get_content_disposition()!='form-data'or name not in{'id','text','file'}:raise ValueError('Unexpected note attachment field')
+		if part.defects or part.is_multipart()or name!='file'and name in fields:raise ValueError('Duplicate or invalid note attachment field')
+		body=part.get_payload(decode=True)
+		if body is None:raise ValueError('Invalid note attachment bytes')
+		if name=='file':files.append((part.get_filename(),part.get_content_type(),body))
+		else:
+			if part.get_filename()is not None:raise ValueError('Only file may have a filename')
+			fields[name]=body.decode('utf-8')
+	if set(fields)!={'id','text'}or not files:raise ValueError('Send one note ID, text and at least one file')
+	return fields['id'],fields['text'],files
+def upload_row(row,directory):path=directory/UPLOAD_DIR/row['file'];return dict(row)|{'path':str(path),'present':path.exists()}
+def add_note_attachments(note,records):
+	if records:note['attachment_name']=records[0]['name'];note['attachment_path']=records[0]['path'];note['attachments']=records
+	return note
 def cli_json(value,pretty=False):
-	'Print agent-facing JSON minified; the agent pays for every space it reads.\n\n  `--pretty` is the human escape hatch: indentation costs tokens, and the tokens are the point.\n  '
 	if pretty:return json.dumps(value,ensure_ascii=False,indent=2)
 	return json.dumps(value,ensure_ascii=False,separators=(',',':'))
 def require_server(store):
-	"Fail the poll while the preview server is down, so the agent restarts it.\n\n  `serve` records its bound port in the state, so a poll can tell a quiet\n  inbox from a dead server: the port is the evidence, and a refused connect\n  means the owner's page is gone with it.\n  ";port=store.meta_value('port')
+	port=store.meta_value('port')
 	if not port:return
 	with closing(socket.socket())as probe:
 		probe.settimeout(1)
 		if probe.connect_ex(('127.0.0.1',int(port)))==0:return
 	raise ValueError('preview server is down; start it again before polling')
-def print_read(store,pretty=False):'Print a read listing, then stamp Seen for the IDs it delivered.\n\n  The stamp follows the write on purpose: a write that fails or never reaches the\n  agent leaves every printed note unseen, so the next read delivers it again.\n  Pending selection is the acknowledgement queue, so a stamped note still prints\n  until it is answered.\n  ';listing=store.read();print(cli_json(listing,pretty),flush=True);store.mark_seen([item['id']for item in listing['pending']])
+def print_read(store,pretty=False):listing=store.read();print(cli_json(listing,pretty),flush=True);store.mark_seen([item['id']for item in listing['pending']])
 def parse_task_import(text):
-	'Accept either a JSON array of tasks or one task per line.';stripped=text.strip()
+	stripped=text.strip()
 	if not stripped:raise ValueError('Nothing to import')
 	records=json.loads(stripped)if stripped.startswith('[')else[json.loads(line)for line in stripped.splitlines()if line.strip()]
 	if not isinstance(records,list)or not all(isinstance(item,dict)for item in records):raise ValueError('Import a JSON array of task objects, or one task object per line')
 	return records
 def check_task(task_id,title,details):
-	"Validate one task's fields before anything is written."
 	if not TASK_ID.match(task_id or''):raise ValueError('A task ID is 1-64 characters of lowercase letters, digits and hyphens, and starts with a letter or digit')
 	if title is not None and len(title)>MAX_TASK_TITLE:raise ValueError(f"A task title must be {MAX_TASK_TITLE} characters or fewer")
 	if len(details or())>MAX_TASK_DETAILS:raise ValueError(f"A task carries at most {MAX_TASK_DETAILS} details")
@@ -183,13 +220,14 @@ def render_report(markdown):
 		else:parts.append(field_html(item))
 	return''.join(parts),questions
 class ReportChanged(ValueError):pass
+class FetchChanged(ValueError):pass
 class Store:
 	def __init__(self,directory,create=False,save_path=None):
-		directory=Path(directory).resolve();self.path=directory/'state.sqlite3';self.save_path=Path(save_path)if save_path else Path(SAVED_STATE);existed=self.path.is_file()
+		directory=Path(directory).resolve();self.path=directory/'state.sqlite3';self.save_path=Path(save_path)if save_path else self.path.parent/SAVED_STATE;existed=self.path.is_file()
 		if not create and not existed:raise FileNotFoundError(f"Inbox missing: {self.path}; start the preview first")
 		if create and not existed:directory.mkdir(parents=True,exist_ok=True,mode=448)
 		with closing(self.connect())as db,db:
-			db.executescript("\n        CREATE TABLE IF NOT EXISTS notes (\n          seq INTEGER PRIMARY KEY, id TEXT UNIQUE NOT NULL,\n          text TEXT NOT NULL, at TEXT NOT NULL, acknowledged_at TEXT,\n          ack_kind TEXT, ack_text TEXT, seen_at TEXT\n        );\n        CREATE TABLE IF NOT EXISTS reports (\n          id TEXT PRIMARY KEY, title TEXT NOT NULL,\n          markdown TEXT NOT NULL, updated_at TEXT NOT NULL, seq INTEGER, seen_at TEXT\n        );\n        CREATE TABLE IF NOT EXISTS submissions (\n          seq INTEGER PRIMARY KEY, id TEXT UNIQUE NOT NULL,\n          report_id TEXT NOT NULL, text TEXT NOT NULL, at TEXT NOT NULL,\n          acknowledged_at TEXT, ack_kind TEXT, ack_text TEXT, seen_at TEXT\n        );\n        CREATE TABLE IF NOT EXISTS uploads (\n          seq INTEGER PRIMARY KEY, id TEXT UNIQUE NOT NULL,\n          name TEXT NOT NULL, type TEXT NOT NULL, size INTEGER NOT NULL,\n          sha256 TEXT NOT NULL, file TEXT NOT NULL, at TEXT NOT NULL\n        );\n        CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);\n        CREATE TABLE IF NOT EXISTS tasks (\n          id TEXT PRIMARY KEY,\n          title TEXT NOT NULL,\n          details TEXT NOT NULL DEFAULT '[]',\n          status TEXT NOT NULL DEFAULT 'upcoming'\n            CHECK (status IN ('upcoming', 'finished')),\n          position INTEGER NOT NULL,\n          created_at TEXT NOT NULL,\n          updated_at TEXT NOT NULL\n        );\n      ");columns={row['name']for row in db.execute('PRAGMA table_info(notes)')}
+			db.executescript("\n        CREATE TABLE IF NOT EXISTS notes (\n          seq INTEGER PRIMARY KEY, id TEXT UNIQUE NOT NULL,\n          text TEXT NOT NULL, at TEXT NOT NULL, acknowledged_at TEXT,\n          ack_kind TEXT, ack_text TEXT, seen_at TEXT\n        );\n        CREATE TABLE IF NOT EXISTS reports (\n          id TEXT PRIMARY KEY, title TEXT NOT NULL,\n          markdown TEXT NOT NULL, updated_at TEXT NOT NULL, seq INTEGER, seen_at TEXT\n        );\n        CREATE TABLE IF NOT EXISTS submissions (\n          seq INTEGER PRIMARY KEY, id TEXT UNIQUE NOT NULL,\n          report_id TEXT NOT NULL, text TEXT NOT NULL, at TEXT NOT NULL,\n          acknowledged_at TEXT, ack_kind TEXT, ack_text TEXT, seen_at TEXT\n        );\n        CREATE TABLE IF NOT EXISTS uploads (\n          seq INTEGER PRIMARY KEY, id TEXT UNIQUE NOT NULL, note_id TEXT,\n          name TEXT NOT NULL, type TEXT NOT NULL, size INTEGER NOT NULL,\n          sha256 TEXT NOT NULL, file TEXT NOT NULL, at TEXT NOT NULL\n        );\n        CREATE TABLE IF NOT EXISTS fetch_jobs (\n          seq INTEGER PRIMARY KEY, id TEXT UNIQUE NOT NULL,\n          url TEXT NOT NULL, allow_proxy INTEGER NOT NULL CHECK (allow_proxy IN (0, 1)),\n          status TEXT NOT NULL CHECK (status IN ('queued', 'fetching', 'saved', 'failed')),\n          approval TEXT NOT NULL DEFAULT 'approved'\n            CHECK (approval IN ('pending', 'approved', 'denied')),\n          claim TEXT, lease_until TEXT, error TEXT, source TEXT,\n          name TEXT, type TEXT, size INTEGER, sha256 TEXT, file TEXT,\n          at TEXT NOT NULL, updated_at TEXT NOT NULL\n        );\n        CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);\n        CREATE TABLE IF NOT EXISTS tasks (\n          id TEXT PRIMARY KEY,\n          title TEXT NOT NULL,\n          details TEXT NOT NULL DEFAULT '[]',\n          status TEXT NOT NULL DEFAULT 'upcoming'\n            CHECK (status IN ('upcoming', 'finished')),\n          position INTEGER NOT NULL,\n          created_at TEXT NOT NULL,\n          updated_at TEXT NOT NULL\n        );\n      ");columns={row['name']for row in db.execute('PRAGMA table_info(notes)')}
 			for column in('ack_kind','ack_text','ack_edited_at','seen_at','task_id'):
 				if column not in columns:db.execute(f"ALTER TABLE notes ADD COLUMN {column} TEXT")
 			if'origin'in columns:db.execute('ALTER TABLE notes DROP COLUMN origin');columns.discard('origin')
@@ -202,60 +240,66 @@ class Store:
 			if'seen_at'not in columns:db.execute('ALTER TABLE reports ADD COLUMN seen_at TEXT');db.execute('UPDATE submissions SET seen_at = acknowledged_at WHERE seen_at IS NULL AND acknowledged_at IS NOT NULL')
 			columns={row['name']for row in db.execute('PRAGMA table_info(reports)')}
 			if'seq'not in columns:db.execute('ALTER TABLE reports ADD COLUMN seq INTEGER');db.execute('UPDATE reports SET seq = rowid WHERE seq IS NULL')
+			columns={row['name']for row in db.execute('PRAGMA table_info(uploads)')}
+			if'note_id'not in columns:db.execute('ALTER TABLE uploads ADD COLUMN note_id TEXT');db.execute('UPDATE uploads SET note_id = id WHERE note_id IS NULL')
+			db.execute('CREATE INDEX IF NOT EXISTS uploads_note_id ON uploads(note_id)');columns={row['name']for row in db.execute('PRAGMA table_info(fetch_jobs)')}
+			if'approval'not in columns:db.execute("ALTER TABLE fetch_jobs ADD COLUMN approval TEXT NOT NULL DEFAULT 'approved' CHECK (approval IN ('pending', 'approved', 'denied'))")
 		if not existed:self.path.chmod(384)
 	def connect(self):db=sqlite3.connect(self.path,timeout=5);db.row_factory=sqlite3.Row;return db
-	def note(self,note_id,text,at=None,acknowledged_at=None,ack_kind=None,ack_text=None,seen_at=None,task_id=None,ack_edited_at=None):
-		'Record a message; a restore carries its receipt and it is written as given.\n\n    Nothing here stamps a receipt with now(), because a restored acknowledgement has to\n    say when it was actually written. Read state rides along on the same terms and answers\n    to nobody, so a line seen but never answered comes back seen and unacknowledged. An ID\n    that is already stored keeps the record it has, so importing the same log twice\n    changes nothing.\n    ';identifier(note_id);note_text(text);receipt=restore_receipt(acknowledged_at,ack_kind,ack_text,ack_edited_at);seen=when(seen_at)if seen_at is not None else None
-		with closing(self.connect())as db,db:
-			db.execute('BEGIN IMMEDIATE');existing=db.execute('SELECT * FROM notes WHERE id = ?',(note_id,)).fetchone()
+	def note(self,note_id,text,at=None,acknowledged_at=None,ack_kind=None,ack_text=None,seen_at=None,task_id=None,ack_edited_at=None,autosave=True,shared=None):
+		identifier(note_id);note_text(text);receipt=restore_receipt(acknowledged_at,ack_kind,ack_text,ack_edited_at);seen=when(seen_at)if seen_at is not None else None
+		with self.transaction(shared,autosave=autosave)as db:
+			if shared is None:db.execute('BEGIN IMMEDIATE')
+			existing=db.execute('SELECT * FROM notes WHERE id = ?',(note_id,)).fetchone()
 			if existing:
 				if existing['text']!=text:raise ValueError('This message ID already belongs to different text')
 				return dict(existing)
-			db.execute('INSERT INTO notes (id, text, at, acknowledged_at, ack_kind, ack_text, ack_edited_at, seen_at, task_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',(note_id,text,at or now(),*receipt,seen,task_id));return dict(db.execute('SELECT * FROM notes WHERE id = ?',(note_id,)).fetchone())
-	def submission(self,submission_id,report_id,text,at=None,acknowledged_at=None,ack_kind=None,ack_text=None,seen_at=None,task_id=None,ack_edited_at=None,shared=None):
-		'Record report answers apart from user messages; the log never shows them.\n\n    `import-notes` restores a saved answer through here too, receipt and all, for the same\n    reason a note keeps its own: the save file exists so a restore returns what the owner\n    sent, and an answer that comes back unread was read when the agent read it (report\n    submission c0fcfad9, note 120fe358). An ID already stored keeps its record.\n    ';identifier(submission_id);identifier(report_id);submission_text(text)
-		with self.transaction(shared)as db:
+			db.execute('INSERT INTO notes (id, text, at, acknowledged_at, ack_kind, ack_text, ack_edited_at, seen_at, task_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',(note_id,text,at or now(),*receipt,seen,task_id));db.execute("INSERT OR REPLACE INTO meta VALUES (?, '0')",(POLLS_SINCE_MESSAGE,));return dict(db.execute('SELECT * FROM notes WHERE id = ?',(note_id,)).fetchone())
+	def submission(self,submission_id,report_id,text,at=None,acknowledged_at=None,ack_kind=None,ack_text=None,seen_at=None,task_id=None,ack_edited_at=None,shared=None,autosave=True):
+		identifier(submission_id);identifier(report_id);submission_text(text)
+		with self.transaction(shared,autosave=autosave)as db:
 			if shared is None:db.execute('BEGIN IMMEDIATE')
 			existing=db.execute('SELECT * FROM submissions WHERE id = ?',(submission_id,)).fetchone()
 			if existing:
 				if existing['text']!=text:raise ValueError('This message ID already belongs to different text')
 				return dict(existing)
-			db.execute('INSERT INTO submissions (id, report_id, text, at, acknowledged_at, ack_kind, ack_text, ack_edited_at, seen_at, task_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',(submission_id,report_id,text,at or now(),*restore_receipt(acknowledged_at,ack_kind,ack_text,ack_edited_at),when(seen_at)if seen_at is not None else None,task_id));return dict(db.execute('SELECT * FROM submissions WHERE id = ?',(submission_id,)).fetchone())
+			db.execute('INSERT INTO submissions (id, report_id, text, at, acknowledged_at, ack_kind, ack_text, ack_edited_at, seen_at, task_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',(submission_id,report_id,text,at or now(),*restore_receipt(acknowledged_at,ack_kind,ack_text,ack_edited_at),when(seen_at)if seen_at is not None else None,task_id));db.execute("INSERT OR REPLACE INTO meta VALUES (?, '0')",(POLLS_SINCE_MESSAGE,));return dict(db.execute('SELECT * FROM submissions WHERE id = ?',(submission_id,)).fetchone())
 	def submissions(self):
 		with closing(self.connect())as db:return[dict(row)for row in db.execute('SELECT * FROM submissions ORDER BY seq')]
 	def state(self):
-		"The page's state, with every stamp cut to seconds.\n\n    The shift-click copy and the save file restore from this shape, and a restore\n    needs no milliseconds or offset, so the state surface carries second stamps\n    while the database keeps what it was given.\n    ";tasks=self.tasks()
+		tasks=self.tasks()
 		with closing(self.connect())as db:
-			meta=dict(db.execute('SELECT key, value FROM meta'));notes=[dict(row)for row in db.execute('SELECT * FROM notes ORDER BY seq')];reports=[dict(row)for row in db.execute('SELECT id, title, updated_at, seq, seen_at, markdown, EXISTS(SELECT 1 FROM submissions WHERE report_id = reports.id) AS answered FROM reports ORDER BY seq, id')]
+			meta=dict(db.execute('SELECT key, value FROM meta'));notes=[dict(row)for row in db.execute('SELECT * FROM notes ORDER BY seq')];reports=[dict(row)for row in db.execute('SELECT id, title, updated_at, seq, seen_at, markdown, EXISTS(SELECT 1 FROM submissions WHERE report_id = reports.id) AS answered FROM reports ORDER BY seq, id')];latest_answers={row['report_id']:row for row in db.execute('SELECT id, report_id, at, acknowledged_at FROM submissions ORDER BY seq')}
 			for report in reports:
-				answered=report.pop('answered')
+				answered=report.pop('answered');latest=latest_answers.get(report['id']);report['latest_answer_id']=latest['id']if latest else None;report['latest_answer_at']=clip_stamp(latest['at'])if latest else None;report['latest_answer_acknowledged_at']=clip_stamp(latest['acknowledged_at'])if latest else None
 				try:report['needs_answer']=bool(parse_fields(report.pop('markdown'))[1])and not answered
 				except ValueError as error:report['needs_answer']=True;report['field_error']=str(error)
-			uploads=self.uploads()
-			for item in notes+reports+uploads:
+			uploads=self.uploads();by_note={}
+			for item in uploads:by_note.setdefault(item['note_id'],[]).append(item)
+			for note in notes:add_note_attachments(note,by_note.get(note['id'],[]))
+			fetch_jobs=self.fetch_jobs()
+			for item in notes+reports+uploads+fetch_jobs:
 				for key in('at','acknowledged_at','ack_edited_at','seen_at','updated_at'):
 					if key in item:item[key]=clip_stamp(item[key])
 			if tasks is not None:
 				for item in tasks['finished']+tasks['upcoming']:item['updated_at']=clip_stamp(item['updated_at'])
 				tasks['updated_at']=clip_stamp(tasks['updated_at'])
-			return{'notes':notes,'reports':reports,'tasks':tasks,'uploads':uploads,'last_check':clip_stamp(meta.get('last_check'))}
+			return{'notes':notes,'reports':reports,'tasks':tasks,'uploads':uploads,'fetch_jobs':fetch_jobs,'last_check':clip_stamp(meta.get('last_check'))}
 	def tasks(self):
-		'Both divs as records in order, or None while nothing is stored.'
 		with closing(self.connect())as db:rows=db.execute(f"SELECT {TASK_COLUMNS} FROM tasks ORDER BY status DESC, position, id").fetchall()
 		records=[task_row(row)for row in rows]
 		if not records:return None
 		return{'finished':[item for item in records if item['status']=='finished'],'upcoming':[item for item in records if item['status']=='upcoming'],'updated_at':max(item['updated_at']for item in records)}
 	def list_tasks(self):
-		'Every task as stored, for an agent to read the list back.'
 		with closing(self.connect())as db:rows=db.execute(f"SELECT {TASK_COLUMNS} FROM tasks ORDER BY status DESC, position, id").fetchall()
 		return[task_row(row)for row in rows]
 	@contextmanager
-	def transaction(self,db=None):
-		"One commit for this call's work, or a caller's open transaction when it passes one.\n\n    An import needs the second form: a delete and several writes that all land or none do.\n    "
+	def transaction(self,db=None,autosave=True):
 		if db is not None:yield db;return
 		with closing(self.connect())as own,own:yield own
+		if autosave:self.autosave()
 	def write_task(self,task_id,title=None,details=None,status=None,order=None,shared=None):
-		'Insert or update one task and return it as stored.\n\n    A title or details left out keep the stored ones, so moving a task between\n    the two divs is one short command rather than a rewrite of the whole list.\n    A transaction passed in is written into rather than committed separately,\n    which is what lets an import be one atomic replacement.\n    ';details=[str(item)for item in details if str(item).strip()]if details else None;check_task(task_id,title,details)
+		details=[str(item)for item in details if str(item).strip()]if details else None;check_task(task_id,title,details)
 		if status is not None and status not in TASK_STATUSES:raise ValueError(f"A task is either {' or '.join(TASK_STATUSES)}")
 		stamp=now()
 		with self.transaction(shared)as db:
@@ -272,28 +316,28 @@ class Store:
 			self.renumber(db)
 		return record
 	def remove_task(self,task_id):
-		'Delete one task and return what was stored, so the echo can confirm it.'
-		with closing(self.connect())as db,db:
+		with self.transaction()as db:
 			row=db.execute(f"SELECT {TASK_COLUMNS} FROM tasks WHERE id = ?",(task_id,)).fetchone()
 			if row is None:raise ValueError(f"No task is stored under {task_id}")
 			db.execute('DELETE FROM tasks WHERE id = ?',(task_id,));self.renumber(db)
 		return task_row(row)
 	def neighbours(self,task_id):
-		'The IDs either side of one task inside its own div, or None at the ends.'
 		with closing(self.connect())as db:
 			row=db.execute('SELECT status, position FROM tasks WHERE id = ?',(task_id,)).fetchone()
 			if row is None:return None,None
 			status,position=row;before=db.execute('SELECT id FROM tasks WHERE status = ? AND position < ? ORDER BY position DESC, id DESC LIMIT 1',(status,position)).fetchone();after=db.execute('SELECT id FROM tasks WHERE status = ? AND position > ? ORDER BY position, id LIMIT 1',(status,position)).fetchone()
 		return before[0]if before else None,after[0]if after else None
 	def amend_task(self,prev_id,task_id):
-		'Move a stored task to a new ID and keep the rest, so a typo costs no deletion.';check_task(task_id,None,None);stamp=now()
-		with closing(self.connect())as db,db:
+		check_task(task_id,None,None);stamp=now()
+		with self.transaction()as db:
 			row=db.execute('SELECT id, title, details, status, position, created_at FROM tasks WHERE id = ?',(prev_id,)).fetchone()
 			if row is None:raise ValueError(f"No task is stored under {prev_id}")
 			if db.execute('SELECT 1 FROM tasks WHERE id = ?',(task_id,)).fetchone():raise ValueError(f"A task is already stored under {task_id}")
 			db.execute('DELETE FROM tasks WHERE id = ?',(prev_id,));db.execute('INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?, ?)',(task_id,row[1],row[2],row[3],row[4],row[5],stamp));self.renumber(db)
+	def autosave(self):
+		try:self.save_state({'notes':self.state()['notes'],'tasks':self.tasks()})
+		except Exception as error:print(f"preview: autosave failed: {error}",file=sys.stderr)
 	def save_state(self,payload):
-		"Write the page's cached state to the save file, in the shape the importers read.\n\n    The browser cannot write the sandbox filesystem, so it posts what it holds and this writes it.\n    Note lines keep their receipts, read stamps and task markers, because a restore that drops any\n    of them is the failure this exists to prevent; task lines keep their status and order, so the\n    queue comes back in the same shape. Answer lines come from the database rather than from the\n    page, because the owner's report answers are stored here the moment they are sent, and an\n    answer that a restore drops is an answer the owner has to type again.\n\n    The file lands at the repository root and stays untracked: a\n    restore keeps the checkout, so the copy outlives the database beside it.\n    "
 		if not isinstance(payload,dict):raise TypeError('Save a state object')
 		notes=payload.get('notes');tasks=payload.get('tasks')
 		if tasks is None:tasks={}
@@ -305,23 +349,121 @@ class Store:
 		if path.parent!=Path('.'):path.parent.mkdir(parents=True,exist_ok=True)
 		path.write_text(''.join(json.dumps(line,ensure_ascii=False)+'\n'for line in lines),encoding='utf-8');return{'path':str(path),'notes':len(notes),'tasks':len(lines)-len(notes)-len(answers),'answers':len(answers)}
 	def uploads(self):
-		'Every upload, newest last, with `present` saying whether its bytes are still on disk.'
 		with closing(self.connect())as db:rows=db.execute('SELECT * FROM uploads ORDER BY seq').fetchall()
 		return[upload_row(row,self.path.parent)for row in rows]
 	def upload(self,upload_id):
-		'One upload by ID, or None; the bytes are read separately so a missing file is a 404.';identifier(upload_id)
+		identifier(upload_id)
 		with closing(self.connect())as db:row=db.execute('SELECT * FROM uploads WHERE id = ?',(upload_id,)).fetchone()
 		return None if row is None else upload_row(row,self.path.parent)
-	def save_upload(self,name,content_type,data):
-		"Write the bytes under the state directory and keep the record in the database.\n\n    Disk first, on the owner's answer: the bytes never pass through the\n    database, and the row carries the file name, the size, the hash and the content type. A record\n    outlives its file by design, because a restore deletes what is under the state directory, so\n    `present` reports that instead of an entry that silently opens nothing. Any bytes are accepted,\n    so a screenshot and an archive arrive as themselves.\n    "
+	def save_upload(self,name,content_type,data,upload_id=None,shared=None,note_id=None,position=None):
 		if not isinstance(data,(bytes,bytearray)):raise TypeError('An upload is bytes')
 		if not data:raise ValueError('An upload must not be empty')
 		if len(data)>MAX_UPLOAD:raise ValueError(f"An upload must be {MAX_UPLOAD:,} bytes or fewer")
-		cleaned=upload_name(name);upload_id=new_id();directory=self.path.parent/UPLOAD_DIR;directory.mkdir(parents=True,exist_ok=True);target=directory/f"{upload_id}{Path(cleaned).suffix[:16]}";target.write_bytes(bytes(data));stamp=now()
-		with closing(self.connect())as db,db:db.execute('INSERT INTO uploads (id, name, type, size, sha256, file, at) VALUES (?, ?, ?, ?, ?, ?, ?)',(upload_id,cleaned,upload_type(content_type),len(data),hashlib.sha256(bytes(data)).hexdigest(),target.name,stamp));row=db.execute('SELECT * FROM uploads WHERE id = ?',(upload_id,)).fetchone()
+		cleaned=upload_name(name);kind=upload_type(content_type);digest=hashlib.sha256(data).hexdigest();upload_id=identifier(upload_id)if upload_id is not None else new_id();note_id=identifier(note_id)if note_id is not None else upload_id
+		if position is not None and(not isinstance(position,int)or not 1<=position<=MAX_ATTACHMENTS):raise ValueError('Invalid attachment position')
+		directory=self.path.parent/UPLOAD_DIR;directory.mkdir(parents=True,exist_ok=True,mode=448);stem=f"{note_id}-{position}"if position is not None else upload_id;target=directory/f"{stem}{Path(cleaned).suffix[:16]}"
+		with self.transaction(shared)as db:
+			if shared is None:db.execute('BEGIN IMMEDIATE')
+			existing=db.execute('SELECT * FROM uploads WHERE id = ?',(upload_id,)).fetchone()
+			if existing:
+				if(existing['note_id'],existing['name'],existing['type'],existing['size'],existing['sha256'],existing['file'])!=(note_id,cleaned,kind,len(data),digest,target.name):raise ValueError('This note ID already belongs to a different file')
+				target=directory/existing['file']
+				if not target.is_file()or hashlib.sha256(target.read_bytes()).hexdigest()!=digest:target.write_bytes(bytes(data));target.chmod(384)
+				return upload_row(existing,self.path.parent)
+			target.write_bytes(bytes(data));target.chmod(384);db.execute('INSERT INTO uploads (id, note_id, name, type, size, sha256, file, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',(upload_id,note_id,cleaned,kind,len(data),digest,target.name,now()));row=db.execute('SELECT * FROM uploads WHERE id = ?',(upload_id,)).fetchone()
 		return upload_row(row,self.path.parent)
-	def import_tasks(self,records,replace=False):
-		'Rebuild a list from the JSON a copy button or task-list produced.\n\n    Every record is validated before anything is written, and the whole import is one\n    transaction, so an invalid record costs nothing. Deleting first, as this did, meant a\n    bad record later in the list took the existing list with it and left the replacement\n    half applied, which is data loss rather than an error.\n    '
+	def note_with_uploads(self,note_id,text,files):
+		identifier(note_id);note_text(text)
+		if not isinstance(files,(list,tuple))or not 1<=len(files)<=MAX_ATTACHMENTS:raise ValueError(f"Attach 1–{MAX_ATTACHMENTS} files to a note")
+		prepared=[]
+		for file in files:
+			if not isinstance(file,(list,tuple))or len(file)!=3:raise ValueError('Each attachment needs a name, type and bytes')
+			name,content_type,data=file
+			if not isinstance(data,(bytes,bytearray)):raise TypeError('An upload is bytes')
+			if not data or len(data)>MAX_UPLOAD:raise ValueError(f"Each attachment must be 1–{MAX_UPLOAD:,} bytes")
+			prepared.append((upload_name(name),upload_type(content_type),bytes(data)))
+		created=[]
+		try:
+			with self.transaction()as db:
+				db.execute('BEGIN IMMEDIATE');existing=db.execute('SELECT text FROM notes WHERE id = ?',(note_id,)).fetchone();rows=db.execute('SELECT * FROM uploads WHERE note_id = ? ORDER BY seq',(note_id,)).fetchall()
+				if existing and existing['text']!=text:raise ValueError('This message ID already belongs to different text')
+				if rows:
+					if len(rows)!=len(prepared)or any((row['name'],row['type'],row['size'],row['sha256'])!=(name,kind,len(data),hashlib.sha256(data).hexdigest())for(row,(name,kind,data))in zip(rows,prepared)):raise ValueError('This note ID already belongs to different files')
+					for(row,(_,_,data))in zip(rows,prepared):
+						target=self.path.parent/UPLOAD_DIR/row['file']
+						if not target.is_file()or hashlib.sha256(target.read_bytes()).hexdigest()!=row['sha256']:target.parent.mkdir(parents=True,exist_ok=True,mode=448);target.write_bytes(data);target.chmod(384)
+					records=[upload_row(row,self.path.parent)for row in rows]
+				else:
+					if existing:raise ValueError('This note ID was already sent without a file')
+					records=[]
+					for(index,(name,kind,data))in enumerate(prepared,1):record=self.save_upload(name,kind,data,upload_id=note_id if index==1 else new_id(),note_id=note_id,position=index if len(prepared)>1 else None,shared=db);records.append(record);created.append(Path(record['path']))
+				note=self.note(note_id,text,shared=db);return add_note_attachments(note,records)
+		except Exception:
+			for path in created:path.unlink(missing_ok=True)
+			raise
+	def note_with_upload(self,note_id,text,name,content_type,data):return self.note_with_uploads(note_id,text,[(name,content_type,data)])
+	def fetch_jobs(self):
+		with closing(self.connect())as db:rows=db.execute('SELECT * FROM fetch_jobs ORDER BY seq DESC').fetchall()
+		return[fetch_row(row,self.path.parent)for row in rows]
+	def enqueue_fetch(self,url,allow_proxy,*,pending=False):
+		url=fetch_url(url)
+		if not isinstance(allow_proxy,bool):raise TypeError('Proxy fallback must be true or false for this URL')
+		if not isinstance(pending,bool):raise TypeError('Pending approval must be true or false')
+		job_id,stamp=new_id(),now()
+		with self.transaction(autosave=False)as db:db.execute("INSERT INTO fetch_jobs (id, url, allow_proxy, status, approval, at, updated_at) VALUES (?, ?, ?, 'queued', ?, ?, ?)",(job_id,url,int(allow_proxy),'pending'if pending else'approved',stamp,stamp));row=db.execute('SELECT * FROM fetch_jobs WHERE id = ?',(job_id,)).fetchone()
+		return fetch_row(row,self.path.parent)
+	def decide_fetch(self,job_id,decision):
+		identifier(job_id)
+		if decision not in{'approved','denied'}:raise ValueError('Choose Approve or Deny for the download')
+		with self.transaction(autosave=False)as db:
+			changed=db.execute("UPDATE fetch_jobs SET approval = ?, status = CASE WHEN ? = 'denied' THEN 'failed' ELSE status END, error = CASE WHEN ? = 'denied' THEN 'Denied in the preview' ELSE NULL END, updated_at = ? WHERE id = ? AND approval = 'pending' AND status = 'queued'",(decision,decision,decision,now(),job_id))
+			if changed.rowcount!=1:
+				if db.execute('SELECT 1 FROM fetch_jobs WHERE id = ?',(job_id,)).fetchone()is None:raise FileNotFoundError('No queued download with that ID')
+				raise FetchChanged('This download request was already decided; refresh Downloads')
+			row=db.execute('SELECT * FROM fetch_jobs WHERE id = ?',(job_id,)).fetchone()
+		return fetch_row(row,self.path.parent)
+	def claim_fetch(self):
+		stamp=now()
+		with self.transaction(autosave=False)as db:
+			db.execute("UPDATE fetch_jobs SET status = 'queued', claim = NULL, lease_until = NULL, error = 'Browser stopped; queued again', updated_at = ? WHERE status = 'fetching' AND approval = 'approved' AND lease_until <= ?",(stamp,stamp));row=db.execute("SELECT id FROM fetch_jobs WHERE status = 'queued' AND approval = 'approved' ORDER BY seq LIMIT 1").fetchone()
+			if row is None:return None
+			job_id=row['id'];claim=secrets.token_urlsafe(24);lease=(datetime.now(timezone.utc)+FETCH_LEASE).isoformat();db.execute("UPDATE fetch_jobs SET status = 'fetching', claim = ?, lease_until = ?, error = NULL, updated_at = ? WHERE id = ?",(claim,lease,stamp,job_id));row=db.execute('SELECT * FROM fetch_jobs WHERE id = ?',(job_id,)).fetchone()
+		return fetch_row(row,self.path.parent)|{'claim':claim}
+	def claimed_fetch(self,db,job_id,claim):
+		identifier(job_id);row=db.execute('SELECT * FROM fetch_jobs WHERE id = ?',(job_id,)).fetchone()
+		if row is None:raise FileNotFoundError('No queued download with that ID')
+		if row['status']!='fetching'or row['approval']!='approved'or not isinstance(claim,str)or not secrets.compare_digest(row['claim']or'',claim)or not row['lease_until']or row['lease_until']<=now():raise FetchChanged('Download claim expired; refresh the queue and try again')
+		return row
+	def renew_fetch(self,job_id,claim):
+		with self.transaction(autosave=False)as db:self.claimed_fetch(db,job_id,claim);lease=(datetime.now(timezone.utc)+FETCH_LEASE).isoformat();db.execute('UPDATE fetch_jobs SET lease_until = ? WHERE id = ?',(lease,job_id));row=db.execute('SELECT * FROM fetch_jobs WHERE id = ?',(job_id,)).fetchone()
+		return fetch_row(row,self.path.parent)
+	def fail_fetch(self,job_id,claim,error):
+		message=str(error).strip()[:1000]or'The browser could not fetch this URL'
+		with self.transaction(autosave=False)as db:self.claimed_fetch(db,job_id,claim);db.execute("UPDATE fetch_jobs SET status = 'failed', error = ?, claim = NULL, lease_until = NULL, updated_at = ? WHERE id = ?",(message,now(),job_id));row=db.execute('SELECT * FROM fetch_jobs WHERE id = ?',(job_id,)).fetchone()
+		return fetch_row(row,self.path.parent)
+	def retry_fetch(self,job_id):
+		identifier(job_id)
+		with self.transaction(autosave=False)as db:
+			row=db.execute('SELECT * FROM fetch_jobs WHERE id = ?',(job_id,)).fetchone()
+			if row is None:raise FileNotFoundError('No queued download with that ID')
+			if row['approval']!='approved':raise FetchChanged('Only approved downloads can be retried')
+			if row['status']not in{'queued','failed'}:raise FetchChanged('Only a failed download can be queued again')
+			db.execute("UPDATE fetch_jobs SET status = 'queued', error = NULL, updated_at = ? WHERE id = ?",(now(),job_id));row=db.execute('SELECT * FROM fetch_jobs WHERE id = ?',(job_id,)).fetchone()
+		return fetch_row(row,self.path.parent)
+	def complete_fetch(self,job_id,claim,name,content_type,source,data):
+		if not data or len(data)>MAX_FETCH:raise ValueError(f"A download must be 1–{MAX_FETCH:,} bytes")
+		if source not in{'direct','allorigins','codetabs'}:raise ValueError('Unknown download source')
+		cleaned=upload_name(name);file_type=upload_type(content_type);target=None
+		try:
+			with self.transaction(autosave=False)as db:
+				row=self.claimed_fetch(db,job_id,claim)
+				if source!='direct'and not row['allow_proxy']:raise ValueError('Proxy fallback was not enabled for this URL')
+				directory=self.path.parent/FETCH_DIR;directory.mkdir(parents=True,exist_ok=True,mode=448);target=directory/f"{job_id}{Path(cleaned).suffix[:16]}";target.write_bytes(data);target.chmod(384);stamp=now();db.execute("UPDATE fetch_jobs SET status = 'saved', source = ?, name = ?, type = ?, size = ?, sha256 = ?, file = ?, error = NULL, claim = NULL, lease_until = NULL, updated_at = ? WHERE id = ?",(source,cleaned,file_type,len(data),hashlib.sha256(data).hexdigest(),target.name,stamp,job_id));message=f"Download: {cleaned} ({len(data)} B, {file_type}) from {urlsplit(row['url']).hostname} via {source} saved to {target}";db.execute('INSERT INTO notes (id, text, at) VALUES (?, ?, ?)',(job_id,message,stamp));result=db.execute('SELECT * FROM fetch_jobs WHERE id = ?',(job_id,)).fetchone()
+		except Exception:
+			if target is not None:target.unlink(missing_ok=True)
+			raise
+		self.autosave();return fetch_row(result,self.path.parent)
+	def import_tasks(self,records,replace=False,autosave=True):
 		if not isinstance(records,list):raise TypeError('Import a list of task objects')
 		prepared=[]
 		for(index,record)in enumerate(records,1):
@@ -329,7 +471,7 @@ class Store:
 			details=[str(item)for item in record.get('details')or[]if str(item).strip()];status=record.get('status');check_task(record.get('id'),record.get('title'),details)
 			if status is not None and status not in TASK_STATUSES:raise ValueError(f"A task is either {' or '.join(TASK_STATUSES)}")
 			prepared.append((record.get('id'),record.get('title'),details,status,record.get('order')or index))
-		with self.transaction()as db:
+		with self.transaction(autosave=autosave)as db:
 			if replace:
 				for(task_id,title,_,_,_)in prepared:
 					stored=db.execute('SELECT 1 FROM tasks WHERE id = ?',(task_id,)).fetchone()
@@ -338,29 +480,29 @@ class Store:
 			written=[self.write_task(*item,shared=db)for item in prepared]
 		return written
 	def renumber(self,db):
-		'Keep positions dense inside each div after a move, an insert or a removal.'
 		for status in TASK_STATUSES:
 			rows=db.execute('SELECT id FROM tasks WHERE status = ? ORDER BY position, id',(status,)).fetchall()
 			for(position,row)in enumerate(rows,1):db.execute('UPDATE tasks SET position = ? WHERE id = ?',(position,row[0]))
 	def meta_value(self,key):
-		'Read one meta value, or None when it is absent.'
 		with closing(self.connect())as db:row=db.execute('SELECT value FROM meta WHERE key = ?',(key,)).fetchone();return row[0]if row else None
 	def set_meta(self,key,value):
-		'Record one meta value, replacing any previous one.'
 		with closing(self.connect())as db,db:db.execute('INSERT OR REPLACE INTO meta VALUES (?, ?)',(key,str(value)))
-	def reminder(self):
-		'Count pending kinds without marking any message seen; any count asks for an ack.'
-		with closing(self.connect())as db:uploads=db.execute('SELECT count(*) FROM notes JOIN uploads USING (id) WHERE acknowledged_at IS NULL').fetchone()[0];notes=db.execute('SELECT count(*) FROM notes WHERE acknowledged_at IS NULL').fetchone()[0]-uploads;reports=db.execute('SELECT count(*) FROM submissions WHERE acknowledged_at IS NULL').fetchone()[0]
-		counts=[f"{count} {kind}/s."for(count,kind)in((notes,'message'),(reports,'form answer'),(uploads,'upload'))if count];ack=['DO NOT IGNORE. ACK ASAP.']if counts else[];return' '.join([*counts,*ack,'Manage the task list.'])
-	def read(self):
+	def reminder(self,advance=False):
 		with closing(self.connect())as db,db:
-			pending=[dict(row)|{'kind':'note'}for row in db.execute('SELECT * FROM notes WHERE acknowledged_at IS NULL ORDER BY seq')];pending+=[dict(row)|{'kind':'report'}for row in db.execute('SELECT * FROM submissions WHERE acknowledged_at IS NULL ORDER BY seq')]
+			uploads=db.execute('SELECT count(*) FROM notes JOIN uploads USING (id) WHERE acknowledged_at IS NULL').fetchone()[0];notes=db.execute('SELECT count(*) FROM notes WHERE acknowledged_at IS NULL').fetchone()[0]-uploads;reports=db.execute('SELECT count(*) FROM submissions WHERE acknowledged_at IS NULL').fetchone()[0];cursor=meta_number(db,REMINDER_CURSOR);polls=0 if advance and not notes+reports+uploads else meta_number(db,POLLS_SINCE_MESSAGE)+(1 if advance else 0);db.execute('INSERT OR REPLACE INTO meta VALUES (?, ?)',(REMINDER_CURSOR,str(cursor+1)))
+			if advance:db.execute('INSERT OR REPLACE INTO meta VALUES (?, ?)',(POLLS_SINCE_MESSAGE,str(polls)))
+		counts=[f"{count} {kind}/s."for(count,kind)in((notes,'message'),(reports,'form answer'),(uploads,'upload'))if count];ack=['DO NOT IGNORE. ACK ASAP.']if counts else[];head=[f"{polls} call/s since user messaged."]if polls and counts else[];return' '.join([*head,*counts,*ack,REMINDERS[cursor%len(REMINDERS)]])
+	def read(self):
+		with self.transaction()as db:
+			pending=[dict(row)|{'kind':'note'}for row in db.execute('SELECT * FROM notes WHERE acknowledged_at IS NULL ORDER BY seq')];pending+=[dict(row)|{'kind':'report'}for row in db.execute('SELECT * FROM submissions WHERE acknowledged_at IS NULL ORDER BY seq')];attachments={}
+			for row in db.execute('SELECT * FROM uploads ORDER BY seq'):record=upload_row(row,self.path.parent);attachments.setdefault(record['note_id'],[]).append(record)
 			for item in pending:
+				if item['kind']=='note':add_note_attachments(item,attachments.get(item['id'],[]))
 				for key in('at','acknowledged_at','ack_edited_at','seen_at'):item[key]=clip_stamp(item[key])
 			pending.sort(key=lambda item:item['at']);checked=now();db.execute("INSERT OR REPLACE INTO meta VALUES ('last_check', ?)",(checked,));return{'checked_at':clip_stamp(checked),'pending':pending}
 	def mark_seen(self,ids):
-		'Receipt the IDs a delivered read printed or an explicit call named.';stamp=now()
-		with closing(self.connect())as db,db:
+		stamp=now()
+		with self.transaction()as db:
 			for record_id in ids:
 				identifier(record_id)
 				for table in('notes','submissions'):
@@ -368,7 +510,7 @@ class Store:
 					if cursor.rowcount:break
 				else:raise ValueError(f"Unknown note: {record_id}; no Seen receipts written")
 	def mark_task(self,record_id,task_id,shared=None):
-		"Record that a message has a task, on whichever table holds that message.\n\n    The receipt then says so in the log, which is what the owner asked for:\n    a line without a marker leaves the reader unable to tell whether it was read and dropped\n    or read and queued. An unknown message ID raises, and a caller's transaction takes the\n    task with it, so a mistyped ID costs no half-written task.\n    ";identifier(record_id);identifier(task_id)
+		identifier(record_id);identifier(task_id)
 		with self.transaction(shared)as db:
 			for table in('notes','submissions'):
 				cursor=db.execute(f"UPDATE {table} SET task_id = ? WHERE id = ?",(task_id,record_id))
@@ -377,7 +519,7 @@ class Store:
 	def acknowledge(self,ids,kind,text):
 		if kind not in{'note','reply'}:raise ValueError('Every acknowledgement is a note or a reply, with its text')
 		text=note_text(text);stamp=now()
-		with closing(self.connect())as db,db:
+		with self.transaction()as db:
 			for record_id in ids:
 				identifier(record_id)
 				for table in('notes','submissions'):
@@ -399,13 +541,13 @@ class Store:
 		with source.open('rb')as stream:data=stream.read(MAX_REPORT+1)
 		if len(data)>MAX_REPORT:raise ValueError('Report exceeds the 2 MB limit; split it into reports')
 		text=data.decode('utf-8');parse_fields(text)
-		with closing(self.connect())as db,db:
+		with self.transaction()as db:
 			answered=db.execute('SELECT count(*) FROM submissions WHERE report_id = ?',(report_id,)).fetchone()[0]
 			if answered:raise ValueError(f"Report {report_id} has submitted answers; publish the update under a new ID")
 			highest=db.execute('SELECT COALESCE(MAX(seq), 0) FROM reports').fetchone()[0];db.execute('INSERT INTO reports (id, title, markdown, updated_at, seq)\n           VALUES (?, ?, ?, ?, ?)\n           ON CONFLICT(id) DO UPDATE SET title = excluded.title,\n             markdown = excluded.markdown, updated_at = excluded.updated_at,\n             seq = COALESCE(reports.seq, excluded.seq), seen_at = NULL',(report_id,title,text,now(),highest+1))
 	def mark_report_seen(self,report_id):
-		'Stamp the moment the owner reached the end of a report, and only the first one.\n\n    The stamp records when the report was actually read, so reopening it in another browser\n    keeps that moment instead of moving it. Republishing clears it, which is what makes a\n    changed report unread in fact rather than unread by a comparison the client has to get right.\n    ';identifier(report_id)
-		with closing(self.connect())as db,db:
+		identifier(report_id)
+		with self.transaction()as db:
 			row=db.execute('SELECT * FROM reports WHERE id = ?',(report_id,)).fetchone()
 			if row is None:raise FileNotFoundError('Report not found')
 			db.execute('UPDATE reports SET seen_at = COALESCE(seen_at, ?) WHERE id = ?',(now(),report_id));return dict(db.execute('SELECT * FROM reports WHERE id = ?',(report_id,)).fetchone())
@@ -466,14 +608,13 @@ def require_renderer():
 CODE_BLOCK=re.compile('<pre>(.*?)</pre>',re.DOTALL)
 CODE_TAG=re.compile('<[^>]+>')
 def add_copy_buttons(rendered):
-	'Give every code block a copy button.\n\n  The button carries the code in `data-code`, because rendered HTML is assigned with\n  `innerHTML` and so cannot hold a listener of its own; the client copies from the attribute.\n  Newlines become `&#10;` to survive attribute parsing unchanged.\n  '
 	def replace(match):inner=match.group(1);code=html.unescape(CODE_TAG.sub('',inner));payload=html.escape(code,quote=True).replace('\n','&#10;');button=f'<button type="button" class="copy-code" aria-label="Copy code" title="Copy code" data-code="{payload}">⧉</button>';return f'<div class="code-block">{button}<pre>{inner}</pre></div>'
 	return CODE_BLOCK.sub(replace,rendered)
 ESCAPED_FENCE=re.compile('^(?P<indent>[ \\t]*)\\\\(?P<fence>(?:`{3,}|~{3,}))',re.MULTILINE)
-def unescape_fences(source):'Give a fence back the backslash that hid it.\n\n  A backslash before a line-leading fence makes markdown-it read a literal ``` inside a\n  paragraph, so the block never reaches the rule that carries the code background. The owner\n  reported exactly that: the fence was meant as a block, and the marker is\n  unescaped here so it opens one. A tilde fence is a fence too, so the run takes either marker. An escape anywhere else is left alone, because inline\n  backticks are the other thing an escape can mean.\n  ';return ESCAPED_FENCE.sub(lambda match:match.group('indent')+match.group('fence'),source)
+def unescape_fences(source):return ESCAPED_FENCE.sub(lambda match:match.group('indent')+match.group('fence'),source)
 PARAGRAPH=re.compile('<p>.*?</p>',re.DOTALL)
 PARAGRAPH_BREAK=re.compile('<br\\s*/?>')
-def drop_paragraph_breaks(rendered):"Take the `<br>` out of a paragraph, on the owner's suggestion.\n\n  With breaks on, markdown-it turns each newline into a `<br>` and the owner found the result too\n  airy next to the message log, where a line breaks through `white-space: pre-wrap` and needs no\n  tag. A paragraph now keeps its source newlines and no break; a `<br>` inside any other element,\n  a list item for one, stays as it was.\n  ";return PARAGRAPH.sub(lambda match:PARAGRAPH_BREAK.sub('',match.group(0)),rendered)
+def drop_paragraph_breaks(rendered):return PARAGRAPH.sub(lambda match:PARAGRAPH_BREAK.sub('',match.group(0)),rendered)
 def render(markdown,breaks=False):
 	try:from markdown_it import MarkdownIt
 	except ImportError as error:raise RuntimeError("Markdown rendering needs markdown-it-py. Install it in the preview's venv and restart the server with that venv's Python; steering still works.")from error
@@ -483,7 +624,7 @@ def handler(store):
 	class Handler(BaseHTTPRequestHandler):
 		def setup(self):super().setup();self.connection.settimeout(15)
 		def reply(self,status,body,content_type='application/json; charset=utf-8',filename=None):
-			data=body if isinstance(body,(bytes,bytearray))else body.encode('utf-8');self.send_response(status);self.send_header('Content-Type',content_type);self.send_header('Content-Length',str(len(data)));self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Content-Security-Policy',"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'")
+			data=body if isinstance(body,(bytes,bytearray))else body.encode('utf-8');self.send_response(status);self.send_header('Content-Type',content_type);self.send_header('Content-Length',str(len(data)));self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Content-Security-Policy',"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self' https:; base-uri 'none'; form-action 'self'")
 			if filename:self.send_header('Content-Disposition',f'attachment; filename="{filename}"')
 			self.end_headers();self.wfile.write(data)
 		def problem(self,status,error):self.reply(status,json.dumps({'error':str(error)}))
@@ -518,27 +659,46 @@ def handler(store):
 			except FileNotFoundError as error:self.problem(404,error)
 			except(OSError,sqlite3.Error,RuntimeError)as error:self.problem(503,error)
 		def do_POST(self):
-			path=urlsplit(self.path).path;report_submit=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/submit',path);report_seen=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/seen',path);save_state=path=='/api/save-state';upload_post=path=='/api/uploads'
-			if path not in{'/api/notes','/api/markdown'}and not report_submit and not report_seen and not save_state and not upload_post:self.problem(404,'Not found');return
+			path=urlsplit(self.path).path;report_submit=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/submit',path);report_seen=re.fullmatch('/api/reports/([a-zA-Z0-9_-]{1,80})/seen',path);fetch_post=re.fullmatch('/api/fetch-jobs/([a-zA-Z0-9_-]{1,80})/(renew|result|fail|retry|approve|deny)',path);upload_post=path=='/api/uploads';note_upload=path=='/api/notes/with-file';fetch_result=bool(fetch_post and fetch_post.group(2)=='result')
+			if path not in{'/api/notes','/api/markdown','/api/fetch-jobs','/api/fetch-jobs/claim'}and not report_submit and not report_seen and not upload_post and not note_upload and not fetch_post:self.problem(404,'Not found');return
 			supplied=self.headers.get('X-Preview-Token','').encode('utf-8')
 			if not secrets.compare_digest(supplied,token.encode('ascii')):self.problem(403,'Reload the preview, then retry; your draft is kept');return
-			if self.headers.get('Content-Type')!='application/json'and not upload_post:self.problem(415,'Expected application/json');return
+			content_type=self.headers.get('Content-Type','')
+			if note_upload:
+				if not content_type.lower().startswith('multipart/form-data;'):self.problem(415,'Expected multipart/form-data');return
+			elif content_type!='application/json'and not(upload_post or fetch_result):self.problem(415,'Expected application/json');return
 			try:
-				length=int(self.headers.get('Content-Length','0'));limit=MAX_UPLOAD if upload_post else MAX_BODY if not(report_submit or save_state)else MAX_SUBMISSION_BODY
+				length=int(self.headers.get('Content-Length','0'));limit=MAX_ATTACHMENTS*MAX_UPLOAD+MAX_BODY if note_upload else MAX_UPLOAD if upload_post else MAX_FETCH if fetch_result else MAX_SUBMISSION_BODY if report_submit else MAX_BODY
 				if not 0<length<=limit:
-					subject='An upload is'if upload_post else'Report answers are'if report_submit else'Note body is';bound=MAX_UPLOAD+1 if upload_post else MAX_SUBMISSION_BODY+1;remaining=length if 0<length<=bound else 0
+					subject='Upload'if upload_post or note_upload else'Download'if fetch_result else'Request body';remaining=length if 0<length<=limit+1 else 0
 					while remaining>0:
 						chunk=self.rfile.read(min(65536,remaining))
 						if not chunk:break
 						remaining-=len(chunk)
-					self.problem(413,f"{subject} empty or too large");return
+					self.problem(413,f"{subject} must be 1–{limit:,} bytes");return
 				data=self.rfile.read(length)
 				if len(data)!=length:self.problem(400,'Incomplete request body; retry the upload or request');return
+				if note_upload:
+					note=store.note_with_uploads(*parse_note_attachments(content_type,data))
+					for key in('at','acknowledged_at','ack_edited_at','seen_at'):note[key]=clip_stamp(note[key])
+					self.reply(201,json.dumps(note,ensure_ascii=False));return
 				if upload_post:name=parse_qs(urlsplit(self.path).query).get('name',[''])[0];record=store.save_upload(name,self.headers.get('Content-Type',''),data);record['at']=clip_stamp(record['at']);store.note(record['id'],f"Upload: {record['name']} ({record['size']} B, {record['type']or'unknown type'}) saved to {record['path']}");self.reply(201,json.dumps(record,ensure_ascii=False));return
+				if fetch_result:
+					name=parse_qs(urlsplit(self.path).query).get('name',[''])[0];record=store.complete_fetch(fetch_post.group(1),self.headers.get('X-Fetch-Claim',''),name,self.headers.get('Content-Type',''),self.headers.get('X-Fetch-Source',''),data)
+					for key in('at','updated_at'):record[key]=clip_stamp(record[key])
+					self.reply(201,json.dumps(record,ensure_ascii=False));return
 				payload=json.loads(data)
 				if not isinstance(payload,dict):self.problem(400,'Expected a JSON object');return
+				if path=='/api/fetch-jobs':record=store.enqueue_fetch(payload.get('url'),payload.get('allow_proxy',False));self.reply(201,json.dumps(record,ensure_ascii=False));return
+				if path=='/api/fetch-jobs/claim':self.reply(200,json.dumps({'job':store.claim_fetch()},ensure_ascii=False));return
+				if fetch_post:
+					job_id,action=fetch_post.groups()
+					if action=='renew':record=store.renew_fetch(job_id,self.headers.get('X-Fetch-Claim',''))
+					elif action=='fail':record=store.fail_fetch(job_id,self.headers.get('X-Fetch-Claim',''),payload.get('error',''))
+					elif action in{'approve','deny'}:record=store.decide_fetch(job_id,'approved'if action=='approve'else'denied')
+					else:record=store.retry_fetch(job_id)
+					self.reply(200,json.dumps(record,ensure_ascii=False));return
 				if path=='/api/markdown':self.reply(200,render(note_text(payload.get('text')),breaks=True),'text/html; charset=utf-8');return
-				if save_state:saved=store.save_state(payload);store.note(new_id(),f"State saved to {saved['path']}: {saved['notes']} notes, {saved['tasks']} tasks, {saved['answers']} answers");self.reply(200,json.dumps(saved,ensure_ascii=False));return
 				if report_seen:
 					report=store.mark_report_seen(report_seen.group(1))
 					for key in('updated_at','seen_at'):report[key]=clip_stamp(report[key])
@@ -550,21 +710,22 @@ def handler(store):
 				note=store.note(payload.get('id'),payload.get('text'))
 				for key in('at','acknowledged_at','ack_edited_at','seen_at'):note[key]=clip_stamp(note[key])
 				self.reply(201,json.dumps(note,ensure_ascii=False))
-			except ReportChanged as error:self.problem(409,error)
+			except(ReportChanged,FetchChanged)as error:self.problem(409,error)
 			except FileNotFoundError as error:self.problem(404,error)
 			except(ValueError,TypeError,UnicodeDecodeError)as error:self.problem(400,error)
 			except(OSError,sqlite3.Error,RuntimeError)as error:self.problem(503,error)
 	return Handler
 def main():
-	parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--state-dir',default='reports/arena-preview');parser.add_argument('--reminder',action='store_true',help='Print the unacked-count reminder line and exit');parser.add_argument('--save-path',default=SAVED_STATE,help='Where the save button writes its file; untracked, and at the repository root by default');parser.add_argument('--pretty',action='store_true',help='Indent the JSON this CLI prints; agent-facing output is minified by default');commands=parser.add_subparsers(dest='command',required=False);serve=commands.add_parser('serve');serve.add_argument('--port',type=int,default=8000,help='Port to bind (default: 8000)');commands.add_parser('init');commands.add_parser('read');seen=commands.add_parser('seen');seen.add_argument('ids',nargs='+');ack=commands.add_parser('ack');ack.add_argument('ids',nargs='+');ack.add_argument('--reply',help='Markdown answer shown in the message log');ack.add_argument('--note',help='Short plain answer shown in the message log');publish=commands.add_parser('publish');publish.add_argument('source',type=Path);publish.add_argument('--id',required=True);publish.add_argument('--title',required=True);task=commands.add_parser('task');task.add_argument('id_arg',nargs='?',metavar='TASK-ID');task.add_argument('title_arg',nargs='?',metavar='TASK-TITLE');task.add_argument('detail_arg',nargs='*',metavar='TASK-DETAIL');task.add_argument('--task-id',help='The ID the first positional takes');task.add_argument('--task-title',help='The title the second positional takes');task.add_argument('--task-details',action='append',help='One detail line, repeatable; an empty string clears the list');task.add_argument('--msg-id',help='Message this task answers; marks that message as having a task');task.add_argument('--amend',metavar='PREV-ID',help='Rename the task stored under this ID to the one given');task.add_argument('--status',choices=TASK_STATUSES,default=None);task.add_argument('--order',type=int,default=None,help='1-based place in its div, not the end');task_remove=commands.add_parser('task-remove');task_remove.add_argument('task_id');commands.add_parser('task-list');task_import=commands.add_parser('task-import');task_import.add_argument('source',nargs='?',type=Path,help='JSON array or one task per line; stdin if omitted');task_import.add_argument('--replace',action='store_true',help='Clear the stored list before importing');legacy=commands.add_parser('import-notes');legacy.add_argument('source',type=Path);args=parser.parse_args()
+	parser=argparse.ArgumentParser(description=CLI_DESCRIPTION);parser.add_argument('--state-dir',default='arena-state');parser.add_argument('--reminder',action='store_true',help='Print the unacked-count reminder line and exit');parser.add_argument('--save-path',default=None,help='Where the save button writes its file; inside the state directory by default');parser.add_argument('--pretty',action='store_true',help='Indent the JSON this CLI prints; agent-facing output is minified by default');commands=parser.add_subparsers(dest='command',required=False);serve=commands.add_parser('serve');serve.add_argument('--port',type=int,default=8000,help='Port to bind (default: 8000)');commands.add_parser('init');commands.add_parser('read');download=commands.add_parser('download-request',help='Request an HTTPS browser download, pending a preview Approve click');download.add_argument('url',help='One HTTPS URL without embedded credentials');download.add_argument('--allow-proxy',action='store_true',help='Let the owner opt in to AllOrigins and CodeTabs fallback for this request');seen=commands.add_parser('seen');seen.add_argument('ids',nargs='+');ack=commands.add_parser('ack');ack.add_argument('ids',nargs='+');ack.add_argument('--reply',help='Markdown answer shown in the message log');ack.add_argument('--note',help='Short plain answer shown in the message log');publish=commands.add_parser('publish');publish.add_argument('source',type=Path);publish.add_argument('--id',required=True);publish.add_argument('--title',required=True);task=commands.add_parser('task');task.add_argument('id_arg',nargs='?',metavar='TASK-ID');task.add_argument('title_arg',nargs='?',metavar='TASK-TITLE');task.add_argument('detail_arg',nargs='*',metavar='TASK-DETAIL');task.add_argument('--task-id',help='The ID the first positional takes');task.add_argument('--task-title',help='The title the second positional takes');task.add_argument('--task-details',action='append',help='One detail line, repeatable; an empty string clears the list');task.add_argument('--msg-id',help='Message this task answers; marks that message as having a task');task.add_argument('--amend',metavar='PREV-ID',help='Rename the task stored under this ID to the one given');task.add_argument('--status',choices=TASK_STATUSES,default=None);task.add_argument('--order',type=int,default=None,help='1-based place in its div, not the end');task_remove=commands.add_parser('task-remove');task_remove.add_argument('task_id');commands.add_parser('task-list');task_import=commands.add_parser('task-import');task_import.add_argument('source',nargs='?',type=Path,help='JSON array or one task per line; stdin if omitted');task_import.add_argument('--replace',action='store_true',help='Clear the stored list before importing');legacy=commands.add_parser('import-notes');legacy.add_argument('source',type=Path);args=parser.parse_args()
 	try:
-		if args.reminder:store=Store(args.state_dir,create=False,save_path=args.save_path);require_server(store);print(store.reminder(),flush=True);return 0
+		if args.reminder:store=Store(args.state_dir,create=False,save_path=args.save_path);require_server(store);print(store.reminder(advance=True),flush=True);return 0
 		if not args.command:parser.error('a command is required')
 		store=Store(args.state_dir,create=args.command in{'serve','init'},save_path=args.save_path);print(store.reminder(),file=sys.stderr,flush=True)
 		if args.command=='serve':
 			require_renderer()
 			with ThreadingHTTPServer(('0.0.0.0',args.port),handler(store))as server:store.set_meta('port',str(server.server_port));print(f"Preview listening on 0.0.0.0:{server.server_port}; state: {store.path}",flush=True);server.serve_forever()
 		elif args.command=='read':require_server(store);print_read(store,args.pretty)
+		elif args.command=='download-request':print(cli_json(store.enqueue_fetch(args.url,args.allow_proxy,pending=True),args.pretty))
 		elif args.command=='seen':store.mark_seen(args.ids);print('Seen: '+', '.join(args.ids))
 		elif args.command=='ack':
 			if bool(args.reply)==bool(args.note):raise ValueError('Choose exactly one of --reply or --note')
@@ -584,11 +745,11 @@ def main():
 			print(cli_json(echo,args.pretty))
 		elif args.command=='task-remove':print(cli_json(echo_task(store.remove_task(args.task_id)),args.pretty))
 		elif args.command=='task-list':print(cli_json(store.list_tasks(),args.pretty))
-		elif args.command=='task-import':text=args.source.read_text(encoding='utf-8')if args.source else sys.stdin.read();written=store.import_tasks([record for record in parse_task_import(text)if not(isinstance(record,dict)and'text'in record and'title'not in record)],args.replace);print(cli_json({'imported':len(written),'replaced':args.replace,'ids':[item['id']for item in written]},args.pretty))
+		elif args.command=='task-import':text=args.source.read_text(encoding='utf-8')if args.source else sys.stdin.read();written=store.import_tasks([record for record in parse_task_import(text)if not(isinstance(record,dict)and'text'in record and'title'not in record)],args.replace,autosave=False);print(cli_json({'imported':len(written),'replaced':args.replace,'ids':[item['id']for item in written]},args.pretty))
 		elif args.command=='import-notes':
 			saved=[json.loads(line)for line in args.source.read_text(encoding='utf-8').splitlines()if line.strip()];answers=[record for record in saved if isinstance(record,dict)and'report_id'in record];records=[record for record in saved if not(isinstance(record,dict)and('title'in record and'text'not in record or'report_id'in record))]
-			for record in answers:store.submission(record['id'],record['report_id'],record['text'],record.get('at'),acknowledged_at=record.get('acknowledged_at'),ack_kind=record.get('ack_kind'),ack_text=record.get('ack_text'),ack_edited_at=record.get('ack_edited_at'),seen_at=record.get('seen_at'),task_id=record.get('task_id'))
-			for record in records:store.note(record['id'],record['text'],record.get('at'),acknowledged_at=record.get('acknowledged_at'),ack_kind=record.get('ack_kind'),ack_text=record.get('ack_text'),ack_edited_at=record.get('ack_edited_at'),seen_at=record.get('seen_at'),task_id=record.get('task_id'))
+			for record in answers:store.submission(record['id'],record['report_id'],record['text'],record.get('at'),acknowledged_at=record.get('acknowledged_at'),ack_kind=record.get('ack_kind'),ack_text=record.get('ack_text'),ack_edited_at=record.get('ack_edited_at'),seen_at=record.get('seen_at'),task_id=record.get('task_id'),autosave=False)
+			for record in records:store.note(record['id'],record['text'],record.get('at'),acknowledged_at=record.get('acknowledged_at'),ack_kind=record.get('ack_kind'),ack_text=record.get('ack_text'),ack_edited_at=record.get('ack_edited_at'),seen_at=record.get('seen_at'),task_id=record.get('task_id'),autosave=False)
 			receipts=sum(1 for record in records if record.get('acknowledged_at'));print(f"Imported {len(records)} notes, {receipts} with a receipt restored verbatim, {len(answers)} report answers; existing IDs are not duplicated and keep the receipt they have")
 	except(OSError,ValueError,TypeError,KeyError,sqlite3.Error,RuntimeError)as error:print(f"Preview error: {error}",file=sys.stderr);return 1
 	return 0
