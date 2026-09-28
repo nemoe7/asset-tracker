@@ -1,15 +1,37 @@
-from datetime import datetime
+import os
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from app.services.data.backups import update_backup_config
 from app.services.executor import last_expected_run, run_backup_job
 from app.services.scheduler import (
+  LOCK_FILENAME,
+  _scheduled_job,
   check_and_run_missed_backups,
   init_backup_scheduler,
   start_scheduler,
   stop_scheduler,
 )
+
+
+def _backup_count():
+  from app.services.data.db import db_connection
+
+  with db_connection() as connection:
+    return connection.execute("SELECT COUNT(*) FROM backup_history").fetchone()[0]
+
+
+def _hold_lock(backup_location):
+  """Write a fresh lock file, as a concurrent worker would."""
+  (backup_location / LOCK_FILENAME).write_text("held")
+
+
+def _hold_stale_lock(backup_location):
+  lock = backup_location / LOCK_FILENAME
+  lock.write_text("crashed")
+  stale = datetime.now(timezone.utc) - timedelta(hours=2)
+  os.utime(lock, (stale.timestamp(), stale.timestamp()))
 
 
 def test_init_scheduler_registers_jobs_when_enabled(gen_test_data_admin):
@@ -85,9 +107,7 @@ def test_scheduler_handles_missing_or_invalid_config(gen_test_data_admin):
   import app.services.data.db as db_module
 
   with db_module.db_transaction() as connection:
-    connection.execute(
-      "UPDATE backup_config SET schedule = 'not-json' WHERE id = 1"
-    )
+    connection.execute("UPDATE backup_config SET schedule = 'not-json' WHERE id = 1")
   scheduler = init_backup_scheduler()
   try:
     start_scheduler(scheduler)
@@ -97,3 +117,49 @@ def test_scheduler_handles_missing_or_invalid_config(gen_test_data_admin):
     stop_scheduler(scheduler)
 
 
+def test_catch_up_skipped_while_another_worker_holds_lock(
+  gen_test_data_admin, tmp_path, monkeypatch
+):
+  monkeypatch.setenv("BACKUP_DIR", str(tmp_path))
+  update_backup_config(enabled=True)
+  _hold_lock(tmp_path)
+
+  before = _backup_count()
+  ran = check_and_run_missed_backups()
+
+  assert ran is False
+  assert _backup_count() == before
+
+
+def test_scheduled_job_skipped_while_another_worker_holds_lock(
+  gen_test_data_admin, tmp_path, monkeypatch
+):
+  monkeypatch.setenv("BACKUP_DIR", str(tmp_path))
+  update_backup_config(enabled=True)
+  _hold_lock(tmp_path)
+
+  before = _backup_count()
+  _scheduled_job()
+
+  assert _backup_count() == before
+  # The other worker's lock is left in place.
+  assert (tmp_path / LOCK_FILENAME).exists()
+
+
+def test_lock_released_after_backup(gen_test_data_admin, tmp_path, monkeypatch):
+  monkeypatch.setenv("BACKUP_DIR", str(tmp_path))
+  update_backup_config(enabled=True)
+
+  assert check_and_run_missed_backups() is True
+  assert not (tmp_path / LOCK_FILENAME).exists()
+
+
+def test_stale_lock_is_taken_over(gen_test_data_admin, tmp_path, monkeypatch):
+  monkeypatch.setenv("BACKUP_DIR", str(tmp_path))
+  update_backup_config(enabled=True)
+  _hold_stale_lock(tmp_path)
+
+  ran = check_and_run_missed_backups()
+
+  assert ran is True
+  assert not (tmp_path / LOCK_FILENAME).exists()

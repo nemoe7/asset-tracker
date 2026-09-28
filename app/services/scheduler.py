@@ -1,13 +1,79 @@
 import logging
+import os
+from contextlib import contextmanager
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from .data.backups import get_backup_config
-from .executor import run_backup_job
+from .executor import backup_dir, run_backup_job
 
 logger = logging.getLogger(__name__)
 
 JOB_ID = "scheduled-backup"
+LOCK_FILENAME = "backup.lock"
+LOCK_STALE_SECONDS = 3600
+
+
+def _lock_path():
+  return os.path.join(backup_dir(), LOCK_FILENAME)
+
+
+def _create_lock_file(path):
+  from datetime import datetime, timezone
+
+  descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+
+  try:
+    os.write(
+      descriptor,
+      datetime.now(timezone.utc).isoformat().encode(),
+    )
+  finally:
+    os.close(descriptor)
+
+
+def _acquire_lock(path):
+  """Create the lock file. A stale file from a crashed process is taken
+  over. Returns False when the lock is held by a live process."""
+  from datetime import datetime, timezone
+
+  try:
+    _create_lock_file(path)
+  except FileExistsError:
+    acquired_at = datetime.fromtimestamp(
+      os.path.getmtime(path),
+      tz=timezone.utc,
+    )
+    age = (datetime.now(timezone.utc) - acquired_at).total_seconds()
+
+    if age < LOCK_STALE_SECONDS:
+      return False
+
+    logger.warning("taking over stale backup lock at %s", path)
+    os.unlink(path)
+    _create_lock_file(path)
+
+  return True
+
+
+@contextmanager
+def _backup_lock():
+  """Exclusive lock that keeps a second worker from running a backup at
+  the same time as the first (CON-001)."""
+  path = _lock_path()
+  os.makedirs(os.path.dirname(path), exist_ok=True)
+
+  if not _acquire_lock(path):
+    yield False
+    return
+
+  try:
+    yield True
+  finally:
+    try:
+      os.unlink(path)
+    except FileNotFoundError:
+      pass
 
 
 def _seconds_until_next_run(schedule):
@@ -51,10 +117,15 @@ def _scheduled_job(scheduled_at=None):
   config = get_backup_config()
   if not config["enabled"]:
     return
-  run_backup_job(
-    scheduled_at=scheduled_at
-    or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-  )
+
+  with _backup_lock() as acquired:
+    if not acquired:
+      logger.info("backup already running elsewhere; skipping scheduled run")
+      return
+
+    run_backup_job(
+      scheduled_at=scheduled_at or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    )
 
 
 def check_and_run_missed_backups():
@@ -66,12 +137,18 @@ def check_and_run_missed_backups():
 
   if not should_catch_up():
     return False
-  logger.info("missed scheduled backup detected; running catch-up backup")
-  from datetime import datetime
 
-  from .executor import last_expected_run
+  with _backup_lock() as acquired:
+    if not acquired:
+      logger.info("backup already running elsewhere; skipping catch-up")
+      return False
 
-  config = get_backup_config()
-  missed = last_expected_run(config["schedule"])
-  run_backup_job(scheduled_at=missed.strftime("%Y-%m-%d %H:%M:%S"))
+    logger.info("missed scheduled backup detected; running catch-up backup")
+
+    from .executor import last_expected_run
+
+    config = get_backup_config()
+    missed = last_expected_run(config["schedule"])
+    run_backup_job(scheduled_at=missed.strftime("%Y-%m-%d %H:%M:%S"))
+
   return True

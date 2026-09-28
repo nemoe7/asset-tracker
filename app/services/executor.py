@@ -8,7 +8,7 @@ from .exceptions.data.backups import BackupError
 from .storage import apply_retention, save_backup_to_file
 
 
-def _backup_dir():
+def backup_dir():
   return os.environ.get("BACKUP_DIR", config.BACKUP_DIR)
 
 
@@ -27,7 +27,7 @@ def run_backup_job(scheduled_at=None, user_id=None):
   """
   backup = create_backup(user_id)
   try:
-    path = save_backup_to_file(backup["data"], _backup_dir())
+    path = save_backup_to_file(backup["data"], backup_dir())
   except OSError as exc:
     raise BackupError(f"cannot persist backup: {exc}") from exc
   completed_at = backup["completed_at"]
@@ -37,7 +37,7 @@ def run_backup_job(scheduled_at=None, user_id=None):
          VALUES (?, ?, ?, ?)""",
       (user_id, scheduled_at, completed_at, path),
     )
-  apply_retention(_backup_dir(), _max_backups())
+  apply_retention(backup_dir(), _max_backups())
   return {
     "filename": backup["filename"],
     "path": path,
@@ -78,9 +78,7 @@ def next_scheduled_at(schedule, after=None):
     while candidate <= after:
       month = candidate.month + 1
       year = candidate.year + (month - 1) // 12
-      candidate = candidate.replace(
-        year=year, month=(month - 1) % 12 + 1
-      )
+      candidate = candidate.replace(year=year, month=(month - 1) % 12 + 1)
     return candidate
 
   candidate = at_time(after)
