@@ -497,3 +497,39 @@ def test_list_audit_logs_filters_by_entity_id_prefix(gen_test_data_admin):
 
   assert len(result["logs"]) == 2
   assert all(log["entity_id"].startswith(asset_id) for log in result["logs"])
+
+
+@pytest.mark.parametrize("entity_id", ["a%b", "a_b"])
+def test_get_audit_logs_escapes_wildcards_in_entity_id(
+  gen_test_data_admin,
+  entity_id,
+):
+  """LIKE wildcards in entity_id are matched literally, not as patterns."""
+  for stored_id in ("a%b", "a_b", "axb"):
+    _insert_audit_log(
+      user_id=gen_test_data_admin,
+      action="updated",
+      entity_id=stored_id,
+    )
+
+  logs = get_audit_logs(entity_id=entity_id)
+
+  assert [log["entity_id"] for log in logs] == [entity_id]
+
+
+@pytest.mark.parametrize("entity_id", ["a%b", "a_b"])
+def test_list_audit_logs_escapes_wildcards_in_entity_id(
+  gen_test_data_admin,
+  entity_id,
+):
+  """list_audit_logs matches wildcards in entity_id literally too."""
+  for stored_id in ("a%b", "a_b", "axb"):
+    _insert_audit_log(
+      user_id=gen_test_data_admin,
+      action="updated",
+      entity_id=stored_id,
+    )
+
+  result = list_audit_logs(entity_id=entity_id)
+
+  assert [log["entity_id"] for log in result["logs"]] == [entity_id]

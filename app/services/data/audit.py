@@ -70,6 +70,18 @@ def get_audit_log(audit_id):
     return _parse_audit_log(row)
 
 
+def _like_prefix(value):
+  """Build a LIKE pattern that matches value as a literal prefix.
+
+  The backslash must be escaped first, otherwise the escapes added for
+  the other wildcards are escaped again.
+  """
+  escaped = str(value).replace("\\", "\\\\")
+  escaped = escaped.replace("%", "\\%").replace("_", "\\_")
+
+  return escaped + "%"
+
+
 def get_audit_logs(entity_type=None, entity_id=None):
   with db_connection() as connection:
     query = """
@@ -85,8 +97,8 @@ def get_audit_logs(entity_type=None, entity_id=None):
       parameters.append(entity_type)
 
     if entity_id is not None:
-      query += " AND entity_id LIKE ?"
-      parameters.append(str(entity_id) + "%")
+      query += " AND entity_id LIKE ? ESCAPE '\\'"
+      parameters.append(_like_prefix(entity_id))
 
     query += " ORDER BY id"
 
@@ -124,8 +136,8 @@ def list_audit_logs(
       parameters.append(entity_type)
 
     if entity_id is not None:
-      where_clauses.append("audit_log.entity_id LIKE ?")
-      parameters.append(str(entity_id) + "%")
+      where_clauses.append("audit_log.entity_id LIKE ? ESCAPE '\\'")
+      parameters.append(_like_prefix(entity_id))
 
     if action is not None:
       where_clauses.append("audit_log.action = ?")
