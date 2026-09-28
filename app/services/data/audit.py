@@ -82,7 +82,7 @@ def _like_prefix(value):
   return escaped + "%"
 
 
-def get_audit_logs(entity_type=None, entity_id=None):
+def get_audit_logs(entity_type=None, entity_id=None, limit=1000):
   with db_connection() as connection:
     query = """
       SELECT *
@@ -100,11 +100,11 @@ def get_audit_logs(entity_type=None, entity_id=None):
       query += " AND entity_id LIKE ? ESCAPE '\\'"
       parameters.append(_like_prefix(entity_id))
 
-    query += " ORDER BY id"
+    query += " ORDER BY id LIMIT ?"
 
     rows = connection.execute(
       query,
-      parameters,
+      [*parameters, limit],
     ).fetchall()
 
     return [_parse_audit_log(row) for row in rows]

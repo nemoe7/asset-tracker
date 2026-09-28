@@ -533,3 +533,46 @@ def test_list_audit_logs_escapes_wildcards_in_entity_id(
   result = list_audit_logs(entity_id=entity_id)
 
   assert [log["entity_id"] for log in result["logs"]] == [entity_id]
+
+
+def test_get_audit_logs_enforces_default_limit(gen_test_data_admin):
+  """The default cap keeps retrieval bounded on a large log table."""
+  with db_transaction() as connection:
+    connection.executemany(
+      """
+      INSERT INTO audit_log (
+        user_id, action, entity_type, entity_id, timestamp
+      )
+      VALUES (?, 'created', 'bulk', 'bulk', '2026-01-02 12:00:00')
+      """,
+      [(gen_test_data_admin,) for _ in range(1001)],
+    )
+
+  logs = get_audit_logs(entity_type="bulk")
+
+  assert len(logs) == 1000
+
+
+def test_get_audit_logs_keeps_oldest_rows_when_limited(
+  gen_test_data_admin,
+):
+  """Rows are ordered ascending by id, so the cap keeps the oldest."""
+  first_id = create_audit_log(
+    action="created",
+    entity_type="test",
+    entity_id=1,
+  )
+  second_id = create_audit_log(
+    action="updated",
+    entity_type="test",
+    entity_id=1,
+  )
+  create_audit_log(
+    action="deleted",
+    entity_type="test",
+    entity_id=1,
+  )
+
+  logs = get_audit_logs(entity_type="test", limit=2)
+
+  assert [log["id"] for log in logs] == [first_id, second_id]
