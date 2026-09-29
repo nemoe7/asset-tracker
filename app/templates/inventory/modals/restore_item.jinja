@@ -1,6 +1,6 @@
 {% from "shared/_modal.jinja" import modal %}
 
-{% call modal("restore-item-modal", title=None) %}
+{% call modal("restore-item-modal", title=None, labelledby="restore-item-title") %}
 
 {# ==================== Restore Confirmation ==================== #}
 <div class="flex items-start gap-4">
@@ -10,7 +10,7 @@
   </div>
 
   <div>
-    <h2 class="text-lg font-semibold">
+    <h2 id="restore-item-title" class="text-lg font-semibold">
       Restore asset?
     </h2>
 
@@ -18,7 +18,7 @@
       This will return the asset to the active list.
     </p>
 
-    <div id="restore-item-error" class="hidden" aria-live="polite"></div>
+    <div id="restore-item-error" class="mt-3 text-sm text-red-400 hidden" aria-live="polite"></div>
 
   </div>
 

@@ -260,7 +260,7 @@ def test_archived_item_can_be_restored(
     name="Apply",
   ).click()
 
-  page.locator(f'.restore-item[data-item-id="{item["id"]}"]').click()
+  page.locator(f'tr .restore-item[data-item-id="{item["id"]}"]').click()
 
   expect(page.locator("#restore-item-modal")).to_be_visible()
 

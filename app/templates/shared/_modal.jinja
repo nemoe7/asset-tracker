@@ -1,12 +1,13 @@
-{% macro modal(id, title=None, subtitle=None, buttons=None) %}
-<div id="{{ id }}" class="hidden p-6">
+{% macro modal(id, title=None, subtitle=None, buttons=None, labelledby=None) %}
+<div id="{{ id }}" class="hidden p-6" role="dialog" aria-modal="true"
+  {% if labelledby %}aria-labelledby="{{ labelledby }}"{% elif title %}aria-labelledby="{{ id }}-title"{% endif %}>
 
   {# ==================== Modal Header ==================== #}
   {% if title %}
   <div class="flex items-center justify-between gap-4">
 
     <div class="min-w-0">
-      <h2 class="text-lg font-semibold">
+      <h2 id="{{ id }}-title" class="text-lg font-semibold">
         {{ title }}
       </h2>
 

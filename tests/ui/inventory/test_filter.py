@@ -8,7 +8,7 @@ def test_filter_modal_opens(page, live_server):
 
   page.locator("#filter-item-button").click()
 
-  expect(page.get_by_role("dialog")).to_be_visible()
+  expect(page.get_by_role("dialog", name="Filter & Sort")).to_be_visible()
   expect(page.get_by_role("heading", name="Filter & Sort")).to_be_visible()
 
 

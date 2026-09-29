@@ -1,6 +1,6 @@
 {% from "shared/_modal.jinja" import modal %}
 
-{% call modal("archive-item-modal", title=None) %}
+{% call modal("archive-item-modal", title=None, labelledby="archive-item-title") %}
 
 {# ==================== Archive Confirmation ==================== #}
 <div class="flex flex-col gap-2">
@@ -11,7 +11,7 @@
     </div>
 
     <div>
-      <h2 class="text-lg font-semibold">
+      <h2 id="archive-item-title" class="text-lg font-semibold">
         Archive asset?
       </h2>
 
@@ -52,7 +52,7 @@
 
     </div>
 
-    <div id="archive-item-error" class="hidden" aria-live="polite"></div>
+    <div id="archive-item-error" class="mt-3 text-sm text-red-400 hidden" aria-live="polite"></div>
 
   </div>
 

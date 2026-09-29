@@ -7,7 +7,7 @@ def open_import_modal(page, live_server):
 
   page.locator("#import-button").click()
 
-  return page.get_by_role("dialog")
+  return page.get_by_role("dialog", name="Import assets")
 
 
 @pytest.mark.e2e
