@@ -141,7 +141,10 @@ def test_edit_item_description_can_be_cleared(page, live_server, create_item):
 
   page.locator("#inventory-content").get_by_role("cell", name="Test Asset").click()
 
-  expect(page.locator("#view-item-description")).to_have_text("—")
+  # The save redirect reloads the same URL and the view modal populates via a
+  # fetch; wait_for_url is a no-op because the URL is unchanged, so allow for
+  # the whole chain under parallel test load.
+  expect(page.locator("#view-item-description")).to_have_text("—", timeout=15000)
 
 
 @pytest.mark.e2e

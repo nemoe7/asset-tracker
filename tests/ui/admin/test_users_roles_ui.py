@@ -263,7 +263,10 @@ def test_admin_page_grants_custom_permission_to_role(page, live_server, setup_ad
   dialog.get_by_role("button", name="Save changes").click()
   page.wait_for_url(f"{live_server}/admin?tab=roles")
 
-  expect(page.get_by_text("custom.report.view").first).to_be_visible()
+  # Save runs staged-permission fetches, then the native form submit, then
+  # the redirect and re-render; wait_for_url is a no-op because the URL is
+  # unchanged, so allow for the whole chain under parallel test load.
+  expect(page.get_by_text("custom.report.view").first).to_be_visible(timeout=15000)
 
 
 @pytest.mark.e2e
@@ -287,10 +290,10 @@ def test_admin_page_cancel_add_permission_does_not_persist(
   expect(row).to_be_visible()
 
   with page.expect_response(
-    lambda response: response.url.endswith(
-      f"/admin/roles/{role_id}/permissions"
-    )
-    and response.status == 200,
+    lambda response: (
+      response.url.endswith(f"/admin/roles/{role_id}/permissions")
+      and response.status == 200
+    ),
   ):
     row.locator(".edit-role").click()
   dialog = page.locator("#edit-role-dialog")
