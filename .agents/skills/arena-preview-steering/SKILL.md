@@ -34,7 +34,7 @@ arena-preview read
 arena-preview poll
 ```
 
-When a pending count is nonzero, `read` now. It prints full pending notes and report answers; a failed or missing inbox is an error, not an empty inbox. `read` marks only fully delivered IDs Seen, not acknowledged, and stamps the parent report read by the agent. Do not mark count-only, truncated, or failed deliveries Seen. A pending item repeats until acknowledged. The hook checks counts after Arena bash calls; end the turn's last tool block with a bash call. When ending a turn or a form awaits answers, run `poll`. When a listing carries a `skip_poll` stamp, the owner pressed Skip poll in the page: the poll consumes it, and the turn ends there with no note and no second poll.
+When a pending count is nonzero, `read` now. It prints full pending notes and report answers; a failed or missing inbox is an error, not an empty inbox. `read` marks only fully delivered IDs Seen, not acknowledged, and stamps the parent report read by the agent. Do not mark count-only, truncated, or failed deliveries Seen. A pending item repeats until acknowledged. The hook checks counts after Arena bash calls; end the turn's last tool block with a bash call. When ending a turn or a form awaits answers, run `poll`. When a listing carries a `skip_poll` stamp, the owner pressed Skip poll in the page: the poll consumes it, and the turn ends there with no note and no second poll. A blocked call hears which noisy commands to drop, and a call that spells the preview path hears the bare form once a shell. A blocked push says so, and a code-scanning-alert or workflow-log read hears the proxy route.
 
 Acknowledge each delivered ID separately where the owner reads it. Use `--reply <Markdown>` for rendered Markdown or `--note <text>` for one plain line. Never acknowledge all blindly or share one answer across notes. Use the full ID, not a sequence number. A second ack appends a reply below the first; it does not replace it. Receipt is not completion. Ack immediately; failure earns a negative rating. After acking a work note, add it via `task <id> ... --msg-id <full-id>`; `ack` reminds you.
 
@@ -46,7 +46,7 @@ If the preview is not visible, acknowledge a delivered note in chat with literal
 
 When a call needs the recorded agent key, such as after a 401 or from an owner question, run arena-preview key; it prints the key, the host and the stamp and needs no server.
 
-Run `task-list` at turn start. Before implementation, add approved work with `task <kebab-title-id> "<title>" [details ...]`; put it first with `--order 1` and update status (`upcoming`/`finished` only)/details as work changes; backtick task IDs in acks so the log links them. For a task from a note or report answer, use `--msg-id <full-message-id>` and queue/ack it in the same tool block. The task marker does not replace `ack`. Mark it finished only after verification.
+Run `task-list` at turn start. Before implementation, add approved work with `task <kebab-title-id> "<title>" [details ...]`; put it first with `--order 1` and update status (`upcoming`/`finished` only)/details as work changes; backtick task IDs in acks so the log links them. For a task from a note or report answer, use `--msg-id <full-message-id>` and queue/ack it in the same tool block. The task marker does not replace `ack`. Mark it finished only after verification. A task waiting on a report takes `--report <report-id>`; the report's answer clears its blocked mark.
 
 ## Publish reports and forms
 
