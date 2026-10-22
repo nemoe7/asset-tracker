@@ -241,6 +241,66 @@ def test_parse_xlsx_uppercase_builtin_headers():
   ]
 
 
+def test_parse_xlsx_datetime_with_time_cell_becomes_date():
+  from datetime import datetime
+
+  upload = make_xlsx_upload(
+    [
+      ["name", "Purchased"],
+      ["Alpha", datetime(2026, 8, 20, 14, 30)],  # noqa: DTZ001
+    ],
+  )
+
+  rows = parse_import_file(upload)
+
+  assert rows[0]["custom_fields"]["Purchased"] == "2026-08-20"
+
+
+def test_parse_xlsx_midnight_datetime_cell_becomes_date():
+  from datetime import datetime
+
+  upload = make_xlsx_upload(
+    [
+      ["name", "Purchased"],
+      ["Alpha", datetime(2026, 8, 20)],  # noqa: DTZ001
+    ],
+  )
+
+  rows = parse_import_file(upload)
+
+  assert rows[0]["custom_fields"]["Purchased"] == "2026-08-20"
+
+
+def test_parse_xlsx_date_object_becomes_iso_date():
+  from datetime import date
+
+  upload = make_xlsx_upload(
+    [
+      ["name", "Purchased"],
+      ["Alpha", date(2026, 9, 1)],
+    ],
+  )
+
+  rows = parse_import_file(upload)
+
+  assert rows[0]["custom_fields"]["Purchased"] == "2026-09-01"
+
+
+def test_parse_xlsx_time_only_cell_passes_through_as_string():
+  from datetime import time
+
+  upload = make_xlsx_upload(
+    [
+      ["name", "Purchased"],
+      ["Alpha", time(13, 45)],
+    ],
+  )
+
+  rows = parse_import_file(upload)
+
+  assert rows[0]["custom_fields"]["Purchased"] == "13:45:00"
+
+
 def test_parse_xlsx_missing_name_column_raises():
   upload = make_xlsx_upload(
     [

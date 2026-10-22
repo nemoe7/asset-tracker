@@ -1,4 +1,5 @@
 import csv
+from datetime import date, datetime, time
 
 from openpyxl import load_workbook
 
@@ -30,6 +31,19 @@ def _cell(row, column):
     return None
 
   return str(value).strip()
+
+
+def _normalize_xlsx_value(value):
+  if isinstance(value, datetime):
+    return value.date().isoformat()
+
+  if isinstance(value, date):
+    return value.isoformat()
+
+  if isinstance(value, time):
+    return value.isoformat()
+
+  return value
 
 
 def _build_rows(dict_rows, columns):
@@ -106,7 +120,9 @@ def _parse_xlsx(file_storage):
 
     _validate_has_name_column(header)
 
-    rows = [dict(zip(header, row)) for row in dict_rows]
+    rows = [
+      dict(zip(header, (_normalize_xlsx_value(v) for v in row))) for row in dict_rows
+    ]
 
     columns = [
       name
