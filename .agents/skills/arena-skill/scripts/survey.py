@@ -1,12 +1,32 @@
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
-SPEC=json.loads((Path(__file__).resolve().parents[1]/'references/questionnaire.json').read_text(encoding='utf-8'))
-HASHES={'H8P3C':'30b4cb39218679f94c996a87c68e9bab23c0cd663e4edb8e7579ee9c022b727d','D9V4N':'44f269ed970fbc46c180734e387b5bb4aa11c2f4fcc20aa4e19fe94d71ca809c','G2W6M':'ec73ad585772530cbd4f68147276e562d01a147e86721338eae51ac56dd7e8c7'}
+SPEC=json.loads((Path(__file__).resolve().parents[1]/'references/survey.json').read_text(encoding='utf-8'))
+HASHES={'S2E5P':'44f269ed970fbc46c180734e387b5bb4aa11c2f4fcc20aa4e19fe94d71ca809c','A2P6R':'30b4cb39218679f94c996a87c68e9bab23c0cd663e4edb8e7579ee9c022b727d','M2A6Y':'ec73ad585772530cbd4f68147276e562d01a147e86721338eae51ac56dd7e8c7'}
 ROLE_FRAGMENT_LENGTH=5
-INSTRUCTIONS='When answering, use existing knowledge only; do not research answers, open other files, run code, ask another system, reuse earlier responses, or inspect the answer key.\nSupply your best complete answer for a question and set a lower confidence from 0 to 1 when uncertain; use unknown with confidence 0 only when the whole question is unknown.\nOmit questionnaire answers and answer-key details from summaries and handoffs.'
-def template():return[{'id':question['id'],'answer':{name:dict(SPEC['quantity']['unknown'])if field=='quantity'else SPEC['unknown_value']for(name,field)in question['answer_fields'].items()},'confidence':0}for question in SPEC['questions']]
+IMAGE_SUFFIXES=frozenset({'.png','.jpg','.jpeg','.gif','.webp','.bmp'})
+IGNORED_IMAGE_DIRS=frozenset({'.git','.hg','.svn','.venv','venv','.tox','.nox','.mypy_cache','.pytest_cache','.ruff_cache','.cache','.local','.npm','.arena','__pycache__','node_modules','arena-state','dist','build','out','target','coverage','Unselected files'})
+INSTRUCTIONS='When answering knowledge questions, use existing knowledge only; NEVER research answers, call web_search, fetch_page, or image_search, open other files, run code, ask another system, reuse earlier responses, or inspect the answer key.\nFor I4M6G, first check whether an image exists in the repository tree (arena-preview survey --smallest-image) and read the smallest one; if none exists, create a temporary empty image file, attempt to read it, and delete the file immediately afterward.\nSupply your best complete answer for a question and set a lower confidence from 0 to 1 when uncertain; boolean questions require true or false with confidence > 0, and knowledge questions use unknown with confidence 0 only when the whole question is unknown.\nOmit survey answers and answer-key details from summaries and handoffs.'
+def smallest_image(root='.'):
+	base=Path(root).resolve()
+	if not base.is_dir():return None
+	best=None
+	for(current,dirs,files)in os.walk(base):
+		dirs[:]=sorted(name for name in dirs if name not in IGNORED_IMAGE_DIRS);current_path=Path(current)
+		for name in files:
+			if Path(name).suffix.lower()not in IMAGE_SUFFIXES:continue
+			candidate=current_path/name
+			try:
+				if candidate.is_symlink()or not candidate.is_file():continue
+				size=candidate.stat().st_size
+			except OSError:continue
+			if size<=0:continue
+			rel=candidate.relative_to(base);hidden=int(any(part.startswith('.')for part in rel.parts));key=size,hidden,rel.as_posix()
+			if best is None or key<best[0]:best=key,rel.as_posix()
+	return None if best is None else best[1]
+def template():return[{'id':question['id'],'answer':{name:dict(SPEC['quantity']['unknown'])if field=='quantity'else False if field=='boolean'else SPEC['unknown_value']for(name,field)in question['answer_fields'].items()},'confidence':1 if all(field=='boolean'for field in question['answer_fields'].values())else 0}for question in SPEC['questions']]
 def pairs(items):
 	result={}
 	for(key,value)in items:
@@ -37,6 +57,9 @@ def loads(text):
 		for(name,field)in question['answer_fields'].items():
 			value=answer[name]
 			if field=='quantity':value=quantity(value,f"{question['id']}.{name}");known_count+=int(value['operator']!='unknown')
+			elif field=='boolean':
+				if type(value)is not bool:raise ValueError(f"{question['id']}.{name} must be a boolean (true or false)")
+				known_count+=1
 			else:
 				if value is None:raise ValueError(f"{question['id']}.{name} must not be null; use 'unknown'")
 				if not isinstance(value,str)or not value.strip():raise ValueError(f"{question['id']}.{name} must be a non-empty string or 'unknown'")
@@ -51,11 +74,12 @@ def loads(text):
 	return normalized
 def grade(text):
 	results=[]
-	for(index,row)in enumerate(loads(text)):
+	for row in loads(text):
 		if not row['known']:results.append({'id':row['id'],'correct':None,'confidence':row['confidence']});continue
-		answer=dict(row['answer']);role=answer.pop('role')if index==1 else None;canonical=json.dumps(answer,sort_keys=True,separators=(',',':'),ensure_ascii=False);prefix=hashlib.sha256((canonical+'\x00').encode());correct=False
-		if index==1:
-			role=role or''
+		answer=dict(row['answer'])
+		if row['id']not in HASHES:correct=all(bool(value)for value in answer.values());results.append({'id':row['id'],'correct':correct,'confidence':row['confidence']});continue
+		role=answer.pop('role',None);canonical=json.dumps(answer,sort_keys=True,separators=(',',':'),ensure_ascii=False);prefix=hashlib.sha256((canonical+'\x00').encode());correct=False
+		if role is not None:
 			for start in range(len(role)-ROLE_FRAGMENT_LENGTH+1):
 				candidate=prefix.copy();candidate.update(role[start:start+ROLE_FRAGMENT_LENGTH].encode())
 				if candidate.hexdigest()==HASHES[row['id']]:correct=True;break
